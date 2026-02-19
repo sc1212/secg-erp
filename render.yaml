@@ -1,0 +1,27 @@
+# Render Blueprint — push to GitHub, then deploy at https://dashboard.render.com/blueprints
+# This creates: 1 web service (FastAPI) + 1 PostgreSQL database, auto-wired.
+
+services:
+  - type: web
+    name: secg-erp-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: secg-erp-db
+          property: connectionURI
+      - key: DEBUG
+        value: "true"
+      - key: CORS_ORIGINS
+        value: "https://secg-erp-api.onrender.com,http://localhost:3000,http://localhost:5173"
+    healthCheckPath: /health
+
+databases:
+  - name: secg-erp-db
+    plan: free
+    databaseName: secg_erp
+    user: secg_user
