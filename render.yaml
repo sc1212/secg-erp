@@ -1,10 +1,8 @@
-# Render Blueprint — push to GitHub, then deploy at https://dashboard.render.com/blueprints
-# This creates: 1 web service (FastAPI) + 1 PostgreSQL database, auto-wired.
-
 services:
   - type: web
     name: secg-erp-api
     runtime: python
+    pythonVersion: "3.11.11"
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
