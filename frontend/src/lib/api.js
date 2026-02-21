@@ -1,4 +1,6 @@
-const BASE = '/api';
+// In production on Render, the API is at a separate URL.
+// In local dev, Vite proxies /api to localhost:8000.
+const BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
