@@ -38,7 +38,7 @@ const demoWeekly = [
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg">
+    <div className="bg-white border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg">
       <p className="text-brand-muted mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.color }}>{p.name}: {money(p.value)}</p>
@@ -81,12 +81,12 @@ export default function Financials() {
             <h3 className="text-sm font-semibold mb-4">13-Week Cash Flow Forecast</h3>
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={demoWeekly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2A4A" />
-                <XAxis dataKey="week" stroke="#A0A0B0" fontSize={11} />
-                <YAxis tickFormatter={(v) => money(v, true)} stroke="#A0A0B0" fontSize={11} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="week" stroke="#94A3B8" fontSize={11} />
+                <YAxis tickFormatter={(v) => money(v, true)} stroke="#94A3B8" fontSize={11} />
                 <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="inflows" stroke="#22C55E" fill="#22C55E" fillOpacity={0.1} name="Inflows" />
-                <Area type="monotone" dataKey="outflows" stroke="#EF4444" fill="#EF4444" fillOpacity={0.1} name="Outflows" />
+                <Area type="monotone" dataKey="inflows" stroke="#16A34A" fill="#16A34A" fillOpacity={0.1} name="Inflows" />
+                <Area type="monotone" dataKey="outflows" stroke="#DC2626" fill="#DC2626" fillOpacity={0.1} name="Outflows" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
