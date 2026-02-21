@@ -13,7 +13,6 @@ import {
   AreaChart, Area, CartesianGrid,
 } from 'recharts';
 
-// Demo data for charts — replaced by real API data when backend runs
 const demoProjects = [
   { name: 'PRJ-042', budget: 120000, spent: 82800, pct: 69 },
   { name: 'PRJ-038', budget: 95000, spent: 66500, pct: 70 },
@@ -40,7 +39,7 @@ const alertBg = { critical: 'bg-danger/10', warning: 'bg-warn/10', info: 'bg-ok/
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg">
+    <div className="bg-white border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg">
       <p className="text-brand-muted mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.color }}>
@@ -54,7 +53,6 @@ function ChartTooltip({ active, payload, label }) {
 export default function Dashboard() {
   const { data, loading, error, refetch } = useApi(() => api.dashboard());
 
-  // Use API data if available, otherwise show demo state
   const cash = data?.cash || {};
   const projects = data?.projects || {};
   const pipeline = data?.pipeline || {};
@@ -72,7 +70,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -82,7 +79,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard label="Cash on Hand" value={money(cash.cash_on_hand || 277912)} icon={Banknote} trend={8.3} />
         <KPICard label="Accounts Receivable" value={money(cash.ar_outstanding || 184500)} icon={FileText} trend={-2.1} />
@@ -90,7 +86,6 @@ export default function Dashboard() {
         <KPICard label="Active Projects" value={projects.active_projects || 47} icon={FolderKanban} sub="3 at risk" />
       </div>
 
-      {/* KPI Row 2 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard label="Pipeline Value" value={money(pipeline.total_value || 2400000, true)} icon={TrendingUp} sub={`${pipeline.total_opportunities || 12} active`} />
         <KPICard label="Retainage Held" value={money(cash.retainage_receivable || 142800)} icon={Building2} sub={`${projects.active_projects || 8} projects`} />
@@ -98,39 +93,35 @@ export default function Dashboard() {
         <KPICard label="Total Debt" value={money(debt.total_debt || 432934)} icon={CreditCard} sub={`${debt.active_count || 6} active`} />
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Budget vs Actuals */}
         <div className="bg-brand-card border border-brand-border rounded-xl p-5">
           <h3 className="text-sm font-semibold text-brand-text mb-4">Budget vs Actuals — Top Projects</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={demoProjects} layout="vertical" margin={{ left: 10 }}>
-              <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke="#A0A0B0" fontSize={11} />
-              <YAxis type="category" dataKey="name" stroke="#A0A0B0" fontSize={11} width={60} />
+              <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke="#94A3B8" fontSize={11} />
+              <YAxis type="category" dataKey="name" stroke="#94A3B8" fontSize={11} width={60} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="budget" fill="#2A2A4A" radius={[0, 4, 4, 0]} name="Budget" />
-              <Bar dataKey="spent" fill="#C9A84C" radius={[0, 4, 4, 0]} name="Spent" />
+              <Bar dataKey="budget" fill="#E2E8F0" radius={[0, 4, 4, 0]} name="Budget" />
+              <Bar dataKey="spent" fill="#2563EB" radius={[0, 4, 4, 0]} name="Spent" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Cash Flow Forecast */}
         <div className="bg-brand-card border border-brand-border rounded-xl p-5">
           <h3 className="text-sm font-semibold text-brand-text mb-4">Cash Flow Forecast — 8 Weeks</h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={demoCashFlow}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2A4A" />
-              <XAxis dataKey="week" stroke="#A0A0B0" fontSize={11} />
-              <YAxis tickFormatter={(v) => money(v, true)} stroke="#A0A0B0" fontSize={11} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+              <XAxis dataKey="week" stroke="#94A3B8" fontSize={11} />
+              <YAxis tickFormatter={(v) => money(v, true)} stroke="#94A3B8" fontSize={11} />
               <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="inflow" stroke="#22C55E" fill="#22C55E" fillOpacity={0.1} name="Inflows" />
-              <Area type="monotone" dataKey="outflow" stroke="#EF4444" fill="#EF4444" fillOpacity={0.1} name="Outflows" />
+              <Area type="monotone" dataKey="inflow" stroke="#16A34A" fill="#16A34A" fillOpacity={0.1} name="Inflows" />
+              <Area type="monotone" dataKey="outflow" stroke="#DC2626" fill="#DC2626" fillOpacity={0.1} name="Outflows" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Alerts */}
       <div className="bg-brand-card border border-brand-border rounded-xl p-5">
         <h3 className="text-sm font-semibold text-brand-text mb-4">Alerts &amp; Action Items</h3>
         <div className="space-y-2">
@@ -140,7 +131,7 @@ export default function Dashboard() {
               <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-lg ${alertBg[a.level]}`}>
                 <Icon size={16} className={alertColor[a.level]} />
                 <span className="text-sm flex-1">{a.message}</span>
-                <button className="text-xs text-brand-gold hover:text-brand-gold-light transition-colors">View &rarr;</button>
+                <button className="text-xs text-brand-gold hover:text-brand-gold-light transition-colors font-medium">View &rarr;</button>
               </div>
             );
           })}
