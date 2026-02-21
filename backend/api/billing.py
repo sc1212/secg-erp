@@ -205,28 +205,47 @@ async def handle_webhook(
 ):
     _require_stripe()
 
-    payload = await request.body()
-    event = None
+    if not settings.stripe_webhook_secret:
+        raise HTTPException(status_code=500, detail="STRIPE_WEBHOOK_SECRET is not configured.")
+    if not stripe_signature:
+        raise HTTPException(status_code=400, detail="Missing Stripe-Signature header.")
 
-    if settings.stripe_webhook_secret and stripe_signature:
-        try:
-            event = stripe.Webhook.construct_event(
-                payload=payload,
-                sig_header=stripe_signature,
-                secret=settings.stripe_webhook_secret,
-            )
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"Invalid webhook signature: {exc}") from exc
-    else:
-        try:
-            event = stripe.Event.construct_from(await request.json(), stripe.api_key)
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"Invalid webhook payload: {exc}") from exc
+    payload = await request.body()
+    try:
+        event = stripe.Webhook.construct_event(
+            payload=payload,
+            sig_header=stripe_signature,
+            secret=settings.stripe_webhook_secret,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid webhook signature: {exc}") from exc
 
     event_type = event["type"]
     obj = event["data"]["object"]
     metadata = obj.get("metadata", {}) if hasattr(obj, "get") else {}
     org_id = metadata.get("org_id")
+    subscription_id = obj.get("id") if hasattr(obj, "get") else None
+    stripe_customer_id = obj.get("customer") if hasattr(obj, "get") else None
+    existing_sub = None
+
+    if subscription_id:
+        existing_sub = db.query(BillingSubscription).filter(BillingSubscription.stripe_subscription_id == subscription_id).first()
+
+    if not org_id and stripe_customer_id:
+        customer = db.query(BillingCustomer).filter(BillingCustomer.stripe_customer_id == stripe_customer_id).first()
+        if customer:
+            org_id = customer.org_id
+
+    if not org_id and existing_sub:
+        org_id = existing_sub.org_id
+
+    if not stripe_customer_id and existing_sub:
+        stripe_customer_id = existing_sub.stripe_customer_id
+
+    if not stripe_customer_id and org_id:
+        customer = db.query(BillingCustomer).filter(BillingCustomer.org_id == org_id).first()
+        if customer:
+            stripe_customer_id = customer.stripe_customer_id
 
     db.add(BillingEvent(
         org_id=org_id,
@@ -237,20 +256,23 @@ async def handle_webhook(
     ))
 
     if event_type in {"customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"}:
-        subscription_id = obj.get("id")
         if org_id and subscription_id:
-            sub = db.query(BillingSubscription).filter(BillingSubscription.stripe_subscription_id == subscription_id).first()
-            if not sub:
+            sub = existing_sub
+            if not sub and stripe_customer_id:
                 sub = BillingSubscription(
                     org_id=org_id,
+                    stripe_customer_id=stripe_customer_id,
                     stripe_subscription_id=subscription_id,
                 )
                 db.add(sub)
-            sub.stripe_customer_id = obj.get("customer")
-            sub.status = obj.get("status", "unknown")
-            sub.price_id = obj.get("items", {}).get("data", [{}])[0].get("price", {}).get("id")
-            period_end = obj.get("current_period_end")
-            sub.current_period_end = datetime.fromtimestamp(period_end) if period_end else None
+            if sub:
+                sub.org_id = org_id
+                if stripe_customer_id:
+                    sub.stripe_customer_id = stripe_customer_id
+                sub.status = obj.get("status", "unknown")
+                sub.price_id = obj.get("items", {}).get("data", [{}])[0].get("price", {}).get("id")
+                period_end = obj.get("current_period_end")
+                sub.current_period_end = datetime.fromtimestamp(period_end) if period_end else None
 
     db.commit()
     return {"received": True, "event_type": event_type}
