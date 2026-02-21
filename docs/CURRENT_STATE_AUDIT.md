@@ -2,7 +2,21 @@
 
 **Date:** 2026-02-20
 **Auditor:** Principal Engineer (Claude)
-**Scope:** Full codebase at commit on branch `claude/audit-existing-codebase-cKStE`
+**Scope:** Full codebase audit — reuse-first strategy
+
+---
+
+## Audit Method
+
+- Read runtime entrypoint, router registration, all API modules, ORM model modules, importer pipeline modules, deployment files, and bootstrap scripts.
+- Treated implemented repository behavior as the current **Status Baseline** in absence of a separate baseline file.
+- Classified each capability as: **Reuse as-is**, **Refactor and keep**, **Replace**, **Missing (build new)**.
+
+## Stack Decision (locked unless owner objects)
+
+- **Target architecture:** pnpm + Turborepo monorepo, TypeScript frontend (Next.js), Python/FastAPI backend (kept — see ADR-001), PostgreSQL + Prisma/SQLAlchemy, Redis, BullMQ.
+- **Current production baseline to preserve:** FastAPI + SQLAlchemy ingestion/reporting backend in `backend/`.
+- **Execution strategy:** keep current backend running while building Next.js frontend and adding platform layers (auth, tenancy, RBAC) in vertical slices.
 
 ---
 
@@ -250,6 +264,14 @@ All enums are well-designed with construction-specific values:
 - No input validation on read endpoints (SQL injection risk via `ilike` patterns)
 - No structured logging
 - No request ID middleware
+
+---
+
+## 9. Reuse-First Conclusion
+
+1. Do not rewrite existing finance/job-costing behavior before auth/tenant controls exist.
+2. Build platform foundation first (identity, tenancy, RBAC, audit, API contracts, app shell).
+3. Migrate domain modules in strict vertical slices with parity + tests.
 
 ---
 

@@ -17,12 +17,12 @@
 
 | Requirement | Status | Detail |
 |---|---|---|
-| Monorepo structure (pnpm + Turborepo) | **GAP** | Current repo is flat Python-only. Need to restructure for monorepo with `apps/api` (Python backend) and `apps/web` (Next.js frontend). |
-| TypeScript everywhere | **GAP** | Backend is Python/FastAPI. **Decision required:** keep Python backend or rewrite to TypeScript. Recommendation: **keep Python** — it works and has 5,000+ lines of tested import logic. |
-| Linting/formatting | **GAP** | No ruff/black/isort for Python. No ESLint/Prettier for TS. |
+| Monorepo structure (pnpm + Turborepo) | **PARTIAL** | Workspace placeholders added. Need to restructure for monorepo with `apps/api` (Python backend) and `apps/web` (Next.js frontend). |
+| TypeScript everywhere | **GAP** | Backend is Python/FastAPI. **Decision:** keep Python backend (ADR-001). |
+| TS strict/lint/format/husky/lint-staged | **GAP** | No ruff/black/isort for Python. No ESLint/Prettier for TS. |
 | Docker/local dev | **HAVE** | docker-compose.yml with PG16 + Redis7. |
 | CI skeleton | **GAP** | No GitHub Actions. |
-| Base docs | **PARTIAL** | Only README.md. Missing 10+ required docs. |
+| Base docs | **PARTIAL** | README.md + audit docs started. Missing 10+ required docs. |
 | Environment configs | **PARTIAL** | `.env.example` exists but minimal. |
 
 ## Phase 1: Core Platform
@@ -32,12 +32,11 @@
 | **Organizations (tenants)** | **GAP** | No `organizations` table, no org model. |
 | **Users model** | **GAP** | No `users` table. `employees` exists but is not a user/auth model. |
 | **Memberships (user↔org)** | **GAP** | No membership/role-in-org model. |
-| **Auth: signup** | **GAP** | No auth endpoints at all. |
-| **Auth: login/logout** | **GAP** | No JWT, no sessions. |
+| **Auth: signup/login/me baseline** | **PARTIAL** | In progress; logout/forgot/reset/verify/profile expansion still missing. |
 | **Auth: forgot/reset password** | **GAP** | No email service, no password reset flow. |
 | **Auth: email verification** | **GAP** | No email service. |
 | **Auth: profile page** | **GAP** | No user-facing UI. |
-| **Session handling (JWT + refresh)** | **GAP** | SECRET_KEY exists in config but unused. |
+| **Session handling (JWT + refresh)** | **GAP** | SECRET_KEY exists in config but rotation not implemented. |
 | **RBAC + permissions matrix** | **GAP** | No roles, no permissions, no middleware. |
 | **App shell (header, sidebar, routing)** | **GAP** | No frontend exists. |
 | **Design tokens + theming** | **GAP** | No frontend exists. |
@@ -65,7 +64,7 @@
 
 | Requirement | Status | Detail |
 |---|---|---|
-| Stripe subscriptions | **GAP** | No billing code. |
+| Stripe-based money movement (AR/AP) | **GAP** | Planned next per ADR-010; subscription monetization intentionally deferred. |
 | Billing admin pages | **GAP** | No frontend, no billing data model. |
 | Email notifications | **GAP** | No email service integrated. |
 | QuickBooks integration | **PARTIAL** | QB ID fields on models (qb_txn_id, qb_vendor_id, etc.): HAVE. Sync service: GAP. |
@@ -143,18 +142,26 @@ The entire frontend is a gap. Specifically needed:
 |---|---|
 | `/docs/TECH_DESIGN.md` | GAP |
 | `/docs/ARCHITECTURE.md` | GAP |
-| `/docs/DECISIONS.md` | GAP (creating now) |
+| `/docs/DECISIONS.md` | HAVE |
 | `/docs/ROADMAP.md` | GAP |
-| `/docs/OPEN_QUESTIONS.md` | GAP |
+| `/docs/OPEN_QUESTIONS.md` | HAVE |
 | `/docs/API_SPEC.md` | PARTIAL (OpenAPI auto-generated, no manual spec) |
 | `/docs/PERMISSIONS_MATRIX.md` | GAP |
 | `/docs/ERD.md` | GAP |
 | `/docs/TEST_PLAN.md` | GAP |
 | `/docs/ONBOARDING.md` | GAP |
 | `/docs/RUNBOOK.md` | GAP |
-| `/docs/CURRENT_STATE_AUDIT.md` | HAVE (just created) |
+| `/docs/CURRENT_STATE_AUDIT.md` | HAVE |
 | `/docs/GAP_ANALYSIS.md` | HAVE (this file) |
-| `/docs/REFACTOR_PLAN.md` | HAVE (creating now) |
+| `/docs/REFACTOR_PLAN.md` | HAVE |
+
+---
+
+## Biggest Delivery Risks
+
+1. Existing backend lacks tenant boundaries; retrofitting multi-tenant access must be first-class before UI scale-out.
+2. No formal migration/versioning workflow risks schema drift.
+3. No auth/RBAC means all current data routes are effectively unprotected for SaaS usage.
 
 ---
 

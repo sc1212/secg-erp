@@ -5,12 +5,21 @@
 
 ---
 
+## Guiding Approach
+
+- Preserve and leverage existing backend finance/job-costing capabilities.
+- Keep Python/FastAPI backend (ADR-001), build Next.js/TypeScript frontend.
+- Only replace components when compatibility/security/maintainability requires it.
+- Migrate domain modules in strict vertical slices with parity + tests.
+
+---
+
 ## Critical Decision: Stack Strategy
 
 ### The Reality
 The existing codebase is a **Python/FastAPI** backend with SQLAlchemy, 39 tables, 41 endpoints, and 7 production-quality data importers. The product spec calls for a **TypeScript/NestJS** backend.
 
-### Recommendation: Keep Python Backend, Build TypeScript Frontend
+### Decision: Keep Python Backend, Build TypeScript Frontend
 
 **Rationale:**
 1. The Python backend has ~5,000 lines of tested, domain-specific import logic mapping real SECG data
@@ -18,7 +27,6 @@ The existing codebase is a **Python/FastAPI** backend with SQLAlchemy, 39 tables
 3. FastAPI generates OpenAPI docs automatically (spec requirement)
 4. Rewriting the backend to TypeScript would burn weeks for zero user-facing value
 5. The frontend (Next.js/React/TypeScript) is 100% missing and is where all user value lives
-6. Python + FastAPI is production-grade — used by Netflix, Uber, Microsoft
 
 **What changes:**
 - Backend stays Python/FastAPI (not NestJS/Fastify)
@@ -29,9 +37,9 @@ The existing codebase is a **Python/FastAPI** backend with SQLAlchemy, 39 tables
 
 ---
 
-## Refactor Phases (ordered by priority)
+## Refactor Phases (Vertical Slices)
 
-### R1: Repository Restructure
+### Slice 0 — Platform Bootstrap (no domain rewrites)
 
 **Goal:** Monorepo that holds Python API + Next.js frontend.
 
@@ -57,20 +65,13 @@ secg-erp/
 └── ...
 ```
 
-**Files to move:**
-- `backend/` → `apps/api/backend/`
-- `requirements.txt` → `apps/api/requirements.txt`
-- `Dockerfile` → `apps/api/Dockerfile`
-- `Procfile` → `apps/api/Procfile`
-- `setup.sh` → `apps/api/setup.sh`
+**Steps:**
+1. Finalize docs + architecture map + permission matrix.
+2. Add monorepo standards (pnpm/turbo/eslint/prettier/tsconfig/husky/lint-staged).
+3. Add CI pipeline gates (lint/typecheck/test).
+4. Introduce Next.js `apps/web` skeleton.
 
-**Files to keep at root:**
-- `docker-compose.yml` (update paths)
-- `render.yaml` (update paths)
-- `.env.example` (expand)
-- `docs/`
-
-### R2: Database Migrations (Alembic)
+### Slice 1 — Database Migrations (Alembic)
 
 **Goal:** Replace `Base.metadata.create_all()` with versioned Alembic migrations.
 
@@ -91,41 +92,16 @@ secg-erp/
    - `billing_events` table
 6. Update `backend/main.py` lifespan to run Alembic instead of create_all
 
-### R3: Multi-Tenancy Layer
+### Slice 2 — Auth + Tenant + RBAC Foundation
 
-**Goal:** Every domain entity is scoped to an organization.
+**Goal:** JWT-based auth with multi-tenancy and role-based access control.
 
-**Changes:**
-1. Add `Organization` model (id, name, slug, plan, settings, created_at)
-2. Add `organization_id` column to: projects, vendors, clients, employees, cost_events, invoices, payments, documents, leads, proposals, bid_pipeline, debts, properties, recurring_expenses, etc.
-3. Create `TenantMiddleware` that extracts org from JWT and injects into request state
-4. Create `get_tenant_db()` dependency that auto-filters queries by org_id
-5. Update all existing endpoints to use tenant-scoped queries
-
-**Strategy:** All existing endpoints are read-only GETs. We add org scoping as a transparent filter layer without rewriting query logic.
-
-### R4: Authentication System
-
-**Goal:** JWT-based auth with refresh token rotation.
-
-**New files:**
-- `backend/core/auth.py` — JWT creation/validation, password hashing
-- `backend/core/security.py` — Rate limiting, security headers
-- `backend/models/auth.py` — User, RefreshToken, PasswordResetToken
-- `backend/api/auth.py` — signup, login, logout, refresh, forgot/reset password
-- `backend/core/deps.py` — Add `get_current_user()`, `require_role()` dependencies
-
-**Implementation:**
-1. Email/password signup with bcrypt hashing
-2. JWT access token (15min) + refresh token (7d, httponly cookie)
-3. Refresh token rotation (invalidate old on use)
-4. Password reset via email token
-5. Email verification flow
-6. Brute-force protection (rate limit login endpoint)
-
-### R5: RBAC + Permissions
-
-**Goal:** Role-based access control with per-org roles.
+1. DB: organizations, users, memberships, roles, permissions, sessions, audit events.
+2. API: signup/login/logout/refresh/forgot/reset/verify/profile + org context switching.
+3. Multi-tenancy middleware: extract org from JWT, inject into request state, auto-filter queries by org_id.
+4. RBAC: permission matrix defined in code, `require_permission()` FastAPI dependency.
+5. UI: auth pages + protected shell + session-expired flow.
+6. Tests: integration + validation + permission coverage.
 
 **Roles (initial):**
 - `owner` — Full access, billing, user management
@@ -135,56 +111,45 @@ secg-erp/
 - `field` — Read-only project data, daily logs, photos
 - `viewer` — Read-only access
 
-**Implementation:**
-1. `Role` enum on `Membership` model
-2. `Permission` matrix defined in code (not DB — simpler to maintain)
-3. `require_permission()` FastAPI dependency
-4. Protect all existing endpoints with permission checks
-5. Document in `PERMISSIONS_MATRIX.md`
+**New files:**
+- `backend/core/auth.py` — JWT creation/validation, password hashing
+- `backend/core/security.py` — Rate limiting, security headers
+- `backend/models/auth.py` — User, RefreshToken, PasswordResetToken
+- `backend/api/auth.py` — signup, login, logout, refresh, forgot/reset password
+- `backend/core/deps.py` — Add `get_current_user()`, `require_role()` dependencies
 
-### R6: CRUD Write Endpoints
+### Slice 3 — Projects + Cost Codes + Budgets
 
-**Goal:** Add create/update/delete for all domain entities.
+1. CRUD write endpoints: Projects (POST, PUT, DELETE), Cost Codes, Budgets.
+2. Typed contracts for projects list/detail and cost summaries.
+3. Reuse existing project data source logic initially.
+4. Deliver budget variance workflows with saved filters and drill-down.
 
-**Priority order (matches Phase 2):**
-1. Projects — POST, PUT, DELETE
-2. Cost Codes — POST, PUT, DELETE (project-scoped)
-3. Budgets — PUT (bulk update on cost codes)
-4. Change Orders — POST, PUT, PATCH (status transitions)
-5. Commitments — POST, PUT, DELETE
-6. AP Invoices — POST, PUT, PATCH (status)
-7. AR / Draws — POST pay apps, PUT SOV lines
-8. Documents — POST (upload), GET (download), DELETE
-9. Vendors — POST, PUT, DELETE
-10. CRM — POST/PUT leads, proposals, pipeline entries
+### Slice 4 — Change Orders + Commitments + Approvals
 
-**For each entity:**
-- Create Pydantic request schemas (CreateX, UpdateX)
-- Add validation (Zod-equivalent via Pydantic)
-- Add audit logging on writes
-- Add permission checks
-- Return proper HTTP status codes (201 Created, 204 No Content)
+1. Approval policy engine (threshold and role-based routes).
+2. CO lifecycle with budget impact snapshots.
+3. Commitment linkage to CO and vendor obligations.
 
-### R7: Frontend Build (Next.js)
+### Slice 5 — AP/AR, Draws, Retainage
 
-**Goal:** Build the entire UI from scratch using Next.js App Router.
+1. AP invoice lifecycle and compliance checkpoints.
+2. AR draws with SOV parity validations.
+3. Retainage accrual/release controls.
 
-This is the largest work item. See `ARCHITECTURE.md` (to be created) for the full component tree.
+### Slice 6 — Documents + Dashboards + Vendors + CRM
 
-**Key pages to build:**
-1. Auth screens (login, signup, forgot password, reset, verify email)
-2. Dashboard (executive command center)
-3. Projects (list, detail with tabs for costs/SOV/draws/COs/milestones)
-4. Financials (debts, P&L, AR, AP, cash forecast, retainage, recurring)
-5. Vendors (list, detail, scorecard)
-6. CRM (leads, proposals, pipeline)
-7. Team (employees, payroll, crew allocation, lien waivers)
-8. Documents (file manager)
-9. Settings (org, users, billing)
+1. Document versioning with S3 presigned URLs and policy-aware retrieval.
+2. KPI drill-through standardization.
+3. Vendor scorecards and CRM pipeline analytics.
 
-### R8: Testing Infrastructure
+### Slice 7 — Commercialization and Intelligence
 
-**Goal:** Test foundation from day one.
+1. Stripe billing + webhook resilience (AR/AP money movement first per ADR-010).
+2. QuickBooks sync jobs + reconciliation workflow.
+3. Predictive risk analytics (overruns/cash crunch/anomalies).
+
+### Slice 8 — Testing Infrastructure
 
 1. **Python backend:** pytest + httpx (TestClient) + test DB
 2. **Frontend:** Vitest + React Testing Library + Playwright
@@ -196,27 +161,36 @@ This is the largest work item. See `ARCHITECTURE.md` (to be created) for the ful
 
 | Step | Description | Depends On |
 |---|---|---|
-| R1 | Repo restructure (monorepo) | — |
-| R2 | Alembic migrations | R1 |
-| R3 | Multi-tenancy models | R2 |
-| R4 | Auth system | R2, R3 |
-| R5 | RBAC + permissions | R4 |
-| R7a | Frontend setup + app shell + auth screens | R1, R4 |
-| R6a | CRUD: Projects + Cost Codes | R5 |
-| R7b | Frontend: Dashboard + Projects | R6a |
-| R6b | CRUD: Change Orders + Commitments | R5 |
-| R7c | Frontend: Financials | R6b |
-| R6c | CRUD: AP/AR + Draws | R5 |
-| R7d | Frontend: Vendors + CRM | R6c |
-| R8 | Testing infrastructure | R1 |
-| R6d | CRUD: Documents + Vendors + CRM | R5 |
-| R7e | Frontend: Team + Settings | R6d |
+| S0 | Repo restructure (monorepo) | — |
+| S1 | Alembic migrations | S0 |
+| S2 | Auth + tenancy + RBAC | S1 |
+| S8 | Testing infrastructure | S0 |
+| S2-UI | Frontend setup + app shell + auth screens | S0, S2 |
+| S3 | CRUD: Projects + Cost Codes | S2 |
+| S3-UI | Frontend: Dashboard + Projects | S3 |
+| S4 | Change Orders + Commitments | S2 |
+| S4-UI | Frontend: Financials | S4 |
+| S5 | AP/AR + Draws | S2 |
+| S5-UI | Frontend: Vendors + CRM | S5 |
+| S6 | Documents + Vendors + CRM | S2 |
+| S6-UI | Frontend: Team + Settings | S6 |
+| S7 | Commercialization | S5 |
+
+---
+
+## Replacement Thresholds
+
+Replace an existing module only if one of these applies:
+- Cannot support tenant isolation safely.
+- Cannot provide required auditability/permissions.
+- Blocks typed contract stability or performance targets.
+- Creates unacceptable operational/security risk.
 
 ---
 
 ## Files Untouched (Reuse As-Is)
 
-These files require NO changes:
+These files require NO changes (except adding auth middleware / tenant filter):
 - `backend/importers/masterfile.py`
 - `backend/importers/budgets.py`
 - `backend/importers/leads.py`

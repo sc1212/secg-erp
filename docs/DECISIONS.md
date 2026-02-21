@@ -28,11 +28,11 @@ Architecture Decision Records (ADR-style). Each entry is immutable once logged.
 
 ---
 
-## ADR-002: Monorepo Structure
+## ADR-002: Reuse-First Migration Strategy
 
 **Date:** 2026-02-20
-**Status:** Proposed
-**Decision:** Use a monorepo with pnpm workspaces + Turborepo for frontend orchestration, pip for Python backend.
+**Status:** Accepted
+**Decision:** Preserve current Python domain capabilities and avoid rewrite before audit completion. Use monorepo with pnpm workspaces + Turborepo for frontend orchestration, pip for Python backend.
 
 **Structure:**
 ```
@@ -41,6 +41,10 @@ apps/web/     ← Next.js frontend
 packages/     ← Shared TS packages (types, utils)
 docs/         ← All documentation
 ```
+
+**Rationale:** Existing project/financial workflows are already valuable and reduce delivery risk. Use strangler pattern: new platform layers wrap/migrate old logic gradually.
+
+**Consequence:** Every feature decision must be tagged reuse/refactor/replace/missing.
 
 ---
 
@@ -78,3 +82,73 @@ docs/         ← All documentation
 **Rationale:** Matches spec requirement. Refresh token rotation prevents token theft escalation.
 
 ---
+
+## ADR-006: Default Provider Choices
+
+**Date:** 2026-02-20
+**Status:** Accepted
+**Decision:** Default transactional email provider to Resend and keep QuickBooks integration as a dedicated service module in commercialization phase.
+
+**Rationale:** Fast implementation velocity with strong developer ergonomics and explicit accounting integration boundary.
+
+**Consequence:** Add provider abstraction to avoid lock-in.
+
+---
+
+## ADR-007: Billing-First Baseline in Current Backend
+
+**Date:** 2026-02-20
+**Status:** Accepted
+**Decision:** Implement Stripe billing baseline in existing FastAPI runtime now (plans, checkout, portal, webhook, status) before NestJS migration parity.
+
+**Rationale:** Immediate path to monetization and user-requested smooth payment experience without waiting for full platform migration.
+
+**Consequence:** Preserve API contract semantics during migration; re-implement equivalent module in `apps/api` later.
+
+---
+
+## ADR-008: Auth Baseline in Current Runtime
+
+**Date:** 2026-02-20
+**Status:** Accepted
+**Decision:** Implement immediate FastAPI auth baseline (`signup`, `login`, `me`) with JWT access token for secure entry while broader tenant/RBAC platform work continues.
+
+**Rationale:** User requested a real, legit login experience now (username/email + password) and it unblocks protected-route UX in parallel with platform migration.
+
+**Consequence:** Add migration path to refresh token rotation and full session management in upcoming auth hardening slice.
+
+---
+
+## ADR-009: Billing and Login Launch Defaults Confirmed
+
+**Date:** 2026-02-20
+**Status:** Accepted
+**Decision:** Launch with no trial, 7-day dunning retry window, and 3 billing tiers (Core/Ops/Enterprise); login tone set to premium executive with provided brand logo.
+
+**Rationale:** Stakeholder selected these defaults explicitly for first release behavior and visual brand posture.
+
+**Consequence:** Configure checkout and dunning implementation around these defaults; maintain logo-first branded login in web UI.
+
+---
+
+## ADR-010: Internal Operating System Priority Over Commercialization
+
+**Date:** 2026-02-20
+**Status:** Accepted
+**Decision:** Prioritize internal team workflow unification (Buildertrend/QuickBooks/bank/vendor/payroll portal replacement) before subscription monetization features.
+
+**Rationale:** Immediate business value is operational consolidation for Southeast Enterprise; SaaS packaging is a later phase.
+
+**Consequence:** Stripe roadmap prioritizes AR/AP money movement first; subscription billing remains deferred backlog.
+
+---
+
+## ADR-011: Canonical Repository Decision
+
+**Date:** 2026-02-20
+**Status:** Accepted
+**Decision:** Use `sc1212/erp` as the single canonical repository (Option A).
+
+**Rationale:** Prevent active-repo divergence and keep CI/deploy/docs/migrations in one source of truth.
+
+**Consequence:** `sc1212/SECG1` becomes mirror/archive unless explicitly changed later.
