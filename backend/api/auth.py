@@ -15,7 +15,7 @@ try:
     from passlib.context import CryptContext
 except ImportError:  # pragma: no cover
     CryptContext = None
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from backend.core.config import settings
@@ -26,12 +26,24 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto") if CryptContext else None
 
+# Pre-computed dummy hash for constant-time login rejection when user not found
+_DUMMY_HASH = pwd_context.hash("timing_safe_dummy") if pwd_context else ""
+
 
 class SignupRequest(BaseModel):
     email: str
     password: str = Field(min_length=8, max_length=72)
     full_name: str = Field(min_length=2, max_length=160)
     username: str = Field(min_length=3, max_length=60)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one digit")
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -131,7 +143,14 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(UserAccount).filter(
         (UserAccount.email == payload.username_or_email) | (UserAccount.username == payload.username_or_email)
     ).first()
-    if not user or not _verify_password(payload.password, user.password_hash):
+
+    # Always run password verification to prevent timing-based user enumeration
+    password_valid = _verify_password(
+        payload.password,
+        user.password_hash if user else _DUMMY_HASH,
+    )
+
+    if not user or not password_valid:
         raise HTTPException(status_code=401, detail="Invalid username/email or password")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is inactive")
