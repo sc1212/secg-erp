@@ -57,25 +57,25 @@ Or run only preflight directly:
 python "C:\Users\Samue\OneDrive\Documents\GitHub\secg-erp\scripts\first_run_check.py"
 ```
 
-If that fails because the path is wrong, auto-find the runner first:
+If that fails because the path is wrong (or your clone is missing `windows_run_now.ps1`), run this instead:
 
 ```powershell
 $repo = Get-ChildItem "$env:USERPROFILE" -Directory -Recurse -ErrorAction SilentlyContinue |
-  Where-Object { $_.Name -eq "secg-erp" } |
+  Where-Object {
+    $_.Name -eq "secg-erp" -and
+    (Test-Path (Join-Path $_.FullName "scripts\set_logo.py")) -and
+    (Test-Path (Join-Path $_.FullName "scripts\first_run_check.py"))
+  } |
   Select-Object -First 1 -ExpandProperty FullName
 
 if (-not $repo) {
-  Write-Host "Could not find the secg-erp repo under your user profile." -ForegroundColor Red
+  Write-Host "Could not find a usable secg-erp repo under your user profile." -ForegroundColor Red
+  Write-Host "Run 'git pull' in your repo, then retry." -ForegroundColor Yellow
   return
 }
 
-$runner = Join-Path $repo "scripts\windows_run_now.ps1"
-if (-not (Test-Path $runner)) {
-  Write-Host "Found repo at $repo but missing $runner" -ForegroundColor Red
-  return
-}
-
-& $runner -SourcePath "C:\Users\Samue\OneDrive\Documents\Assets\se-logo.png.png"
+python (Join-Path $repo "scripts\set_logo.py") "C:\Users\Samue\OneDrive\Documents\Assets\se-logo.png.png"
+python (Join-Path $repo "scripts\first_run_check.py")
 ```
 
 If you do not know your repo location yet, find it first:

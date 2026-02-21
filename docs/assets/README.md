@@ -53,28 +53,31 @@ This will:
 3) run preflight check.
 
 ## If the full path command fails (most common case)
-Use this copy/paste block from **any** PowerShell window; it auto-finds `windows_run_now.ps1` first:
+Use this copy/paste block from **any** PowerShell window. It does **not** require `windows_run_now.ps1`:
 
 ```powershell
 $repo = Get-ChildItem "$env:USERPROFILE" -Directory -Recurse -ErrorAction SilentlyContinue |
-  Where-Object { $_.Name -eq "secg-erp" } |
+  Where-Object {
+    $_.Name -eq "secg-erp" -and
+    (Test-Path (Join-Path $_.FullName "scripts\set_logo.py")) -and
+    (Test-Path (Join-Path $_.FullName "scripts\first_run_check.py"))
+  } |
   Select-Object -First 1 -ExpandProperty FullName
 
 if (-not $repo) {
-  Write-Host "Could not find the secg-erp repo under your user profile." -ForegroundColor Red
+  Write-Host "Could not find a usable secg-erp repo under your user profile." -ForegroundColor Red
+  Write-Host "Run 'git pull' in your repo, then retry." -ForegroundColor Yellow
   return
 }
 
-$runner = Join-Path $repo "scripts\windows_run_now.ps1"
-if (-not (Test-Path $runner)) {
-  Write-Host "Found repo at $repo but missing $runner" -ForegroundColor Red
-  return
-}
+$setLogo = Join-Path $repo "scripts\set_logo.py"
+$preflight = Join-Path $repo "scripts\first_run_check.py"
 
-& $runner -SourcePath "C:\Users\Samue\OneDrive\Documents\Assets\se-logo.png.png"
+python $setLogo "C:\Users\Samue\OneDrive\Documents\Assets\se-logo.png.png"
+python $preflight
 ```
 
-This avoids hardcoding repo paths like `...\GitHub\secg-erp` when your clone lives somewhere else.
+This avoids hardcoding repo paths like `...\GitHub\secg-erp` and also works if your local clone has not yet pulled the `windows_run_now.ps1` helper.
 
 ## Troubleshooting
 - `...set_logo.ps1 is not recognized`: you used a relative path from the wrong folder. Use the full script path as shown above.
