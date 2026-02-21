@@ -103,6 +103,14 @@ Then open [localhost:8000/api/docs](http://localhost:8000/api/docs) and follow t
 | `GET /api/team/payroll-calendar` | Upcoming payroll dates |
 | `GET /api/team/crew-allocation` | Weekly crew matrix |
 | `GET /api/team/lien-waivers` | Lien waiver tracker |
+| `POST /api/auth/signup` | Create account (baseline auth) |
+| `POST /api/auth/login` | Authenticate with username/email and password |
+| `GET /api/auth/me` | Get current authenticated user profile |
+| `GET /api/billing/plans` | Subscription plans catalog |
+| `POST /api/billing/checkout-session` | Create Stripe Checkout session |
+| `POST /api/billing/portal-session` | Open Stripe customer portal |
+| `GET /api/billing/status` | Billing status by organization |
+| `POST /api/billing/webhook` | Stripe webhook receiver |
 | `POST /api/admin/setup` | Create database tables |
 | `POST /api/admin/import/*` | Upload + import data files |
 | `GET /api/admin/status` | Database row counts |
@@ -146,3 +154,30 @@ secg-erp/
 ├── setup.sh                   ← Local quick-start script
 └── Procfile                   ← Render/Railway start command
 ```
+
+---
+
+## Migration Notice (Reuse-First)
+
+This repository now includes a **monorepo scaffold** (`apps/*`, `packages/*`) for the target TypeScript platform. The current FastAPI backend in `backend/` remains the active runtime while migration occurs in vertical slices.
+
+Audit and planning artifacts:
+- `docs/CURRENT_STATE_AUDIT.md`
+- `docs/GAP_ANALYSIS.md`
+- `docs/REFACTOR_PLAN.md`
+- `docs/PRODUCT_BLUEPRINT.md`
+- `docs/IMPLEMENTATION_BACKLOG.md`
+
+- `docs/VISUAL_MOCKUPS.md`
+- `docs/PAYMENTS_SYSTEM.md`
+
+- `docs/LOGIN_BRANDING_GUIDE.md`
+
+- `docs/INTEGRATION_OS_STRATEGY.md`
+
+- `scripts/set_logo.py`
+- `scripts/set_logo.ps1`
+- `docs/UI_UX_SPEC.md`
+- `docs/REPO_STRATEGY.md`
+- `scripts/first_run_check.py`
+- `scripts/windows_run_now.ps1`

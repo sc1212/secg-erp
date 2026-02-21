@@ -23,6 +23,14 @@ class Settings:
     secret_key: str = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
 
+    # Auth
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    access_token_exp_minutes: int = int(os.getenv("ACCESS_TOKEN_EXP_MINUTES", "60"))
+
+    # Billing
+    stripe_secret_key: str = os.getenv("STRIPE_SECRET_KEY", "")
+    stripe_webhook_secret: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
     # CORS
     cors_origins: List[str] = field(default_factory=lambda: [
         o.strip() for o in os.getenv(
