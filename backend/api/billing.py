@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.core.config import settings
@@ -17,6 +19,8 @@ try:
     import stripe
 except ImportError:  # pragma: no cover - handled at runtime with error
     stripe = None
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
 
@@ -98,6 +102,9 @@ def list_plans():
     return list(PLANS.values())
 
 
+# TODO: Add auth middleware once org-user association is implemented.
+# All billing endpoints below should verify the caller belongs to the org.
+
 @router.post("/checkout-session", response_model=CheckoutResponse)
 def create_checkout_session(payload: CheckoutRequest, db: Session = Depends(get_db)):
     _require_stripe()
@@ -111,11 +118,15 @@ def create_checkout_session(payload: CheckoutRequest, db: Session = Depends(get_
     if customer and customer.stripe_customer_id:
         stripe_customer_id = customer.stripe_customer_id
     else:
-        stripe_customer = stripe.Customer.create(
-            email=payload.email,
-            name=payload.org_name,
-            metadata={"org_id": payload.org_id},
-        )
+        try:
+            stripe_customer = stripe.Customer.create(
+                email=payload.email,
+                name=payload.org_name,
+                metadata={"org_id": payload.org_id},
+            )
+        except stripe.error.StripeError as exc:
+            logger.error("Stripe Customer.create failed for org %s: %s", payload.org_id, exc)
+            raise HTTPException(status_code=502, detail="Failed to create Stripe customer") from exc
         stripe_customer_id = stripe_customer["id"]
         if customer:
             customer.stripe_customer_id = stripe_customer_id
@@ -128,28 +139,36 @@ def create_checkout_session(payload: CheckoutRequest, db: Session = Depends(get_
                 email=payload.email,
                 stripe_customer_id=stripe_customer_id,
             ))
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Organization billing record already exists")
 
-    session = stripe.checkout.Session.create(
-        mode="subscription",
-        customer=stripe_customer_id,
-        success_url=payload.success_url,
-        cancel_url=payload.cancel_url,
-        line_items=[{
-            "price_data": {
-                "currency": "usd",
-                "product_data": {
-                    "name": plan.name,
-                    "description": "SECG ERP subscription",
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer=stripe_customer_id,
+            success_url=payload.success_url,
+            cancel_url=payload.cancel_url,
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": plan.name,
+                        "description": "SECG ERP subscription",
+                    },
+                    "unit_amount": plan.amount_cents,
+                    "recurring": {"interval": plan.interval},
                 },
-                "unit_amount": plan.amount_cents,
-                "recurring": {"interval": plan.interval},
-            },
-            "quantity": 1,
-        }],
-        metadata={"org_id": payload.org_id, "plan_code": payload.plan_code},
-        allow_promotion_codes=True,
-    )
+                "quantity": 1,
+            }],
+            metadata={"org_id": payload.org_id, "plan_code": payload.plan_code},
+            allow_promotion_codes=True,
+        )
+    except stripe.error.StripeError as exc:
+        logger.error("Stripe checkout.Session.create failed for org %s: %s", payload.org_id, exc)
+        raise HTTPException(status_code=502, detail="Failed to create checkout session") from exc
 
     db.add(BillingEvent(
         org_id=payload.org_id,
@@ -171,10 +190,14 @@ def create_portal_session(payload: PortalRequest, db: Session = Depends(get_db))
     if not customer or not customer.stripe_customer_id:
         raise HTTPException(status_code=404, detail="No billing customer found for org")
 
-    portal = stripe.billing_portal.Session.create(
-        customer=customer.stripe_customer_id,
-        return_url=payload.return_url,
-    )
+    try:
+        portal = stripe.billing_portal.Session.create(
+            customer=customer.stripe_customer_id,
+            return_url=payload.return_url,
+        )
+    except stripe.error.StripeError as exc:
+        logger.error("Stripe portal session failed for org %s: %s", payload.org_id, exc)
+        raise HTTPException(status_code=502, detail="Failed to create portal session") from exc
     return {"url": portal["url"]}
 
 
@@ -219,12 +242,15 @@ async def handle_webhook(
             sig_header=stripe_signature,
             secret=settings.stripe_webhook_secret,
         )
+    except stripe.error.SignatureVerificationError as exc:
+        raise HTTPException(status_code=400, detail="Invalid webhook signature") from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid webhook signature: {exc}") from exc
+        logger.error("Unexpected error verifying webhook: %s", exc, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid webhook payload") from exc
 
     event_type = event["type"]
     obj = event["data"]["object"]
-    metadata = obj.get("metadata", {}) if hasattr(obj, "get") else {}
+    metadata = obj.get("metadata", {}) or {}
     org_id = metadata.get("org_id")
 
     # If org_id not in event metadata, resolve from customer record
@@ -259,7 +285,8 @@ async def handle_webhook(
                 sub.org_id = org_id
             sub.stripe_customer_id = obj.get("customer")
             sub.status = obj.get("status", "unknown")
-            sub.price_id = obj.get("items", {}).get("data", [{}])[0].get("price", {}).get("id")
+            items_data = obj.get("items", {}).get("data", [])
+            sub.price_id = items_data[0].get("price", {}).get("id") if items_data else None
             period_end = obj.get("current_period_end")
             sub.current_period_end = datetime.fromtimestamp(period_end, tz=timezone.utc) if period_end else None
 
