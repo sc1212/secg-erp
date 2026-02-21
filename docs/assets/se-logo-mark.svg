@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="24" fill="#05080D"/>
+  <circle cx="256" cy="220" r="118" stroke="#D7D9DC" stroke-width="8"/>
+  <path d="M256 102C190 102 138 154 138 220C138 286 190 338 256 338" stroke="#D6A53A" stroke-width="8"/>
+  <path d="M256 108V332" stroke="#D7D9DC" stroke-width="8"/>
+  <path d="M220 176C206 164 182 166 170 180C160 191 160 206 172 216C181 224 194 228 206 231C219 234 233 238 242 246C255 257 255 276 244 289C232 304 208 309 188 304C174 301 163 294 154 284" stroke="#D6A53A" stroke-width="8" stroke-linecap="round"/>
+  <path d="M288 182H352" stroke="#D7D9DC" stroke-width="8"/>
+  <path d="M288 220H352" stroke="#D7D9DC" stroke-width="8"/>
+  <path d="M288 258H352" stroke="#D7D9DC" stroke-width="8"/>
+  <text x="256" y="398" text-anchor="middle" fill="#D6A53A" font-size="44" font-family="Arial, Helvetica, sans-serif" letter-spacing="3">SOUTHEAST</text>
+  <text x="256" y="442" text-anchor="middle" fill="#D7D9DC" font-size="28" font-family="Arial, Helvetica, sans-serif" letter-spacing="8">ENTERPRISE</text>
+</svg>

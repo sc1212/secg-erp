@@ -9,6 +9,8 @@ from backend.api.vendors import router as vendors_router
 from backend.api.financials import router as financials_router
 from backend.api.crm import router as crm_router
 from backend.api.team import router as team_router
+from backend.api.billing import router as billing_router
+from backend.api.auth import router as auth_router
 
 api_router = APIRouter()
 api_router.include_router(admin_router)
@@ -18,3 +20,5 @@ api_router.include_router(vendors_router)
 api_router.include_router(financials_router)
 api_router.include_router(crm_router)
 api_router.include_router(team_router)
+api_router.include_router(billing_router)
+api_router.include_router(auth_router)

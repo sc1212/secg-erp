@@ -413,3 +413,54 @@ class LeadProposal(TimestampMixin, Base):
     client_price = Column(Numeric(14, 2), default=0)
     status = Column(String(50))
     notes = Column(Text)
+
+
+# ── Billing (Stripe) ─────────────────────────────────────────────────────
+
+class BillingCustomer(TimestampMixin, Base):
+    __tablename__ = "billing_customers"
+
+    id = Column(Integer, primary_key=True)
+    org_id = Column(String(64), unique=True, nullable=False, index=True)
+    org_name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    stripe_customer_id = Column(String(100), unique=True, nullable=False, index=True)
+    is_active = Column(Boolean, default=True)
+
+
+class BillingSubscription(TimestampMixin, Base):
+    __tablename__ = "billing_subscriptions"
+
+    id = Column(Integer, primary_key=True)
+    org_id = Column(String(64), nullable=False, index=True)
+    stripe_customer_id = Column(String(100), nullable=False, index=True)
+    stripe_subscription_id = Column(String(100), unique=True, nullable=False, index=True)
+    status = Column(String(50), default="incomplete")
+    price_id = Column(String(100))
+    current_period_end = Column(DateTime)
+
+
+class BillingEvent(TimestampMixin, Base):
+    __tablename__ = "billing_events"
+
+    id = Column(Integer, primary_key=True)
+    org_id = Column(String(64), index=True)
+    event_type = Column(String(120), nullable=False)
+    stripe_event_id = Column(String(100), index=True)
+    status = Column(String(50), default="received")
+    payload_json = Column(Text)
+
+
+# ── Auth users (baseline) ────────────────────────────────────────────────
+
+class UserAccount(TimestampMixin, Base):
+    __tablename__ = "user_accounts"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(80), unique=True, nullable=False, index=True)
+    full_name = Column(String(200), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+    last_login_at = Column(DateTime)
+

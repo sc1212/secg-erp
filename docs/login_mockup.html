@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title>Southeast Enterprise ERP — Login</title>
+  <style>
+    :root{--bg:#090d14;--panel:#0f1621;--card:#ffffff;--text:#0f1720;--muted:#5d6876;--accent:#d3a33f;--silver:#d7d9dc}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 20% -10%,#223146 0%,#090d14 55%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .shell{width:min(1380px,100%);height:820px;background:#fff1;border:1px solid #ffffff2f;border-radius:24px;display:grid;grid-template-columns:1.25fr 0.95fr;overflow:hidden;box-shadow:0 30px 60px #00000055}
+    .left{position:relative;background:linear-gradient(165deg,#0f1621,#1b2737);color:#eef3f8;padding:52px;display:flex;flex-direction:column;justify-content:space-between}
+    .halo{position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,#d3a33f22,transparent 45%)}
+    .hero{position:relative;z-index:1;display:flex;flex-direction:column;gap:24px;align-items:flex-start}
+    .logo-main{width:320px;max-width:80%;border:1px solid #ffffff35;border-radius:20px;background:#060a10;box-shadow:0 18px 38px #00000055;padding:12px}
+    .title{font-size:38px;line-height:1.15;font-weight:800;max-width:640px}
+    .subtitle{font-size:16px;line-height:1.5;color:#d4deea;max-width:640px}
+    .chips{display:flex;flex-wrap:wrap;gap:10px;z-index:1;position:relative}
+    .chip{border:1px solid #d4deea44;padding:10px 14px;border-radius:999px;font-size:12px;color:#dce7f3;background:#ffffff08}
+
+    .right{background:#f2f5f8;display:flex;align-items:center;justify-content:center;padding:34px}
+    .card{width:100%;max-width:500px;background:var(--card);border:1px solid #dbe4ed;border-radius:16px;box-shadow:0 20px 40px #00000014;padding:34px}
+    .brand-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .mini-logo{width:44px;height:44px;border-radius:999px;border:1px solid #d5dde7;background:#111821;padding:6px}
+    .brand-name{font-weight:700;letter-spacing:.04em;color:#17212e}
+    h1{margin:0 0 6px;color:var(--text);font-size:30px}
+    p{margin:0 0 18px;color:var(--muted)}
+    label{display:block;font-size:13px;margin:12px 0 6px;color:#2d3947;font-weight:600}
+    input{width:100%;padding:13px;border:1px solid #cbd6e2;border-radius:10px;font-size:14px;background:white}
+    .row{display:flex;justify-content:space-between;align-items:center;margin:12px 0 20px;font-size:13px;color:var(--muted)}
+    .cta{width:100%;padding:13px;background:linear-gradient(120deg,#e8be5a,#c8932f);color:#14171d;border:0;border-radius:10px;font-weight:800;cursor:pointer}
+    .foot{margin-top:16px;font-size:12px;color:var(--muted);display:flex;gap:14px;justify-content:center}
+  </style>
+</head>
+<body>
+  <div class='shell'>
+    <section class='left'>
+      <div class='halo'></div>
+      <div class='hero'>
+        <img class='logo-main' src='./assets/se-logo.png' alt='Southeast Enterprise logo' onerror="this.src='./assets/se-logo-mark.svg'"/>
+        <div class='title'>Southeast Enterprise ERP</div>
+        <div class='subtitle'>Your executive command center for construction finance, operations, project controls, and billing. Purpose-built for serious operators and scaling contractors.</div>
+      </div>
+      <div class='chips'>
+        <div class='chip'>Premium Executive UI</div>
+        <div class='chip'>AIA Draw + Retainage</div>
+        <div class='chip'>Role-based Security</div>
+        <div class='chip'>Audit-ready Controls</div>
+      </div>
+    </section>
+
+    <section class='right'>
+      <div class='card'>
+        <div class='brand-row'>
+          <img class='mini-logo' src='./assets/se-logo.png' alt='Southeast Enterprise logo' onerror="this.src='./assets/se-logo-mark.svg'"/>
+          <div class='brand-name'>SOUTHEAST ENTERPRISE</div>
+        </div>
+        <h1>Welcome back</h1>
+        <p>Sign in with your username/email and password.</p>
+        <label>Username or email</label>
+        <input placeholder='you@company.com' />
+        <label>Password</label>
+        <input type='password' placeholder='••••••••••' />
+        <div class='row'><span><input type='checkbox' style='width:auto;vertical-align:middle'/> Remember me</span><span>Forgot password?</span></div>
+        <button class='cta'>Sign in</button>
+        <div class='foot'><span>Terms</span><span>Privacy</span><span>Support</span></div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
