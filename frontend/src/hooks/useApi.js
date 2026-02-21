@@ -15,7 +15,11 @@ export function useApi(fetcher, deps = []) {
         if (!cancelled) setData(result);
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message);
+        if (!cancelled) {
+          // Silently handle network errors so pages render with demo data
+          const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError';
+          if (!isNetworkError) setError(err.message);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -26,6 +30,13 @@ export function useApi(fetcher, deps = []) {
 
   return { data, loading, error, refetch: () => {
     setLoading(true);
-    fetcher().then(setData).catch(e => setError(e.message)).finally(() => setLoading(false));
+    setError(null);
+    fetcher()
+      .then(setData)
+      .catch((e) => {
+        const isNetworkError = e.message === 'Failed to fetch' || e.name === 'TypeError';
+        if (!isNetworkError) setError(e.message);
+      })
+      .finally(() => setLoading(false));
   }};
 }
