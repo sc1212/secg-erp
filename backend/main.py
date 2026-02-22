@@ -7,6 +7,7 @@ Production (Railway):
     uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 """
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,17 +18,50 @@ from backend.core.config import settings
 from backend.core.database import Base, engine
 
 
+def _seed_admin_user(log) -> None:
+    """Create the default admin user from env vars if not already present."""
+    email = os.getenv("ADMIN_EMAIL", "")
+    password = os.getenv("ADMIN_PASSWORD", "")
+    username = os.getenv("ADMIN_USERNAME", "")
+    full_name = os.getenv("ADMIN_FULL_NAME", "")
+    if not (email and password and username and full_name):
+        return
+    try:
+        from passlib.context import CryptContext
+        from sqlalchemy.orm import Session
+        from backend.core.database import SessionLocal
+        from backend.models.extended import UserAccount
+        pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        db: Session = SessionLocal()
+        try:
+            existing = db.query(UserAccount).filter(UserAccount.email == email).first()
+            if not existing:
+                user = UserAccount(
+                    email=email,
+                    username=username,
+                    full_name=full_name,
+                    password_hash=pwd_ctx.hash(password),
+                    is_active=True,
+                )
+                db.add(user)
+                db.commit()
+                log.info("Admin user seeded: %s", email)
+        finally:
+            db.close()
+    except Exception as exc:
+        log.warning("Admin user seeding failed: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create tables on startup if they don't exist (dev convenience).
-    In production, use Alembic migrations instead.
-    """
-    if settings.debug:
-        try:
-            Base.metadata.create_all(bind=engine)
-        except Exception as exc:
-            import logging
-            logging.getLogger(__name__).warning("DB not ready, skipping create_all: %s", exc)
+    """Create tables on startup if they don't exist, then seed admin user."""
+    import logging
+    log = logging.getLogger(__name__)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:
+        log.warning("DB not ready, skipping create_all: %s", exc)
+    _seed_admin_user(log)
     yield
 
 
