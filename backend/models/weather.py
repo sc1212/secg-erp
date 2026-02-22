@@ -12,6 +12,7 @@ from backend.models.core import TimestampMixin
 
 class WeatherForecast(TimestampMixin, Base):
     __tablename__ = "weather_forecasts"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     location_lat = Column(Numeric(9, 6))
@@ -36,6 +37,7 @@ class WeatherForecast(TimestampMixin, Base):
 
 class WeatherImpactRule(TimestampMixin, Base):
     __tablename__ = "weather_impact_rules"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     trade_or_activity = Column(String(100), nullable=False)   # "Concrete Pour", "Roofing", etc.
@@ -48,6 +50,7 @@ class WeatherImpactRule(TimestampMixin, Base):
 
 class ProjectLocation(TimestampMixin, Base):
     __tablename__ = "project_locations"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), unique=True, nullable=False)

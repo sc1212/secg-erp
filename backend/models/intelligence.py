@@ -17,6 +17,7 @@ class TimestampMixin:
 class ProfitFadeSnapshot(TimestampMixin, Base):
     """Weekly per-project margin/CPI health snapshot."""
     __tablename__ = "profit_fade_snapshots"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -57,6 +58,7 @@ class ProfitFadeSnapshot(TimestampMixin, Base):
 class CashFlowForecast(TimestampMixin, Base):
     """13-week rolling cash flow forecast."""
     __tablename__ = "cash_flow_forecasts"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     forecast_date = Column(Date, nullable=False)
@@ -85,6 +87,7 @@ class CashFlowForecast(TimestampMixin, Base):
 class HistoricalCostMetric(TimestampMixin, Base):
     """Per-completed-project cost benchmarks for estimating assistant."""
     __tablename__ = "historical_cost_metrics"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)

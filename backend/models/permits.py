@@ -16,6 +16,7 @@ class TimestampMixin:
 
 class Permit(TimestampMixin, Base):
     __tablename__ = "permits"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -36,6 +37,7 @@ class Permit(TimestampMixin, Base):
 
 class Inspection(TimestampMixin, Base):
     __tablename__ = "inspections"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     permit_id = Column(Integer, ForeignKey("permits.id"), nullable=False)

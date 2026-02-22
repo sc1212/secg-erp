@@ -10,6 +10,7 @@ from backend.models.core import TimestampMixin
 
 class WarrantyItem(TimestampMixin, Base):
     __tablename__ = "warranty_items"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
