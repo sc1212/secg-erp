@@ -1,0 +1,9 @@
+{
+  "customer_to_project": {
+    "123": {"project_name": "Riverside Custom", "project_id": null},
+    "456": {"project_name": "Oak Creek Remodel", "project_id": null}
+  },
+  "customer_to_contact": {
+    "101": {"contact_name": "Smith Family", "type": "homeowner"}
+  }
+}

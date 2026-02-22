@@ -11,6 +11,9 @@ from backend.api.crm import router as crm_router
 from backend.api.team import router as team_router
 from backend.api.billing import router as billing_router
 from backend.api.auth import router as auth_router
+from backend.api.operations import router as operations_router
+from backend.api.documents import router as documents_router
+from backend.api.shell import router as shell_router
 from backend.api.calendar import router as calendar_router
 from backend.api.daily_logs import router as daily_logs_router
 from backend.api.weather import router as weather_router
@@ -43,6 +46,11 @@ api_router.include_router(crm_router)
 api_router.include_router(team_router)
 api_router.include_router(billing_router)
 api_router.include_router(auth_router)
+api_router.include_router(operations_router)
+
+api_router.include_router(documents_router)
+
+api_router.include_router(shell_router)
 api_router.include_router(calendar_router)
 api_router.include_router(daily_logs_router)
 api_router.include_router(weather_router)

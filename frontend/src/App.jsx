@@ -9,6 +9,15 @@ import Payments from './pages/Payments';
 import Vendors from './pages/Vendors';
 import CRM from './pages/CRM';
 import Team from './pages/Team';
+import MorningBriefing from './pages/MorningBriefing';
+import Calendar from './pages/Calendar';
+import DailyLogs from './pages/DailyLogs';
+import Fleet from './pages/Fleet';
+import Inventory from './pages/Inventory';
+import Documents from './pages/Documents';
+import Safety from './pages/Safety';
+import Warranties from './pages/Warranties';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import MissionControl from './pages/MissionControl';
 import Calendar from './pages/Calendar';
 import DailyLogs from './pages/DailyLogs';
@@ -34,6 +43,19 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/morning-briefing" element={<MorningBriefing />} />
+
+          <Route path="/mission-control" element={<OperatingSystem />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/daily-logs" element={<DailyLogs />} />
+          <Route path="/fleet" element={<Fleet />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/safety" element={<Safety />} />
+          <Route path="/warranties" element={<Warranties />} />
+
         <Route element={<Layout />}>
           {/* Command */}
           <Route path="/" element={<Dashboard />} />

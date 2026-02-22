@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
-import { money, moneyExact, shortDate } from '../lib/format';
+import { money, moneyExact, moneyAccounting, shortDate } from '../lib/format';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
 import {
@@ -252,6 +252,103 @@ export default function Payments() {
                 ) : (
                   <button className="ghost-btn flex items-center gap-1" style={{ color: 'var(--status-warning)' }}>
                     <Shield size={12} /> Hold \u2014 Request Lien Waiver
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-brand-border pb-px overflow-x-auto">
+        {tabList.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              tab === t
+                ? 'border-brand-gold text-brand-gold'
+                : 'border-transparent text-brand-muted lg:hover:text-brand-text'
+            }`}
+          >
+            {tabLabels[t]}
+          </button>
+        ))}
+      </div>
+
+      {/* Accounts Tab */}
+      {tab === 'accounts' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-brand-text">Connected Accounts</h3>
+            <button className="flex items-center gap-1.5 text-xs font-medium text-brand-gold lg:hover:text-brand-gold-light transition-colors">
+              <Plus size={14} /> Connect Account
+            </button>
+          </div>
+          <div className="space-y-2">
+            {demoAccounts.map((a, i) => {
+              const Icon = accountIcon[a.type] || Landmark;
+              return (
+                <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-xl px-5 py-4 lg:hover:border-brand-gold/20 transition-colors">
+                <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-lg px-5 py-4 hover:border-brand-gold/20 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-brand-surface flex items-center justify-center">
+                      <Icon size={18} className="text-brand-gold" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{a.name}</div>
+                      <div className="text-xs text-brand-muted">····{a.last4}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="font-bold num">{moneyExact(a.balance)}</div>
+                      <div className="text-[10px] text-brand-muted">{a.type === 'card' ? 'Balance' : a.type === 'loc' ? 'Drawn' : 'Available'}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-ok" />
+                      <span className="text-xs text-ok">Live</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Pay Vendors Tab */}
+      {tab === 'pay_vendors' && (
+        <div className="bg-brand-card border border-brand-border rounded-lg p-6 space-y-5">
+          <h3 className="font-semibold">Pay a Vendor</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-brand-muted mb-1.5">Vendor</label>
+              <select className="w-full bg-brand-surface border border-brand-border rounded-lg px-4 py-2.5 text-sm text-brand-text focus:outline-none focus:border-brand-gold/60">
+                <option>Select vendor...</option>
+                <option>ABC Plumbing LLC</option>
+                <option>Williams Electric</option>
+                <option>Miller Concrete</option>
+                <option>Home Depot Pro</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-brand-muted mb-1.5">Project</label>
+              <select className="w-full bg-brand-surface border border-brand-border rounded-lg px-4 py-2.5 text-sm text-brand-text focus:outline-none focus:border-brand-gold/60">
+                <option>Select project...</option>
+                <option>PRJ-042 — 2847 Elm Street</option>
+                <option>PRJ-038 — Lakewood Custom Home</option>
+                <option>PRJ-051 — Riverdale Spec #3</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs text-brand-muted mb-1.5">Amount</label>
+            <input type="text" placeholder="$0.00" className="w-full sm:w-64 bg-brand-surface border border-brand-border rounded-lg px-4 py-2.5 text-sm text-brand-text placeholder:text-brand-muted/50 focus:outline-none focus:border-brand-gold/60" />
+          </div>
+
+          <div className="flex gap-4 items-center">
+            <div>
+              <label className="block text-xs text-brand-muted mb-1.5">Pay Method</label>
+              <div className="flex gap-2">
+                {['ACH', 'Check', 'Wire'].map((m) => (
+                  <button key={m} className="px-4 py-2 rounded-lg text-xs font-medium bg-brand-surface border border-brand-border text-brand-muted lg:hover:text-brand-text lg:hover:border-brand-gold/40 transition-colors first:bg-brand-gold/15 first:text-brand-gold first:border-brand-gold/30">
+                    {m}
                   </button>
                 )}
                 <button className="ghost-btn">Dispute</button>
@@ -299,6 +396,77 @@ export default function Payments() {
           Require lien waiver before payment
         </label>
       </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button className="px-5 py-2.5 bg-brand-surface border border-brand-border rounded-lg text-sm text-brand-muted lg:hover:text-brand-text transition-colors">
+              Cancel
+            </button>
+            <button className="px-5 py-2.5 bg-brand-gold lg:hover:bg-brand-gold-light text-brand-bg font-semibold rounded-lg text-sm transition-colors">
+              Approve &amp; Send Payment &rarr;
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Request Payment Tab */}
+      {tab === 'request_payment' && (
+        <div className="bg-brand-card border border-brand-border rounded-lg p-6 space-y-5">
+          <h3 className="font-semibold">Create Invoice / Draw Request</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-brand-muted mb-1.5">Client</label>
+              <select className="w-full bg-brand-surface border border-brand-border rounded-lg px-4 py-2.5 text-sm text-brand-text focus:outline-none focus:border-brand-gold/60">
+                <option>Select client...</option>
+                <option>Johnson Family</option>
+                <option>ABC Development</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-brand-muted mb-1.5">Project</label>
+              <select className="w-full bg-brand-surface border border-brand-border rounded-lg px-4 py-2.5 text-sm text-brand-text focus:outline-none focus:border-brand-gold/60">
+                <option>Select project...</option>
+                <option>PRJ-042 — 2847 Elm Street</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-brand-muted mb-1.5">Amount Requested</label>
+            <input type="text" placeholder="$0.00" className="w-full sm:w-64 bg-brand-surface border border-brand-border rounded-lg px-4 py-2.5 text-sm text-brand-text placeholder:text-brand-muted/50 focus:outline-none focus:border-brand-gold/60" />
+          </div>
+          <button className="px-5 py-2.5 bg-brand-gold lg:hover:bg-brand-gold-light text-brand-bg font-semibold rounded-lg text-sm transition-colors">
+            Create &amp; Send Invoice &rarr;
+          </button>
+        </div>
+      )}
+
+      {/* Transactions Tab */}
+      {tab === 'transactions' && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-brand-text">Recent Transactions</h3>
+          <div className="space-y-1">
+            {demoTransactions.map((t) => (
+              <div key={t.id} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-lg px-5 py-3 lg:hover:border-brand-gold/20 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${t.amount > 0 ? 'bg-ok/15' : 'bg-danger/15'}`}>
+                    {t.amount > 0 ? <ArrowDownLeft size={14} className="text-ok" /> : <ArrowUpRight size={14} className="text-danger" />}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">{t.description}</div>
+                    <div className="text-xs text-brand-muted">{t.account} &middot; {t.project}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`font-bold text-sm num ${t.amount > 0 ? 'text-ok' : 'text-danger'}`}>
+                    {t.amount > 0 ? `+${moneyExact(t.amount)}` : moneyAccounting(t.amount)}
+                  </div>
+                  <div className="text-[10px] text-brand-muted">{shortDate(t.date)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
