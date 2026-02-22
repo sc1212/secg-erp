@@ -1,180 +1,166 @@
 import { useState, useEffect } from 'react';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
+import { PROJECTS, FINANCIAL } from '../data/demoData';
 import { money } from '../lib/format';
-import { AlertTriangle, ChevronRight, Cloud, CloudRain, Key, Sun } from 'lucide-react';
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
-const DEMO_BRIEFING = {
-  weather: {
-    location: 'Murfreesboro, TN',
-    temp: 48,
-    conditions: 'Partly Cloudy',
-    high: 55,
-    low: 38,
-    precipitation: 0,
-    alerts: ['Freeze warning tonight \u2014 protect exposed pipes'],
-  },
-  changes: [
-    { text: '3 new invoices synced from QuickBooks ($14,280)', link: '/financials?tab=ap', icon: '\u{1F4E5}' },
-    { text: 'Vendor payment processed \u2014 Miller Concrete ($8,400)', link: '/payments', icon: '\u{1F4B3}' },
-    { text: 'Connor submitted daily log \u2014 Riverside Custom', link: '/daily-logs', icon: '\u{1F4DD}' },
-    { text: 'COI expiring in 3 days \u2014 Williams Electric', link: '/vendors?tab=compliance', icon: '\u{26A0}\u{FE0F}' },
-  ],
-  numbers: {
-    cash: 247800,
-    ar: 186400,
-    ap_due: 42600,
-    active_projects: 7,
-    margin_good: 3,
-    margin_watch: 2,
-    margin_bad: 1,
-  },
-  attention: [
-    { text: 'Draw request ready \u2014 Oak Creek ($45,000)', link: '/draws', severity: 'critical' },
-    { text: '2 vendor invoices awaiting approval ($6,200)', link: '/payments', severity: 'warning' },
-    { text: 'Punch list items overdue \u2014 Magnolia (5 items)', link: '/decisions', severity: 'warning' },
-  ],
-};
-
-const WEATHER_ICONS = { 'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud, 'Rain': CloudRain };
+import { ChevronRight, AlertTriangle, FileText, DollarSign, CreditCard, X } from 'lucide-react';
 
 export default function MorningBriefingOverlay({ onDismiss, onNavigate }) {
   const [visible, setVisible] = useState(false);
-  const { data } = useApi(() => api.morningBriefing(), []);
-  const briefing = data || DEMO_BRIEFING;
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
-  useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
-
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-
-  const WeatherIcon = WEATHER_ICONS[briefing.weather?.conditions] || Cloud;
-
-  const handleDismiss = () => {
+  const handleDismiss = (dismissToday = false) => {
+    if (dismissToday) localStorage.setItem('briefing_dismissed_date', new Date().toDateString());
     setVisible(false);
     setTimeout(onDismiss, 300);
   };
 
+  const today = new Date();
+  const h = today.getHours();
+  const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  const attention = [
+    { text: 'PO-089 needs approval -- 84 Lumber $10,284 (Riverside)', link: '/projects/1', severity: 'warning' },
+    { text: 'Johnson Office electrical 8% over budget', link: '/projects/5', severity: 'critical' },
+    { text: 'Miller Concrete COI expires in 6 days -- 3 active projects', link: '/vendors', severity: 'warning' },
+    { text: 'Magnolia Spec Draw #2 -- $58K outstanding 12 days', link: '/financials', severity: 'warning' },
+    { text: '3 transactions need coding', link: '/financials', severity: 'info' },
+  ];
+
+  const totalContract = PROJECTS.reduce((s, p) => s + p.contract, 0);
+  const avgMargin = (PROJECTS.reduce((s, p) => s + p.margin, 0) / PROJECTS.length).toFixed(1);
+
   return (
-    <div className={`briefing-overlay${visible ? ' visible' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) handleDismiss(); }}>
-      <div className={`briefing-modal${visible ? ' visible' : ''}`}>
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) handleDismiss(); }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: visible ? 'rgba(11,17,33,0.85)' : 'rgba(11,17,33,0)',
+        backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+        transition: 'background 0.3s ease',
+      }}
+    >
+      <div style={{
+        maxWidth: 680, width: '100%',
+        background: 'linear-gradient(135deg, rgba(17,24,39,0.95), rgba(15,23,42,0.98))',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16, padding: 32,
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.97)',
+        opacity: visible ? 1 : 0,
+        transition: 'all 0.3s ease',
+        maxHeight: '90vh', overflowY: 'auto',
+      }}>
+        {/* Close */}
+        <button onClick={() => handleDismiss()} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
+          <X size={20} />
+        </button>
+
         {/* Greeting */}
-        <div className="briefing-greeting">
-          <div className="briefing-hello">
-            <Sun size={22} style={{ color: 'var(--status-warning)' }} />
-            <span>{getGreeting()}, Samuel.</span>
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#f0f2f5', fontFamily: 'Inter, system-ui, sans-serif' }}>
+            {greeting}, Matt
           </div>
-          <div className="briefing-date">{today}</div>
+          <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4 }}>{dateStr}</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Murfreesboro, TN -- 42F Partly Cloudy</div>
         </div>
 
-        <div className="briefing-divider" />
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
 
-        {/* Weather */}
-        {briefing.weather && (
-          <>
-            <div className="briefing-section">
-              <div className="briefing-section-label">WEATHER \u2014 {briefing.weather.location}</div>
-              <div className="briefing-weather-main">
-                <WeatherIcon size={28} style={{ color: 'var(--text-secondary)' }} />
-                <span className="briefing-temp">{briefing.weather.temp}\u00B0F</span>
-                <span className="briefing-conditions">{briefing.weather.conditions}</span>
-                <span className="briefing-hilo">H {briefing.weather.high}\u00B0 / L {briefing.weather.low}\u00B0</span>
-                <span className="briefing-precip">{briefing.weather.precipitation}% {'\u{1F327}\u{FE0F}'}</span>
-              </div>
-              {briefing.weather.alerts?.map((alert, i) => (
-                <div key={i} className="briefing-weather-alert">
-                  <AlertTriangle size={13} />
-                  <span>{alert}</span>
-                </div>
-              ))}
-            </div>
-            <div className="briefing-divider" />
-          </>
-        )}
-
-        {/* What Changed */}
-        <div className="briefing-section">
-          <div className="briefing-section-label">WHAT CHANGED SINCE YOUR LAST LOGIN</div>
-          {briefing.changes?.map((item, i) => (
-            <button
-              key={i}
-              className="briefing-change-item"
-              onClick={() => onNavigate(item.link)}
-            >
-              <span className="briefing-change-icon">{item.icon}</span>
-              <span className="briefing-change-text">{item.text}</span>
-              <ChevronRight size={14} className="briefing-arrow" />
-            </button>
-          ))}
+        {/* Financial Snapshot 2x2 */}
+        <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: 12 }}>
+          Financial Snapshot
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+          <SnapCard label="Cash in Bank" value={money(284320)} color="#34d399" sub="" />
+          <SnapCard label="Effective Cash" value={money(127840)} color="#fbbf24" sub="After payroll + AP" />
+          <SnapCard label="Coming in 7 days" value={'+$116,000'} color="#34d399" sub="Draw #3 Riverside $58K / Invoice Johnson $58K" />
+          <SnapCard label="Going out 7 days" value={'-$72,400'} color="#fb7185" sub="Payroll $48K / Vendor bills $24.4K" />
         </div>
 
-        <div className="briefing-divider" />
-
-        {/* Key Numbers */}
-        <div className="briefing-section">
-          <div className="briefing-section-label">KEY NUMBERS</div>
-          <div className="briefing-numbers">
-            <div className="briefing-number">
-              <span className="briefing-number-label">Cash</span>
-              <span className="briefing-number-value">{money(briefing.numbers?.cash ?? 0)}</span>
-            </div>
-            <div className="briefing-number">
-              <span className="briefing-number-label">AR</span>
-              <span className="briefing-number-value">{money(briefing.numbers?.ar ?? 0)}</span>
-            </div>
-            <div className="briefing-number">
-              <span className="briefing-number-label">AP Due</span>
-              <span className="briefing-number-value" style={{ color: 'var(--status-loss)' }}>{money(briefing.numbers?.ap_due ?? 0)}</span>
-            </div>
-            <div className="briefing-number">
-              <span className="briefing-number-label">Active Jobs</span>
-              <span className="briefing-number-value">{briefing.numbers?.active_projects ?? 0}</span>
-            </div>
-            <div className="briefing-number">
-              <span className="briefing-number-label">Margin Health</span>
-              <span className="briefing-number-value" style={{ fontSize: 13 }}>
-                {briefing.numbers?.margin_good ?? 0} {'\u2705'} {briefing.numbers?.margin_watch ?? 0} {'\u26A0\uFE0F'} {briefing.numbers?.margin_bad ?? 0} {'\u{1F534}'}
-              </span>
-            </div>
+        {/* Portfolio Margin */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b' }}>Portfolio Margin Health</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#f0f2f5', fontFamily: 'JetBrains Mono, monospace' }}>16.8% <span style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>vs 15% target</span></span>
+          </div>
+          <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ width: '84%', height: '100%', background: 'linear-gradient(90deg, #34d399, #22d3ee)', borderRadius: 3 }} />
           </div>
         </div>
 
-        <div className="briefing-divider" />
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '16px 0' }} />
 
         {/* Needs Attention */}
-        <div className="briefing-section">
-          <div className="briefing-section-label">NEEDS YOUR ATTENTION ({briefing.attention?.length ?? 0})</div>
-          {briefing.attention?.map((item, i) => (
+        <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b', marginBottom: 10 }}>
+          Needs Your Attention ({attention.length})
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {attention.map((item, i) => (
             <button
               key={i}
-              className="briefing-attention-item"
               onClick={() => onNavigate(item.link)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                width: '100%', textAlign: 'left',
+                padding: '10px 12px', borderRadius: 8,
+                background: item.severity === 'critical' ? 'rgba(251,113,133,0.08)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${item.severity === 'critical' ? 'rgba(251,113,133,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                color: '#e2e8f0', fontSize: 13, cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = item.severity === 'critical' ? 'rgba(251,113,133,0.08)' : 'rgba(255,255,255,0.03)'; }}
             >
-              <span className={`briefing-attention-dot ${item.severity}`} />
-              <span className="briefing-attention-text">{item.text}</span>
-              <ChevronRight size={14} className="briefing-arrow" />
+              <span style={{
+                width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                background: item.severity === 'critical' ? '#fb7185' : item.severity === 'warning' ? '#fbbf24' : '#38bdf8',
+              }} />
+              <span style={{ flex: 1 }}>{item.text}</span>
+              <ChevronRight size={14} style={{ color: '#64748b' }} />
             </button>
           ))}
         </div>
 
         {/* Actions */}
-        <div className="briefing-actions">
-          <button className="briefing-btn-primary" onClick={handleDismiss}>Go to Dashboard</button>
-          <button className="briefing-btn-secondary" onClick={handleDismiss}>Don&apos;t show today</button>
+        <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => handleDismiss(true)}
+            style={{
+              padding: '10px 20px', borderRadius: 8,
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#94a3b8', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            }}
+          >
+            Don't show today
+          </button>
+          <button
+            onClick={() => handleDismiss()}
+            style={{
+              padding: '10px 24px', borderRadius: 8,
+              background: '#3b82f6', border: 'none',
+              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Go to Command Center
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SnapCard({ label, value, color, sub }) {
+  return (
+    <div style={{
+      padding: '14px 16px', borderRadius: 10,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.06)',
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-0.02em' }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{sub}</div>}
     </div>
   );
 }

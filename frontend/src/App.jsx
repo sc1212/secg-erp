@@ -33,6 +33,9 @@ import Warranties from './pages/Warranties';
 import Decisions from './pages/Decisions';
 import Exceptions from './pages/Exceptions';
 
+import Operations from './pages/Operations';
+import Reports from './pages/Reports';
+
 import Weather from './pages/Weather';
 import Scorecard from './pages/Scorecard';
 import ClientPortal from './pages/ClientPortal';
@@ -78,6 +81,10 @@ export default function App() {
           {/* Decision / Exception queues */}
           <Route path="/decisions" element={<Decisions />} />
           <Route path="/exceptions" element={<Exceptions />} />
+
+          {/* Hub pages */}
+          <Route path="/operations" element={<Operations />} />
+          <Route path="/reports" element={<Reports />} />
 
           {/* Legacy */}
           <Route path="/weather" element={<Weather />} />
