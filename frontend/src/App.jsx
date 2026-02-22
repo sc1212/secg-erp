@@ -10,6 +10,7 @@ import Payments from './pages/Payments';
 import Vendors from './pages/Vendors';
 import CRM from './pages/CRM';
 import Team from './pages/Team';
+import MissionControl from './pages/MissionControl';
 
 export default function App() {
   return (
@@ -17,6 +18,8 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route element={<Layout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/mission" element={<MissionControl />} />
           <Route path="/" element={<OperatingSystem />} />
           <Route path="/legacy-dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<Projects />} />

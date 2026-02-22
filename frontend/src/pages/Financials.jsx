@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { money, moneyExact, pct, shortDate, statusBadge } from '../lib/format';
@@ -48,7 +49,10 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 export default function Financials() {
-  const [tab, setTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const validTabs = ['overview', 'debts', 'ar', 'retainage', 'recurring', 'properties'];
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'overview';
+  const [tab, setTab] = useState(initialTab);
 
   return (
     <div className="space-y-6">
