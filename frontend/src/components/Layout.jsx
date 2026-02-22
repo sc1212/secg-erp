@@ -48,10 +48,11 @@ const NAV_MENUS = [
   },
   {
     label: 'Operations',
-    activeRoutes: ['/calendar', '/daily-logs', '/decisions', '/warranties', '/timeclock', '/documents', '/portal', '/weather', '/fleet', '/inventory', '/permits', '/safety'],
+    activeRoutes: ['/operations', '/calendar', '/daily-logs', '/decisions', '/warranties', '/timeclock', '/documents', '/portal', '/weather', '/fleet', '/inventory', '/permits', '/safety'],
     groups: [
       {
         items: [
+          { icon: '\u{1F3AF}', label: 'Operations Hub', to: '/operations', desc: 'All operations modules' },
           { icon: '\u{1F4C5}', label: 'Schedule / Calendar', to: '/calendar', desc: 'Inspections, milestones, deadlines' },
           { icon: '\u{1F4DD}', label: 'Daily Logs', to: '/daily-logs', desc: 'Field logs & photos' },
           { icon: '\u{2705}', label: 'Punch List', to: '/decisions', desc: 'QA/QC items' },
@@ -153,25 +154,19 @@ const NAV_MENUS = [
   },
   {
     label: 'Reports',
-    activeRoutes: ['/mission', '/briefing', '/scorecard'],
+    activeRoutes: ['/reports', '/briefing', '/scorecard'],
     groups: [
       {
         items: [
-          { icon: '\u{1F4CA}', label: 'Report Builder', to: '/mission', desc: 'Custom reports' },
+          { icon: '\u{1F4CA}', label: 'All Reports', to: '/reports', desc: 'Reports hub' },
         ],
       },
       {
         items: [
-          { icon: '\u{1F4B0}', label: 'Job Cost Detail', to: '/projects?report=cost', desc: 'Per-project cost breakdown' },
-          { icon: '\u{1F4C8}', label: 'Profit & Loss by Job', to: '/financials?tab=pl', desc: 'P&L per project' },
-          { icon: '\u{1F4B5}', label: 'Cash Flow Report', to: '/cash-flow', desc: 'Historical + projected' },
-          { icon: '\u{1F477}', label: 'Labor Cost Report', to: '/team', desc: 'Payroll by project' },
-        ],
-      },
-      {
-        items: [
-          { icon: '\u{1F4CA}', label: 'Budget vs Actual', to: '/projects?report=variance', desc: 'Variance analysis' },
-          { icon: '\u{1F3C6}', label: 'Historical Cost Intel', to: '/mission?tab=intel', desc: 'Completed project costs' },
+          { icon: '\u{1F4B0}', label: 'Budget vs Actual', to: '/reports', desc: 'Per-project cost breakdown' },
+          { icon: '\u{1F4C8}', label: 'WIP Report', to: '/reports', desc: 'Work in progress' },
+          { icon: '\u{1F4B5}', label: 'AR Aging', to: '/reports', desc: 'Receivables aging' },
+          { icon: '\u{1F477}', label: 'Profitability Analysis', to: '/reports', desc: 'Margin by project' },
         ],
       },
       {
