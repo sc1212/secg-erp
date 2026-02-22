@@ -10,9 +10,7 @@ services:
           name: secg-erp-db
           property: connectionString
       - key: DEBUG
-        value: "true"
-      - key: CORS_ORIGINS
-        value: "https://secg-erp.onrender.com,https://secg-erp-pj9h.onrender.com,https://secg-finance-backend.onrender.com,http://localhost:3000,http://localhost:5173"
+        value: "false"
     healthCheckPath: /health
 
   - type: web
@@ -30,7 +28,7 @@ services:
       - key: PYTHON_VERSION
         value: "3.13.2"
       - key: VITE_API_URL
-        value: "https://secg-finance-backend.onrender.com/api"
+        value: "https://secg-erp-api.onrender.com/api"
     headers:
       - path: /*
         name: X-Frame-Options
