@@ -1,19 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FolderKanban, DollarSign, CreditCard,
   Users, Handshake, UserCog, ChevronLeft, ChevronRight,
-  Bell, Search, Menu, X,
+  Bell, Search, Menu, X, Sun, Moon, Crosshair,
 } from 'lucide-react';
 
 const nav = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/projects', icon: FolderKanban, label: 'Projects' },
-  { to: '/financials', icon: DollarSign, label: 'Financials' },
-  { to: '/payments', icon: CreditCard, label: 'Payments' },
-  { to: '/vendors', icon: Handshake, label: 'Vendors' },
-  { to: '/crm', icon: Users, label: 'CRM' },
-  { to: '/team', icon: UserCog, label: 'Team' },
+  { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/mission',   icon: Crosshair,       label: 'Mission Control' },
+  { to: '/projects',  icon: FolderKanban,    label: 'Projects' },
+  { to: '/financials',icon: DollarSign,      label: 'Financials' },
+  { to: '/payments',  icon: CreditCard,      label: 'Payments' },
+  { to: '/vendors',   icon: Handshake,       label: 'Vendors' },
+  { to: '/crm',       icon: Users,           label: 'CRM' },
+  { to: '/team',      icon: UserCog,         label: 'Team' },
 ];
 
 function SideLink({ to, icon: Icon, label, collapsed }) {
@@ -22,52 +23,92 @@ function SideLink({ to, icon: Icon, label, collapsed }) {
       to={to}
       end={to === '/'}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-          isActive
-            ? 'bg-brand-gold/15 text-brand-gold'
-            : 'text-brand-muted hover:text-brand-text hover:bg-brand-card-hover'
-        } ${collapsed ? 'justify-center' : ''}`
+        `sidebar-link${isActive ? ' active' : ''}${collapsed ? ' collapsed' : ''}`
       }
     >
-      <Icon size={20} />
+      <Icon size={18} strokeWidth={1.75} />
       {!collapsed && <span>{label}</span>}
     </NavLink>
   );
 }
 
+function initTheme() {
+  const saved = localStorage.getItem('secg-theme');
+  if (saved === 'midnight' || saved === 'arctic') return saved;
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'arctic' : 'midnight';
+}
+
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const location = useLocation();
+  const [theme, setTheme] = useState(initTheme);
+  useLocation(); // re-render on route change to close mobile menu
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('secg-theme', theme);
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme(t => (t === 'midnight' ? 'arctic' : 'midnight'));
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ background: 'var(--bg-overlay)' }}
+          onClick={() => setMobileOpen(false)}
+        />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — always dark in both themes */}
       <aside
-        className={`fixed lg:static z-50 top-0 left-0 h-full bg-brand-surface border-r border-brand-border flex flex-col transition-all duration-200 ${
+        className={`fixed lg:static z-50 top-0 left-0 h-full flex flex-col transition-all duration-200 ${
           collapsed ? 'w-[68px]' : 'w-60'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        style={{
+          background: 'var(--bg-deepest)',
+          borderRight: '1px solid var(--border-subtle)',
+        }}
       >
         {/* Logo */}
-        <div className={`flex items-center h-16 px-4 border-b border-brand-border ${collapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className="w-9 h-9 rounded-lg bg-brand-gold flex items-center justify-center font-bold text-brand-bg text-sm shrink-0">
+        <div
+          className={`flex items-center h-16 px-4 ${collapsed ? 'justify-center' : 'gap-3'}`}
+          style={{ borderBottom: '1px solid var(--border-subtle)' }}
+        >
+          <div
+            className="w-9 h-9 rounded flex items-center justify-center font-bold text-sm shrink-0"
+            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+          >
             SE
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-brand-text truncate">Southeast Enterprise</div>
-              <div className="text-[10px] text-brand-muted">ERP Platform</div>
+              <div className="text-sm font-semibold truncate" style={{ color: 'var(--sidebar-text-active)' }}>
+                Southeast Enterprise
+              </div>
+              <div className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--sidebar-text)' }}>
+                ERP Platform
+              </div>
             </div>
           )}
         </div>
 
+        {/* Section label */}
+        {!collapsed && (
+          <div
+            className="px-4 pt-5 pb-1 text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: 'var(--sidebar-text)', opacity: 0.6 }}
+          >
+            Navigation
+          </div>
+        )}
+
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-2 pb-3 space-y-0.5 overflow-y-auto">
           {nav.map((n) => (
             <SideLink key={n.to} {...n} collapsed={collapsed} />
           ))}
@@ -76,7 +117,14 @@ export default function Layout() {
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex items-center justify-center h-10 border-t border-brand-border text-brand-muted hover:text-brand-text transition-colors"
+          className="hidden lg:flex items-center justify-center h-10 transition-colors"
+          style={{
+            borderTop: '1px solid var(--border-subtle)',
+            color: 'var(--sidebar-text)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--sidebar-text-active)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--sidebar-text)')}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -85,29 +133,93 @@ export default function Layout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-16 border-b border-brand-border bg-brand-surface/80 backdrop-blur-sm flex items-center justify-between px-4 lg:px-6 shrink-0">
+        <header
+          className="h-16 flex items-center justify-between px-4 lg:px-6 shrink-0"
+          style={{
+            borderBottom: '1px solid var(--border-subtle)',
+            background: theme === 'midnight'
+              ? 'rgba(12, 18, 32, 0.85)'
+              : 'rgba(244, 245, 247, 0.92)',
+            backdropFilter: 'blur(12px)',
+            position: 'sticky',
+            top: 0,
+            zIndex: 50,
+          }}
+        >
           <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-brand-muted hover:text-brand-text">
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+              aria-label="Toggle mobile menu"
+            >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
-            <div className="hidden sm:flex items-center gap-2 bg-brand-card rounded-lg px-3 py-2 text-sm text-brand-muted w-64">
-              <Search size={16} />
-              <span>Search... ⌘K</span>
+
+            {/* Search */}
+            <div
+              className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm w-64 rounded"
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-medium)',
+                color: 'var(--text-tertiary)',
+              }}
+            >
+              <Search size={15} />
+              <span style={{ fontSize: 13 }}>Search... ⌘K</span>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="relative text-brand-muted hover:text-brand-text transition-colors">
-              <Bell size={20} />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-danger rounded-full text-[10px] font-bold flex items-center justify-center text-white">3</span>
+
+          <div className="flex items-center gap-3">
+            {/* Notification bell */}
+            <button
+              className="relative transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+              <span
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
+                style={{ background: 'var(--status-loss)', color: '#fff' }}
+              >
+                3
+              </span>
             </button>
-            <div className="w-8 h-8 rounded-full bg-brand-gold/20 border border-brand-gold/40 flex items-center justify-center text-brand-gold text-xs font-semibold">
+
+            {/* Theme toggle */}
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={theme === 'midnight' ? 'Switch to Arctic Command (light mode)' : 'Switch to Midnight Studio (dark mode)'}
+              title={theme === 'midnight' ? 'Arctic Command' : 'Midnight Studio'}
+            >
+              {theme === 'midnight' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+
+            {/* User avatar */}
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold"
+              style={{
+                background: 'var(--accent-bg)',
+                border: '1px solid var(--accent-border)',
+                color: 'var(--accent)',
+              }}
+            >
               MS
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main
+          className="flex-1 overflow-y-auto p-4 lg:p-6"
+          style={{ background: 'var(--bg-base, #F8FAFC)', transition: 'background-color 0.25s ease' }}
+        >
           <Outlet />
         </main>
       </div>
