@@ -705,6 +705,7 @@ textarea:focus-visible,
   background-image: linear-gradient(90deg, color-mix(in oklab, var(--color-brand-surface) 88%, white), color-mix(in oklab, var(--color-brand-surface) 70%, white), color-mix(in oklab, var(--color-brand-surface) 88%, white));
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite linear;
+}
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,

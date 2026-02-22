@@ -1,18 +1,3 @@
-import { useState } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
-import { money, pct, shortDate, statusBadge } from '../lib/format';
-import { PageLoading, ErrorState } from '../components/LoadingState';
-import {
-  ArrowLeft, DollarSign, FileText, ClipboardList, Calendar,
-  AlertTriangle, Gavel, Receipt, TrendingUp, BarChart3, GitCommit, Scale,
-} from 'lucide-react';
-
-import { demoProject } from '../components/jobcosting/demoData';
-import CostCodesTab from '../components/jobcosting/CostCodesTab';
-import BidsQuotesTab from '../components/jobcosting/BidsQuotesTab';
-import CommitmentsTab from '../components/jobcosting/CommitmentsTab';
 import ActualsTab from '../components/jobcosting/ActualsTab';
 import ForecastTab from '../components/jobcosting/ForecastTab';
 import SOVTab from '../components/jobcosting/SOVTab';

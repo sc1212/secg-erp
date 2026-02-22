@@ -1,18 +1,3 @@
-/**
- * Mission Control — High-level command layer
- *
- * Every card, objective row, score bar, narrative step, and cadence row
- * is clickable and navigates to the relevant surface.
- *
- * drillTo routing:
- *   '/projects/1?tab=cos'   → ProjectDetail, Change Orders tab
- *   '/financials?tab=ar'    → Financials, AR/Invoices tab
- *   '/vendors'              → Vendors list
- *   '/crm'                  → CRM pipeline
- */
-
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Crosshair, TrendingUp, Zap, GitMerge,
   ArrowRight, CheckCircle2, Circle,

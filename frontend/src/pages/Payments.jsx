@@ -251,7 +251,15 @@ export default function Payments() {
                   </button>
                 ) : (
                   <button className="ghost-btn flex items-center gap-1" style={{ color: 'var(--status-warning)' }}>
-                    <Shield size={12} /> Hold \u2014 Request Lien Waiver
+                    <Shield size={12} /> Hold — Request Lien Waiver
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-1 border-b border-brand-border pb-px overflow-x-auto">
         {tabList.map((t) => (
@@ -282,7 +290,6 @@ export default function Payments() {
             {demoAccounts.map((a, i) => {
               const Icon = accountIcon[a.type] || Landmark;
               return (
-                <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-xl px-5 py-4 lg:hover:border-brand-gold/20 transition-colors">
                 <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-lg px-5 py-4 hover:border-brand-gold/20 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-brand-surface flex items-center justify-center">
@@ -350,52 +357,24 @@ export default function Payments() {
                   <button key={m} className="px-4 py-2 rounded-lg text-xs font-medium bg-brand-surface border border-brand-border text-brand-muted lg:hover:text-brand-text lg:hover:border-brand-gold/40 transition-colors first:bg-brand-gold/15 first:text-brand-gold first:border-brand-gold/30">
                     {m}
                   </button>
-                )}
-                <button className="ghost-btn">Dispute</button>
+                ))}
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* Bottom Action Bar */}
-      <div
-        className="rounded-lg p-4 flex items-center justify-between flex-wrap gap-3"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
-      >
-        <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Selected: <strong style={{ color: 'var(--text-primary)' }}>{selected.size} bills ({money(selectedTotal)})</strong>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="ghost-btn" onClick={selectAllDueThisWeek}>Select All Due This Week</button>
-          <button
-            className="px-4 py-2 rounded-lg text-sm font-semibold"
-            style={{
-              background: selected.size > 0 ? 'var(--accent)' : 'var(--bg-elevated)',
-              color: selected.size > 0 ? 'var(--text-inverse)' : 'var(--text-tertiary)',
-              cursor: selected.size > 0 ? 'pointer' : 'not-allowed',
-            }}
-            disabled={selected.size === 0}
-          >
-            Pay Selected \u2192
-          </button>
-        </div>
-      </div>
-
-      {/* Settings */}
-      <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-        <span className="flex items-center gap-1.5">
-          \u2699\uFE0F Payment Method: Company Checking ****4521 (via QuickBooks)
-        </span>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={requireLienWaiver}
-            onChange={e => setRequireLienWaiver(e.target.checked)}
-          />
-          Require lien waiver before payment
-        </label>
-      </div>
+          {/* Settings */}
+          <div className="flex items-center gap-4 text-xs text-brand-muted">
+            <span className="flex items-center gap-1.5">
+              Payment Method: Company Checking ****4521 (via QuickBooks)
+            </span>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={requireLienWaiver}
+                onChange={e => setRequireLienWaiver(e.target.checked)}
+              />
+              Require lien waiver before payment
+            </label>
           </div>
 
           <div className="flex gap-3 pt-2">
