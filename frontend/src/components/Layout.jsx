@@ -1,20 +1,72 @@
-import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FolderKanban, DollarSign, CreditCard,
   Users, Handshake, UserCog, ChevronLeft, ChevronRight,
   Bell, Search, Menu, X, Sun, Moon, Crosshair,
-  CalendarDays, FileText, CloudSun, FolderArchive, Truck, Package,
-  ShieldCheck, Trophy, Wrench, Globe, Sunrise,
+  CalendarDays, FileText, FolderArchive, Truck, Package,
+  ShieldCheck, Wrench, Sunrise, FileCheck, Clock, Building2,
 } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
+import { api } from '../lib/api';
+
+// ── Demo notifications (shown when backend returns nothing) ───────────────
+
+const DEMO_NOTIFICATIONS = [
+  {
+    id: 1,
+    title: 'New Exception: Unmapped Cost Code',
+    body: 'Cost event #2847 — Home Depot $847 needs review',
+    link: '/exceptions',
+    is_read: false,
+    created_at: new Date(Date.now() - 25 * 60000).toISOString(),
+  },
+  {
+    id: 2,
+    title: 'PO Approval Needed',
+    body: 'PO-0047 for $12,500 (ACE Plumbing) awaits approval',
+    link: '/decisions',
+    is_read: false,
+    created_at: new Date(Date.now() - 57 * 60000).toISOString(),
+  },
+  {
+    id: 3,
+    title: 'COI Expiring in 14 Days',
+    body: 'ACE Plumbing COI expires Mar 8 — request renewal',
+    link: '/vendors',
+    is_read: true,
+    created_at: new Date(Date.now() - 23 * 3600000).toISOString(),
+  },
+  {
+    id: 4,
+    title: 'Critical Stock: PEX 3/4"',
+    body: '2 units remaining — reorder needed',
+    link: '/inventory',
+    is_read: true,
+    created_at: new Date(Date.now() - 25 * 3600000).toISOString(),
+  },
+];
+
+function formatTimeAgo(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 2) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────
 
 const navSections = [
   {
     label: 'Command',
     items: [
-      { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/mission',   icon: Crosshair,       label: 'Mission Control' },
+      { to: '/',         icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/mission',  icon: Crosshair,       label: 'Mission Control' },
+      { to: '/briefing', icon: Sunrise,         label: 'Morning Briefing' },
     ],
   },
   {
@@ -23,9 +75,9 @@ const navSections = [
       { to: '/projects',   icon: FolderKanban, label: 'Projects' },
       { to: '/calendar',   icon: CalendarDays, label: 'Calendar' },
       { to: '/daily-logs', icon: FileText,     label: 'Daily Logs' },
-      { to: '/weather',    icon: CloudSun,     label: 'Weather' },
       { to: '/fleet',      icon: Truck,        label: 'Fleet' },
       { to: '/inventory',  icon: Package,      label: 'Inventory' },
+      { to: '/permits',    icon: FileCheck,    label: 'Permits & Inspections' },
     ],
   },
   {
@@ -34,32 +86,28 @@ const navSections = [
       { to: '/financials', icon: DollarSign, label: 'Financials' },
       { to: '/payments',   icon: CreditCard, label: 'Payments' },
       { to: '/vendors',    icon: Handshake,  label: 'Vendors' },
+      { to: '/draws',      icon: Building2,  label: 'Draws' },
     ],
   },
   {
     label: 'People',
     items: [
-      { to: '/team',       icon: UserCog,  label: 'Team' },
-      { to: '/crm',        icon: Users,    label: 'CRM' },
-      { to: '/scorecard',  icon: Trophy,   label: 'Scorecard' },
+      { to: '/team',      icon: UserCog, label: 'Team & Scorecard' },
+      { to: '/timeclock', icon: Clock,   label: 'Time Clock' },
+      { to: '/crm',       icon: Users,   label: 'CRM' },
     ],
   },
   {
     label: 'Compliance',
     items: [
-      { to: '/documents',   icon: FolderArchive, label: 'Documents' },
-      { to: '/safety',      icon: ShieldCheck,   label: 'Safety' },
-      { to: '/warranties',  icon: Wrench,        label: 'Warranties' },
-    ],
-  },
-  {
-    label: 'External',
-    items: [
-      { to: '/portal',    icon: Globe,   label: 'Client Portal' },
-      { to: '/briefing',  icon: Sunrise, label: 'Briefing' },
+      { to: '/documents',  icon: FolderArchive, label: 'Documents' },
+      { to: '/safety',     icon: ShieldCheck,   label: 'Safety' },
+      { to: '/warranties', icon: Wrench,        label: 'Warranties' },
     ],
   },
 ];
+
+// ── Sub-components ────────────────────────────────────────────────────────
 
 function SideLink({ to, icon: Icon, label, collapsed }) {
   return (
@@ -83,19 +131,67 @@ function initTheme() {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'arctic' : 'midnight';
 }
 
+// ── Layout ────────────────────────────────────────────────────────────────
+
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState(initTheme);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS);
+  const [unreadCount, setUnreadCount] = useState(2);
+  const notifRef = useRef(null);
+  const navigate = useNavigate();
   useLocation(); // re-render on route change to close mobile menu
 
+  // Theme persistence
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('secg-theme', theme);
   }, [theme]);
 
+  // Click-outside to close notification panel
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Load notification data from backend (falls back to demo)
+  useEffect(() => {
+    api.unreadCount()
+      .then(r => setUnreadCount(r.count))
+      .catch(() => {});
+    api.myNotifications({ limit: 20 })
+      .then(data => { if (data && data.length > 0) setNotifications(data); })
+      .catch(() => {});
+  }, []);
+
   function toggleTheme() {
     setTheme(t => (t === 'midnight' ? 'arctic' : 'midnight'));
+  }
+
+  function handleNotifClick(n) {
+    if (!n.is_read) {
+      api.markNotificationRead(n.id).catch(() => {});
+      setNotifications(prev =>
+        prev.map(x => (x.id === n.id ? { ...x, is_read: true } : x))
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+    setNotifOpen(false);
+    const link = n.link || n.action_url;
+    if (link) navigate(link);
+  }
+
+  function markAllRead() {
+    api.markAllRead().catch(() => {});
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setUnreadCount(0);
   }
 
   return (
@@ -220,22 +316,109 @@ export default function Layout() {
           </div>
 
           <div className="topbar-right flex items-center gap-3">
-            {/* Notification bell */}
-            <button
-              className="relative transition-colors"
-              style={{ color: 'var(--text-secondary)' }}
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              <span
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-                style={{ background: 'var(--status-loss)', color: '#fff' }}
+            {/* Notification bell with dropdown */}
+            <div className="relative" ref={notifRef}>
+              <button
+                className="relative transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                aria-label="Notifications"
+                onClick={() => setNotifOpen(o => !o)}
               >
-                3
-              </span>
-            </button>
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
+                    style={{ background: 'var(--status-loss)', color: '#fff' }}
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
 
-            {/* Theme toggle — icon shows current state: Moon = dark, Sun = light */}
+              {notifOpen && (
+                <div
+                  className="absolute right-0 top-8 w-80 rounded-lg shadow-xl z-50 overflow-hidden"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-medium)',
+                  }}
+                >
+                  {/* Header */}
+                  <div
+                    className="flex items-center justify-between px-4 py-3"
+                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                  >
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      Notifications
+                    </span>
+                    <button
+                      onClick={markAllRead}
+                      className="text-xs"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      Mark all read
+                    </button>
+                  </div>
+
+                  {/* List */}
+                  <div className="overflow-y-auto" style={{ maxHeight: 360 }}>
+                    {notifications.length === 0 ? (
+                      <div
+                        className="px-4 py-8 text-center text-sm"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        All caught up!
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <button
+                          key={n.id}
+                          onClick={() => handleNotifClick(n)}
+                          className="w-full text-left px-4 py-3 transition-opacity hover:opacity-80"
+                          style={{
+                            borderBottom: '1px solid var(--border-subtle)',
+                            background: n.is_read ? 'transparent' : 'var(--accent-bg)',
+                          }}
+                        >
+                          <div className="flex items-start gap-2">
+                            {!n.is_read && (
+                              <div
+                                className="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                                style={{ background: 'var(--accent)' }}
+                              />
+                            )}
+                            <div className="min-w-0">
+                              <div
+                                className="text-xs font-medium truncate"
+                                style={{ color: 'var(--text-primary)' }}
+                              >
+                                {n.title}
+                              </div>
+                              {n.body && (
+                                <div
+                                  className="text-xs mt-0.5 line-clamp-2"
+                                  style={{ color: 'var(--text-secondary)' }}
+                                >
+                                  {n.body}
+                                </div>
+                              )}
+                              <div
+                                className="text-[10px] mt-1"
+                                style={{ color: 'var(--text-muted)' }}
+                              >
+                                {formatTimeAgo(n.created_at)}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Theme toggle */}
             <button
               className="theme-toggle"
               onClick={toggleTheme}

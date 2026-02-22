@@ -21,6 +21,11 @@ import Warranties from './pages/Warranties';
 import Scorecard from './pages/Scorecard';
 import ClientPortal from './pages/ClientPortal';
 import MorningBriefing from './pages/MorningBriefing';
+import Draws from './pages/Draws';
+import TimeClock from './pages/TimeClock';
+import Decisions from './pages/Decisions';
+import Exceptions from './pages/Exceptions';
+import Permits from './pages/Permits';
 
 export default function App() {
   return (
@@ -28,26 +33,44 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route element={<Layout />}>
+          {/* Command */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/mission" element={<MissionControl />} />
+          <Route path="/briefing" element={<MorningBriefing />} />
+
+          {/* Operations */}
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/daily-logs" element={<DailyLogs />} />
-          <Route path="/weather" element={<Weather />} />
+          <Route path="/fleet" element={<Fleet />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/permits" element={<Permits />} />
+
+          {/* Finance */}
           <Route path="/financials" element={<Financials />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/vendors" element={<Vendors />} />
-          <Route path="/crm" element={<CRM />} />
+          <Route path="/draws" element={<Draws />} />
+
+          {/* People */}
           <Route path="/team" element={<Team />} />
+          <Route path="/timeclock" element={<TimeClock />} />
+          <Route path="/crm" element={<CRM />} />
+
+          {/* Compliance */}
           <Route path="/documents" element={<Documents />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/fleet" element={<Fleet />} />
           <Route path="/safety" element={<Safety />} />
           <Route path="/warranties" element={<Warranties />} />
+
+          {/* Phase 0 — Decision / Exception queues */}
+          <Route path="/decisions" element={<Decisions />} />
+          <Route path="/exceptions" element={<Exceptions />} />
+
+          {/* Legacy routes (still accessible, not in main sidebar) */}
+          <Route path="/weather" element={<Weather />} />
           <Route path="/scorecard" element={<Scorecard />} />
           <Route path="/portal" element={<ClientPortal />} />
-          <Route path="/briefing" element={<MorningBriefing />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -224,6 +224,76 @@ export const api = {
   // Morning Briefing
   morningBriefing: () => request('/briefing/today'),
 
+  // Notifications (Phase 0 — real bell icon)
+  unreadCount: (userId = 'mike') => request(`/notifications/unread-count?user_id=${userId}`),
+  myNotifications: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/notifications${q ? '?' + q : ''}`);
+  },
+  markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllRead: (userId = 'mike') => request(`/notifications/read-all?user_id=${encodeURIComponent(userId)}`, { method: 'POST' }),
+
+  // Exception Queue (Phase 0)
+  exceptions: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/exceptions${q ? '?' + q : ''}`);
+  },
+  exceptionsOpenCount: () => request('/exceptions/open-count'),
+  resolveException: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/exceptions/${id}/resolve${q ? '?' + q : ''}`, { method: 'POST' });
+  },
+  assignException: (id, assignedTo) =>
+    request(`/exceptions/${id}/assign?assigned_to=${encodeURIComponent(assignedTo)}`, { method: 'POST' }),
+
+  // Approval / Decision Queue (Phase 0)
+  approvalQueue: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/approvals/queue${q ? '?' + q : ''}`);
+  },
+  approveRequest: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/approvals/${id}/approve${q ? '?' + q : ''}`, { method: 'POST' });
+  },
+  rejectRequest: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/approvals/${id}/reject${q ? '?' + q : ''}`, { method: 'POST' });
+  },
+  approvalThresholds: () => request('/approvals/thresholds'),
+
+  // Time Clock (Phase 0 / M-25)
+  timeclockEntries: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/timeclock/entries${q ? '?' + q : ''}`);
+  },
+  punchIn: (data) => request('/timeclock/punch-in', { method: 'POST', body: JSON.stringify(data) }),
+  punchOut: (id, data = {}) => request(`/timeclock/punch-out/${id}`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Purchase Orders (Phase 2 / F-7)
+  purchaseOrders: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/purchase-orders${q ? '?' + q : ''}`);
+  },
+  purchaseOrder: (id) => request(`/purchase-orders/${id}`),
+
+  // Draw Requests (Phase 2 / M-17)
+  drawRequests: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/draw-requests${q ? '?' + q : ''}`);
+  },
+
+  // Permits & Inspections (Phase 3 / M-21)
+  permits: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/permits${q ? '?' + q : ''}`);
+  },
+  permit: (id) => request(`/permits/${id}`),
+  createPermit: (data) => request('/permits', { method: 'POST', body: JSON.stringify(data) }),
+  upcomingInspections: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/permits/inspections/upcoming${q ? '?' + q : ''}`);
+  },
+
   // Admin
   adminStatus: () => request('/admin/status'),
 };
