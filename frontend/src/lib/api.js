@@ -3,7 +3,7 @@
 import { getAuthToken } from './auth';
 
 const BASE = import.meta.env.VITE_API_URL
-  || (import.meta.env.DEV ? '/api' : 'https://secg-erp-api.onrender.com/api');
+  || (import.meta.env.DEV ? '/api' : 'https://secg-finance-backend.onrender.com/api');
 
 async function request(path, options = {}) {
   const token = getAuthToken();
