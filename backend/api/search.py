@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 
 from backend.core.deps import get_db
 from backend.core.database import engine
-from backend.models.core import Document, Employee, Invoice, Project, Vendor
+from backend.models.core import Employee, Invoice, Project, Vendor
+from backend.models.extended import Document
 from backend.models.document_vault import VaultDocument
 
 router = APIRouter(prefix="/search", tags=["Search"])

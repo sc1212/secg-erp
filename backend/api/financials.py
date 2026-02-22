@@ -19,9 +19,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.core.deps import get_db
-from backend.models.core import CostEvent, Invoice, InvoiceStatus
+from backend.models.core import Invoice, InvoiceStatus
 from backend.models.extended import (
-    CashForecastLine, Debt, PLEntry, Property,
+    CashForecastLine, CostEvent, Debt, PLEntry, Property,
     RecurringExpense, RetainageEntry,
 )
 from backend.schemas import (

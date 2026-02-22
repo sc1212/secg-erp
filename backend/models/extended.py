@@ -512,6 +512,8 @@ class CalendarEvent(TimestampMixin, Base):
     reminder_minutes = Column(Integer)
     visibility = Column(String(20), default="team")
 
+    attendees = relationship("CalendarAttendee", back_populates="event", cascade="all, delete-orphan")
+
 
 class CalendarAttendee(Base):
     __tablename__ = "calendar_attendees"
@@ -521,6 +523,8 @@ class CalendarAttendee(Base):
     event_id = Column(Integer, ForeignKey("calendar_events.id"), nullable=False)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
     response = Column(String(20), default="pending")
+
+    event = relationship("CalendarEvent", back_populates="attendees")
 
 
 class DailyLog(TimestampMixin, Base):
@@ -547,6 +551,9 @@ class DailyLog(TimestampMixin, Base):
     reviewed_by = Column(Integer, ForeignKey("employees.id"))
     reviewed_at = Column(DateTime)
 
+    crew_entries = relationship("DailyLogCrewEntry", back_populates="daily_log", cascade="all, delete-orphan")
+    photos = relationship("DailyLogPhoto", back_populates="daily_log", cascade="all, delete-orphan")
+
 
 class DailyLogCrewEntry(Base):
     __tablename__ = "daily_log_crew"
@@ -560,6 +567,8 @@ class DailyLogCrewEntry(Base):
     headcount = Column(Integer, default=1)
     hours = Column(Numeric(4, 1))
     trade = Column(String(100))
+
+    daily_log = relationship("DailyLog", back_populates="crew_entries")
 
 
 class DailyLogPhoto(Base):
@@ -578,6 +587,8 @@ class DailyLogPhoto(Base):
     caption = Column(Text)
     taken_at = Column(DateTime)
     sort_order = Column(Integer, default=0)
+
+    daily_log = relationship("DailyLog", back_populates="photos")
 
 # ── Foundation Engine Models (Phase 0) ──────────────────────────────────
 
@@ -721,6 +732,8 @@ class ApprovalRequest(TimestampMixin, Base):
     escalated_to = Column(Integer, ForeignKey("employees.id"))
     escalated_at = Column(DateTime)
 
+    steps = relationship("ApprovalStep", back_populates="approval_request")
+
 
 class ApprovalRule(TimestampMixin, Base):
     __tablename__ = "approval_rules"
@@ -798,6 +811,10 @@ class CostEvent(TimestampMixin, Base):
     posted_at = Column(DateTime)
     qb_synced = Column(Boolean, default=False)
     qb_sync_id = Column(String(100))
+
+    project = relationship("Project", back_populates="cost_events")
+    cost_code = relationship("CostCode", back_populates="cost_events")
+    vendor = relationship("Vendor", back_populates="cost_events")
 
 
 class Integration(TimestampMixin, Base):

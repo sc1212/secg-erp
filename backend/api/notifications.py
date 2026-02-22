@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from backend.core.deps import get_db
-from backend.models.foundation import Notification
+from backend.models.extended import Notification
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
