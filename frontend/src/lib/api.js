@@ -138,6 +138,176 @@ export const api = {
   createDocument: (data) => request('/documents', { method: 'POST', body: JSON.stringify(data) }),
   updateDocument: (id, data) => request(`/documents/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
+  // Fleet
+  fleetVehicles: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/fleet${q ? '?' + q : ''}`);
+  },
+  fleetVehicle: (id) => request(`/fleet/${id}`),
+  createFleetVehicle: (data) => request('/fleet', { method: 'POST', body: JSON.stringify(data) }),
+  updateFleetVehicle: (id, data) => request(`/fleet/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  fleetMaintenance: (id) => request(`/fleet/${id}/maintenance`),
+  createFleetMaintenance: (id, data) => request(`/fleet/${id}/maintenance`, { method: 'POST', body: JSON.stringify(data) }),
+  fleetFuel: (id) => request(`/fleet/${id}/fuel`),
+  createFleetFuel: (id, data) => request(`/fleet/${id}/fuel`, { method: 'POST', body: JSON.stringify(data) }),
+  fleetAlerts: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/fleet/alerts${q ? '?' + q : ''}`);
+  },
+
+  // Inventory
+  inventoryMaterials: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/inventory/materials${q ? '?' + q : ''}`);
+  },
+  inventoryMaterial: (id) => request(`/inventory/materials/${id}`),
+  createInventoryMaterial: (data) => request('/inventory/materials', { method: 'POST', body: JSON.stringify(data) }),
+  inventoryEntries: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/inventory/entries${q ? '?' + q : ''}`);
+  },
+  inventoryTransactions: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/inventory/transactions${q ? '?' + q : ''}`);
+  },
+  createInventoryTransaction: (data) => request('/inventory/transactions', { method: 'POST', body: JSON.stringify(data) }),
+  inventoryAlerts: () => request('/inventory/alerts'),
+
+  // Safety
+  safetyDashboard: () => request('/safety/dashboard'),
+  safetyIncidents: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/safety/incidents${q ? '?' + q : ''}`);
+  },
+  createSafetyIncident: (data) => request('/safety/incidents', { method: 'POST', body: JSON.stringify(data) }),
+  updateSafetyIncident: (id, status) => request(`/safety/incidents/${id}?status=${status}`, { method: 'PATCH' }),
+  toolboxTalks: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/safety/toolbox-talks${q ? '?' + q : ''}`);
+  },
+  createToolboxTalk: (data) => request('/safety/toolbox-talks', { method: 'POST', body: JSON.stringify(data) }),
+  certifications: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/safety/certifications${q ? '?' + q : ''}`);
+  },
+  createCertification: (data) => request('/safety/certifications', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Warranties
+  warranties: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/warranties${q ? '?' + q : ''}`);
+  },
+  warrantySummary: () => request('/warranties/summary'),
+  warranty: (id) => request(`/warranties/${id}`),
+  createWarranty: (data) => request('/warranties', { method: 'POST', body: JSON.stringify(data) }),
+  updateWarranty: (id, data) => request(`/warranties/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  // Scorecard
+  scorecardPrograms: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/scorecard/programs${q ? '?' + q : ''}`);
+  },
+  createScorecardProgram: (data) => request('/scorecard/programs', { method: 'POST', body: JSON.stringify(data) }),
+  scorecardLeaderboard: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/scorecard/leaderboard${q ? '?' + q : ''}`);
+  },
+  scorecardScores: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/scorecard/scores${q ? '?' + q : ''}`);
+  },
+
+  // Client Portal
+  portalClients: () => request('/portal/clients'),
+  portalClient: (id) => request(`/portal/clients/${id}`),
+
+  // Morning Briefing
+  morningBriefing: () => request('/briefing/today'),
+
+  // Notifications (Phase 0 — real bell icon)
+  unreadCount: (userId = 'mike') => request(`/notifications/unread-count?user_id=${userId}`),
+  myNotifications: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/notifications${q ? '?' + q : ''}`);
+  },
+  markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllRead: (userId = 'mike') => request(`/notifications/read-all?user_id=${encodeURIComponent(userId)}`, { method: 'POST' }),
+
+  // Exception Queue (Phase 0)
+  exceptions: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/exceptions${q ? '?' + q : ''}`);
+  },
+  exceptionsOpenCount: () => request('/exceptions/open-count'),
+  resolveException: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/exceptions/${id}/resolve${q ? '?' + q : ''}`, { method: 'POST' });
+  },
+  assignException: (id, assignedTo) =>
+    request(`/exceptions/${id}/assign?assigned_to=${encodeURIComponent(assignedTo)}`, { method: 'POST' }),
+
+  // Approval / Decision Queue (Phase 0)
+  approvalQueue: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/approvals/queue${q ? '?' + q : ''}`);
+  },
+  approveRequest: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/approvals/${id}/approve${q ? '?' + q : ''}`, { method: 'POST' });
+  },
+  rejectRequest: (id, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/approvals/${id}/reject${q ? '?' + q : ''}`, { method: 'POST' });
+  },
+  approvalThresholds: () => request('/approvals/thresholds'),
+
+  // Time Clock (Phase 0 / M-25)
+  timeclockEntries: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/timeclock/entries${q ? '?' + q : ''}`);
+  },
+  punchIn: (data) => request('/timeclock/punch-in', { method: 'POST', body: JSON.stringify(data) }),
+  punchOut: (id, data = {}) => request(`/timeclock/punch-out/${id}`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Purchase Orders (Phase 2 / F-7)
+  purchaseOrders: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/purchase-orders${q ? '?' + q : ''}`);
+  },
+  purchaseOrder: (id) => request(`/purchase-orders/${id}`),
+
+  // Draw Requests (Phase 2 / M-17)
+  drawRequests: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/draw-requests${q ? '?' + q : ''}`);
+  },
+
+  // Permits & Inspections (Phase 3 / M-21)
+  permits: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/permits${q ? '?' + q : ''}`);
+  },
+  permit: (id) => request(`/permits/${id}`),
+  createPermit: (data) => request('/permits', { method: 'POST', body: JSON.stringify(data) }),
+  upcomingInspections: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/permits/inspections/upcoming${q ? '?' + q : ''}`);
+  },
+
+  // Profit Fade Early Warning (Phase 4 / M-15)
+  profitFadeDashboard: () => request('/profit-fade/dashboard'),
+  projectFadeHistory: (projectId, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/profit-fade/projects/${projectId}${q ? '?' + q : ''}`);
+  },
+  fadeDrivers: (projectId) => request(`/profit-fade/projects/${projectId}/drivers`),
+  generateFadeSnapshot: () => request('/profit-fade/generate', { method: 'POST' }),
+
+  // Cash Flow Forecasting (Phase 4 / M-16)
+  cashFlowForecast: (scenario = 'expected') => request(`/cash-flow/forecast?scenario=${scenario}`),
+  cashRunway: () => request('/cash-flow/runway'),
+  generateCashForecast: () => request('/cash-flow/generate', { method: 'POST' }),
+
   // Admin
   adminStatus: () => request('/admin/status'),
 };
