@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from backend.core.deps import get_db
-from backend.models.foundation import ExceptionItem
+from backend.models.extended import ExceptionItem
 
 router = APIRouter(prefix="/exceptions", tags=["Exception Queue"])
 

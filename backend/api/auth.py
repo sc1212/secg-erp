@@ -160,6 +160,31 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     return _create_access_token(user.email)
 
 
+@router.get("/debug")
+def auth_debug(db: Session = Depends(get_db)):
+    """Unauthenticated diagnostic endpoint — shows if DB + users are working."""
+    try:
+        user_count = db.query(UserAccount).count()
+        users = [
+            {"email": u.email, "username": u.username, "is_active": u.is_active}
+            for u in db.query(UserAccount).all()
+        ]
+        deps_ok = jwt is not None and pwd_context is not None
+        return {
+            "status": "ok",
+            "db_connected": True,
+            "auth_deps_installed": deps_ok,
+            "user_count": user_count,
+            "users": users,
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "db_connected": False,
+            "error": str(exc),
+        }
+
+
 @router.get("/me", response_model=MeOut)
 def me(
     authorization: str | None = Header(default=None, alias="Authorization"),

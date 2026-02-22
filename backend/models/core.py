@@ -359,32 +359,7 @@ class ChangeOrder(TimestampMixin, Base):
     project = relationship("Project", back_populates="change_orders")
 
 
-# ── Cost Events (canonical actuals ledger) ───────────────────────────────
-
-class CostEvent(TimestampMixin, Base):
-    __tablename__ = "cost_events"
-    __table_args__ = {'extend_existing': True}
-
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    cost_code_id = Column(Integer, ForeignKey("cost_codes.id"))
-    vendor_id = Column(Integer, ForeignKey("vendors.id"))
-    event_type = Column(Enum(CostEventType))
-    date = Column(Date, nullable=False)
-    amount = Column(Numeric(14, 2), nullable=False)
-    description = Column(String(500))
-    reference_number = Column(String(100))
-    po_number = Column(String(100))
-    check_number = Column(String(50))
-    source = Column(Enum(CostEventSource), default=CostEventSource.manual)
-    source_ref = Column(String(200))
-    import_batch = Column(String(100))
-    qb_txn_id = Column(String(50))
-    notes = Column(Text)
-
-    project = relationship("Project", back_populates="cost_events")
-    cost_code = relationship("CostCode", back_populates="cost_events")
-    vendor = relationship("Vendor", back_populates="cost_events")
+# ── CostEvent is defined in backend.models.extended ──────────────────────
 
 
 # ── Quotes ───────────────────────────────────────────────────────────────
@@ -536,19 +511,7 @@ class Payment(TimestampMixin, Base):
     notes = Column(Text)
 
 
-# ── Documents ────────────────────────────────────────────────────────────
-
-class Document(TimestampMixin, Base):
-    __tablename__ = "documents"
-    __table_args__ = {'extend_existing': True}
-
-    id = Column(Integer, primary_key=True)
-    title = Column(String(300), nullable=False)
-    file_path = Column(Text)
-    file_type = Column(String(50))
-    file_size_bytes = Column(Integer)
-    uploaded_by = Column(String(100))
-    notes = Column(Text)
+# ── Document is defined in backend.models.extended ───────────────────────
 
 
 class DocumentVersion(TimestampMixin, Base):

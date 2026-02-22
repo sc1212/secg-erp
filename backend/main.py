@@ -36,33 +36,35 @@ _DEFAULT_USERS = [
 
 def _seed_admin_users(log) -> None:
     """Seed default admin users on every startup (skips if already present)."""
+    from passlib.context import CryptContext
+    from sqlalchemy.orm import Session
+    from backend.core.database import SessionLocal
+    from backend.models.extended import UserAccount
+    pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    db: Session = SessionLocal()
     try:
-        from passlib.context import CryptContext
-        from sqlalchemy.orm import Session
-        from backend.core.database import SessionLocal
-        from backend.models.extended import UserAccount
-        pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        db: Session = SessionLocal()
-        try:
-            for u in _DEFAULT_USERS:
-                existing = db.query(UserAccount).filter(UserAccount.email == u["email"]).first()
-                if not existing:
-                    user = UserAccount(
-                        email=u["email"],
-                        username=u["username"],
-                        full_name=u["full_name"],
-                        password_hash=pwd_ctx.hash(u["password"]),
-                        is_active=True,
-                    )
-                    db.add(user)
-                    db.commit()
-                    log.info("Admin user seeded: %s", u["email"])
-                else:
-                    log.info("Admin user already exists: %s", u["email"])
-        finally:
-            db.close()
+        for u in _DEFAULT_USERS:
+            existing = db.query(UserAccount).filter(UserAccount.email == u["email"]).first()
+            if not existing:
+                user = UserAccount(
+                    email=u["email"],
+                    username=u["username"],
+                    full_name=u["full_name"],
+                    password_hash=pwd_ctx.hash(u["password"]),
+                    is_active=True,
+                )
+                db.add(user)
+                db.commit()
+                log.info("SEED OK: created %s", u["email"])
+            else:
+                log.info("SEED SKIP: %s already exists (id=%s)", u["email"], existing.id)
+        total = db.query(UserAccount).count()
+        log.info("SEED DONE: %d total users in DB", total)
     except Exception as exc:
-        log.warning("Admin user seeding failed: %s", exc)
+        log.error("SEED FAILED: %s", exc, exc_info=True)
+        db.rollback()
+    finally:
+        db.close()
 
 
 @asynccontextmanager
@@ -72,8 +74,9 @@ async def lifespan(app: FastAPI):
     log = logging.getLogger(__name__)
     try:
         Base.metadata.create_all(bind=engine)
+        log.info("DB create_all succeeded")
     except Exception as exc:
-        log.warning("DB not ready, skipping create_all: %s", exc)
+        log.error("DB create_all FAILED: %s", exc, exc_info=True)
     _seed_admin_users(log)
     yield
 
@@ -87,21 +90,10 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
-# CORS — all known Render frontend URLs + local dev
-_cors_origins = [
-    "https://secg-erp.onrender.com",
-    "https://secg-erp-pj9h.onrender.com",
-    "https://secg-erp-frontend.onrender.com",
-    "http://localhost:5173",
-    "http://localhost:3000",
-]
-_extra = os.getenv("CORS_ORIGINS", "")
-if _extra:
-    _cors_origins.extend([o.strip() for o in _extra.split(",") if o.strip()])
-
+# CORS — allow all origins so Render subdomain mismatches can't break login
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

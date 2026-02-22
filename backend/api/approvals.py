@@ -5,7 +5,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from backend.core.deps import get_db
-from backend.models.foundation import ApprovalRequest, ApprovalStep, ApprovalThreshold
+from backend.models.extended import ApprovalRequest
+from backend.models.foundation import ApprovalStep, ApprovalThreshold
 
 router = APIRouter(prefix="/approvals", tags=["Approvals"])
 
