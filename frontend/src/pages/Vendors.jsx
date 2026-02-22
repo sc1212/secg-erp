@@ -3,6 +3,11 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { money, shortDate } from '../lib/format';
 import { EmptyState, ErrorState, PageLoading } from '../components/LoadingState';
+import {
+  AlertTriangle, Check, CheckSquare, ChevronLeft, ChevronRight,
+  Download, FileText, Filter, Mail, MoreHorizontal, Phone, Plus,
+  Search, Shield, Square, Star, Trash2, X,
+} from 'lucide-react';
 
 const demoVendors = [
   { id: 1, name: 'Miller Concrete', trade: 'Concrete', contact_name: 'Tom M', phone: 'x4521', insurance_expiry: '2026-08-15', w9_on_file: true, current_balance: 8400, rating: 4 },

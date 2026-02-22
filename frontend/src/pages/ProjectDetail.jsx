@@ -1,4 +1,18 @@
+import { useState } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
+import {
+  AlertTriangle, ArrowLeft, BarChart3, Calendar, ClipboardList,
+  DollarSign, FileText, Gavel, GitCommit, Notebook, Receipt, Scale, TrendingUp,
+} from 'lucide-react';
+import { useApi } from '../hooks/useApi';
+import { api } from '../lib/api';
+import { money, shortDate, pct, statusBadge } from '../lib/format';
+import { PageLoading, ErrorState } from '../components/LoadingState';
+import { demoProject } from '../components/jobcosting/demoData';
 import ActualsTab from '../components/jobcosting/ActualsTab';
+import BidsQuotesTab from '../components/jobcosting/BidsQuotesTab';
+import CommitmentsTab from '../components/jobcosting/CommitmentsTab';
+import CostCodesTab from '../components/jobcosting/CostCodesTab';
 import ForecastTab from '../components/jobcosting/ForecastTab';
 import SOVTab from '../components/jobcosting/SOVTab';
 import PayAppsTab from '../components/jobcosting/PayAppsTab';
@@ -7,7 +21,6 @@ import ScheduleTab from '../components/jobcosting/ScheduleTab';
 import CashflowWipTab from '../components/jobcosting/CashflowWipTab';
 import WhatChangedTab from '../components/jobcosting/WhatChangedTab';
 import DailyLogTab from '../components/DailyLogTab';
-import { Notebook } from 'lucide-react';
 
 const tabs = [
   { key: 'costs', label: 'Cost Codes', icon: DollarSign },

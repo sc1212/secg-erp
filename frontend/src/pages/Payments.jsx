@@ -12,7 +12,7 @@ import DemoBanner from '../components/DemoBanner';
 import {
   Banknote, ArrowUpRight, ArrowDownLeft, Clock,
   Check, AlertTriangle, Shield, FileText, Eye,
-  Filter, Search, ChevronDown,
+  Filter, Plus, Search, ChevronDown,
 } from 'lucide-react';
 
 const DEMO_BILLS = [

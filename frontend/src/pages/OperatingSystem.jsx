@@ -8,16 +8,29 @@ import {
   ClipboardList,
   Clock3,
   DatabaseZap,
+  Download,
   FileText,
+  Filter,
   FolderKanban,
+  GitBranch,
   HandCoins,
   Layers3,
   MessageSquareMore,
   ShieldCheck,
+  Sparkles,
   TrendingUp,
   Users2,
   Wallet,
 } from 'lucide-react';
+
+function TinyMetric({ label, value, icon: Icon }) {
+  return (
+    <div className="flex items-center gap-2 bg-brand-surface rounded p-2 text-xs">
+      {Icon && <Icon size={14} className="text-brand-gold shrink-0" />}
+      <div><div className="text-brand-muted">{label}</div><div className="font-semibold">{value}</div></div>
+    </div>
+  );
+}
 
 const views = [
   { id: 'command', label: 'Command Deck' },
