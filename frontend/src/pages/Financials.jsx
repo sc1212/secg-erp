@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { api } from '../lib/api';
-import { money, moneyExact, pct, shortDate, statusBadge } from '../lib/format';
+import { money, moneyExact, pct, shortDate, statusBadge, moneyClass } from '../lib/format';
 import KPICard from '../components/KPICard';
+import ChartTooltip from '../components/ChartTooltip';
+import DemoBanner from '../components/DemoBanner';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
 import { DollarSign, TrendingDown, Building2, CreditCard, Repeat, Home } from 'lucide-react';
 import {
@@ -52,10 +55,16 @@ export default function Financials() {
   const colors = useThemeColors();
   const [tab, setTab] = useState('overview');
   const [showCashFlowTable, setShowCashFlowTable] = useState(false);
+export default function Financials() {
+  const [searchParams] = useSearchParams();
+  const validTabs = ['overview', 'debts', 'ar', 'retainage', 'recurring', 'properties'];
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'overview';
+  const [tab, setTab] = useState(initialTab);
+  const tc = useThemeColors();
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Financials</h1>
+      <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Financials</h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard label="Total Debt" value={money(265847)} icon={TrendingDown} sub="4 active" />
@@ -64,7 +73,7 @@ export default function Financials() {
         <KPICard label="Properties" value="4" icon={Home} sub="$1.2M equity" />
       </div>
 
-      <div className="flex gap-1 border-b border-brand-border pb-px overflow-x-auto">
+      <div className="flex gap-1 pb-px overflow-x-auto" style={{ borderBottom: '1px solid var(--color-brand-border)' }}>
         {tabs.map((t) => (
           <button
             key={t}
@@ -72,6 +81,8 @@ export default function Financials() {
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               tab === t ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-muted lg:hover:text-brand-text'
             }`}
+            className="mc-tab"
+            style={tab === t ? { color: 'var(--accent)', borderBottomColor: 'var(--accent)' } : undefined}
           >
             {tabLabels[t]}
           </button>
@@ -122,21 +133,39 @@ export default function Financials() {
                 </AreaChart>
               </ResponsiveContainer>
             )}
+          <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
+            <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
+              <div>
+                <h3 className="panel-title">13-Week Cash Flow Forecast</h3>
+                <div className="panel-sub">Projected inflows vs outflows</div>
+              </div>
+              <button className="ghost-btn">View as Table</button>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={demoWeekly}>
+                <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
+                <XAxis dataKey="week" stroke={tc.textSecondary} fontSize={11} />
+                <YAxis tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={11} />
+                <Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="inflows" stroke={tc.statusProfit} fill={tc.statusProfit} fillOpacity={0.1} name="Inflows" />
+                <Area type="monotone" dataKey="outflows" stroke={tc.statusLoss} fill={tc.statusLoss} fillOpacity={0.1} name="Outflows" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}
 
       {tab === 'debts' && (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="mc-table">
             <thead>
-              <tr className="border-b border-brand-border text-left text-xs text-brand-muted uppercase">
-                <th className="pb-3 pr-4">Name</th>
-                <th className="pb-3 pr-4">Lender</th>
-                <th className="pb-3 pr-4">Type</th>
-                <th className="pb-3 pr-4 text-right">Balance</th>
-                <th className="pb-3 pr-4 text-right">Rate</th>
-                <th className="pb-3 text-right">Monthly Pmt</th>
+              <tr>
+                <th>Name</th>
+                <th>Lender</th>
+                <th>Type</th>
+                <th className="right">Balance</th>
+                <th className="right">Rate</th>
+                <th className="right">Monthly Pmt</th>
               </tr>
             </thead>
             <tbody>
@@ -148,6 +177,13 @@ export default function Financials() {
                   <td className="py-3 pr-4 num font-bold">{moneyExact(d.current_balance)}</td>
                   <td className="py-3 pr-4 num">{d.interest_rate}%</td>
                   <td className="py-3 num">{moneyExact(d.monthly_payment)}</td>
+                <tr key={d.id}>
+                  <td style={{ fontWeight: 500 }}>{d.name}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{d.lender}</td>
+                  <td className="text-xs capitalize">{d.debt_type.replace('_', ' ')}</td>
+                  <td className="num right" style={{ fontWeight: 600 }}>{moneyExact(d.current_balance)}</td>
+                  <td className="num right">{d.interest_rate}%</td>
+                  <td className="num right">{moneyExact(d.monthly_payment)}</td>
                 </tr>
               ))}
             </tbody>
@@ -157,15 +193,15 @@ export default function Financials() {
 
       {tab === 'ar' && (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="mc-table">
             <thead>
-              <tr className="border-b border-brand-border text-left text-xs text-brand-muted uppercase">
-                <th className="pb-3 pr-4">Invoice #</th>
-                <th className="pb-3 pr-4">Issued</th>
-                <th className="pb-3 pr-4">Due</th>
-                <th className="pb-3 pr-4 text-right">Amount</th>
-                <th className="pb-3 pr-4 text-right">Balance</th>
-                <th className="pb-3">Status</th>
+              <tr>
+                <th>Invoice #</th>
+                <th>Issued</th>
+                <th>Due</th>
+                <th className="right">Amount</th>
+                <th className="right">Balance</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -177,6 +213,13 @@ export default function Financials() {
                   <td className="py-3 pr-4 num">{moneyExact(inv.amount)}</td>
                   <td className="py-3 pr-4 num font-medium">{moneyExact(inv.balance)}</td>
                   <td className="py-3">
+                <tr key={inv.id}>
+                  <td className="font-mono text-xs" style={{ color: 'var(--accent)' }}>{inv.invoice_number}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{shortDate(inv.date_issued)}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{shortDate(inv.date_due)}</td>
+                  <td className="num right">{moneyExact(inv.amount)}</td>
+                  <td className="num right" style={{ fontWeight: 500 }}>{moneyExact(inv.balance)}</td>
+                  <td>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${statusBadge(inv.status)}`}>{inv.status}</span>
                   </td>
                 </tr>

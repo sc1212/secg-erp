@@ -86,6 +86,52 @@ export default function Vendors() {
           </table>
         </div>
       )}
+      <div className="relative max-w-sm">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" />
+        <input
+          type="text"
+          placeholder="Search vendors or trades..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-brand-card border border-brand-border rounded-lg pl-9 pr-4 py-2.5 text-sm text-brand-text placeholder:text-brand-muted/50 focus:outline-none focus:border-brand-gold/60 transition-colors"
+        />
+      </div>
+
+      {loading ? <PageLoading /> : !filtered.length ? (
+        <EmptyState title="No vendors found" />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {filtered.map((v) => {
+            const avgScore = ((Number(v.score_quality) + Number(v.score_timeliness) + Number(v.score_communication) + Number(v.score_price)) / 4);
+            const insExpired = v.insurance_expiry && new Date(v.insurance_expiry) < new Date();
+            return (
+              <div key={v.id} className="bg-brand-card border border-brand-border rounded-lg p-5 hover:border-brand-gold/20 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-brand-text">{v.name}</h3>
+                    <span className="text-xs text-brand-gold">{v.trade}</span>
+                  </div>
+                  <Stars score={avgScore} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <div className="text-[10px] text-brand-muted uppercase">Quality</div>
+                    <Stars score={v.score_quality} />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-brand-muted uppercase">Timeliness</div>
+                    <Stars score={v.score_timeliness} />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-brand-muted uppercase">Communication</div>
+                    <Stars score={v.score_communication} />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-brand-muted uppercase">Price</div>
+                    <Stars score={v.score_price} />
+                  </div>
+                </div>
 
       {selected && (
         <div className="fixed inset-y-0 right-0 w-[500px] bg-brand-surface border-l border-brand-border p-4 z-50">

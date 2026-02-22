@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const NETWORK_EVENT = 'secg-network-status';
 
@@ -10,6 +10,7 @@ export function useApi(fetcher, deps = []) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,6 +22,7 @@ export function useApi(fetcher, deps = []) {
         if (!cancelled) {
           setData(result);
           publishNetworkStatus(false);
+          setIsDemo(false);
         }
       })
       .catch((err) => {
@@ -28,6 +30,11 @@ export function useApi(fetcher, deps = []) {
           const isNetworkError = err.message === 'Failed to fetch' || err.name === 'TypeError';
           setError(isNetworkError ? 'Network unavailable. Showing fallback/demo data.' : err.message);
           publishNetworkStatus(isNetworkError);
+          if (isNetworkError) {
+            setIsDemo(true);
+          } else {
+            setError(err.message);
+          }
         }
       })
       .finally(() => {
@@ -57,6 +64,20 @@ export function useApi(fetcher, deps = []) {
         .finally(() => setLoading(false));
     },
   };
+  const refetch = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetcher()
+      .then((d) => { setData(d); setIsDemo(false); })
+      .catch((e) => {
+        const isNetworkError = e.message === 'Failed to fetch' || e.name === 'TypeError';
+        if (isNetworkError) setIsDemo(true);
+        else setError(e.message);
+      })
+      .finally(() => setLoading(false));
+  }, [fetcher]);
+
+  return { data, loading, error, isDemo, refetch };
 }
 
 export { NETWORK_EVENT };

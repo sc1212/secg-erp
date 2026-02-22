@@ -57,7 +57,7 @@ export default function BidsQuotesTab({ project, initialBidRef }) {
       </div>
 
       {/* Bid header info */}
-      <div className="bg-brand-card border border-brand-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-brand-card border border-brand-border rounded-lg p-4 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-bold">Bid Comparison — {currentBid.costCode} {currentBid.description}</h3>
           <div className="text-sm text-brand-muted mt-1">
@@ -210,7 +210,7 @@ export default function BidsQuotesTab({ project, initialBidRef }) {
           {vendors.map((v) => {
             const isExpanded = expandedVendor === v.id;
             return (
-              <div key={v.id} className={`border rounded-xl overflow-hidden transition-colors ${v.recommended ? 'border-brand-gold/30' : 'border-brand-border'}`}>
+              <div key={v.id} className={`border rounded-lg overflow-hidden transition-colors ${v.recommended ? 'border-brand-gold/30' : 'border-brand-border'}`}>
                 <button
                   onClick={() => setExpandedVendor(isExpanded ? null : v.id)}
                   className="w-full flex items-center justify-between px-5 py-3 bg-brand-card hover:bg-brand-card-hover transition-colors"

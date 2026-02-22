@@ -155,6 +155,9 @@ export default function OperatingSystem() {
       <section className="relative overflow-hidden rounded-2xl border border-brand-border bg-brand-card p-6">
         <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ background: 'radial-gradient(1200px 280px at 15% -10%, color-mix(in oklab, var(--color-brand-gold) 20%, transparent), transparent 70%)' }} />
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+    <div className="space-y-3">
+      <section className="bg-brand-card border border-brand-border rounded-lg p-3">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
           <div>
             <p className="text-[11px] tracking-[0.22em] uppercase text-brand-gold font-semibold">Southeast Construction Group · Financial Command Center</p>
             <h1 className="display-title text-2xl lg:text-3xl font-semibold mt-2">One screen for cash, cost, approvals, and field execution.</h1>
@@ -192,6 +195,10 @@ export default function OperatingSystem() {
             >
               {tab.label}
             </button>
+      <section className="bg-brand-card border border-brand-border rounded-lg p-1.5 sticky top-0 z-20">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
+          {viewTabs.map((tab) => (
+            <button key={tab.id} onClick={() => setActiveView(tab.id)} className={`px-2 py-2 text-xs rounded-md border ${activeView === tab.id ? 'border-brand-gold text-brand-gold bg-brand-gold/10' : 'border-brand-border text-brand-muted hover:text-brand-text'}`}>{tab.label}</button>
           ))}
         </div>
       </section>
@@ -230,6 +237,25 @@ export default function OperatingSystem() {
               </table>
             </div>
           </div>
+      {activeView === 'overview' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+          <section className="bg-brand-card border border-brand-border rounded-lg p-3 xl:col-span-2">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Intervention Queue</h3>
+              <div className="text-xs text-brand-muted flex items-center gap-1"><Filter size={12} /> sort · filter · compare · export</div>
+            </div>
+            <table className="w-full text-xs">
+              <thead><tr className="text-left text-xs uppercase text-brand-muted border-b border-brand-border"><th className="pb-2">Priority</th><th className="pb-2">Issue</th><th className="pb-2">Owner</th><th className="pb-2">SLA</th></tr></thead>
+              <tbody>{queueRows.map((row) => <tr key={row.item} className="border-b border-brand-border/60"><td className="py-2"><span className={`text-[11px] px-2 py-0.5 rounded border ${priorityClass[row.priority]}`}>{row.priority}</span></td><td className="py-2 font-medium">{row.item}</td><td className="py-2 text-brand-muted">{row.owner}</td><td className="py-2 text-brand-muted">{row.due}</td></tr>)}</tbody>
+            </table>
+          </section>
+          <section className="bg-brand-card border border-brand-border rounded-lg p-3 space-y-2">
+            <h3 className="font-semibold">Quick Decision Lens</h3>
+            <div className="text-xs p-2 rounded border border-brand-border">Top cash risk in next 2 weeks: AR delay + payroll concentration overlap.</div>
+            <div className="text-xs p-2 rounded border border-brand-border">Top margin risk: labor productivity + rework in structural concrete scope.</div>
+            <div className="text-xs p-2 rounded border border-brand-border">Top CO risk: owner response aging beyond SLA, delaying billing conversion.</div>
+          </section>
+
 
           <div className="rounded-xl border border-brand-border bg-brand-card p-4 space-y-3">
             <h3 className="text-sm font-semibold flex items-center gap-2"><HandCoins size={15} className="text-brand-gold" />Project decision lens</h3>
@@ -295,6 +321,14 @@ export default function OperatingSystem() {
               );
             })}
           </div>
+      {activeView === 'mission' && (
+        <section className="space-y-2">
+          <div className="bg-brand-card border border-brand-border rounded-lg p-3">
+            <h3 className="font-semibold flex items-center gap-2"><Sparkles size={15} className="text-brand-gold" />Mission Control</h3>
+            <p className="text-sm text-brand-muted">Signal → Drilldown → Decision → Outcome command narratives.</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">{missionCards.map((card) => { const Icon = card.icon; return <div key={card.id} className="bg-brand-card border border-brand-border rounded-lg p-3"><div className="flex items-center justify-between"><h4 className="font-medium text-sm">{card.title}</h4><Icon size={14} className="text-brand-gold" /></div><p className="text-xs text-brand-muted mt-2">{card.brief}</p><p className="text-xs mt-2"><span className="font-medium">Command:</span> {card.command}</p><p className="text-[11px] mt-2 inline-flex px-2 py-0.5 rounded border border-brand-border">{card.score}</p></div>; })}</div>
+          <div className="bg-brand-card border border-brand-border rounded-lg p-4 space-y-1">{commandNarratives.map((n, i) => <p key={n} className="text-sm"><span className="text-brand-gold font-semibold mr-2">{i + 1}.</span>{n}</p>)}</div>
         </section>
       )}
 
@@ -327,6 +361,11 @@ export default function OperatingSystem() {
                 </div>
               </article>
             ))}
+          <div className="bg-brand-card border border-brand-border rounded-lg p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="border border-brand-border rounded-lg p-3"><p className="text-xs font-semibold mb-2">1) Drivers</p>{module.drivers.map((d) => <button key={d.id} onClick={() => { setDriverId(d.id); setRecordId(''); }} className={`w-full text-left text-xs px-2 py-2 rounded border mb-2 ${driverId === d.id ? 'border-brand-gold bg-brand-gold/10' : 'border-brand-border'}`}>{d.label}</button>)}</div>
+            <div className="border border-brand-border rounded-lg p-3"><p className="text-xs font-semibold mb-2">2) Records</p>{driver ? driver.records.map((r) => <button key={r.id} onClick={() => setRecordId(r.id)} className={`w-full text-left text-xs px-2 py-2 rounded border mb-2 ${recordId === r.id ? 'border-brand-gold bg-brand-gold/10' : 'border-brand-border'}`}><div className="font-medium">{r.label}</div><div className="text-brand-muted">{r.rootCause}</div></button>) : <p className="text-xs text-brand-muted">Pick a driver.</p>}</div>
+            <div className="border border-brand-border rounded-lg p-3"><p className="text-xs font-semibold mb-2">3) Transactions</p>{record ? record.transactions.map((t) => <button key={t} onClick={() => setSelectedTransaction(t)} className={`w-full text-left text-xs px-2 py-2 rounded border mb-2 ${selectedTransaction === t ? 'border-brand-gold bg-brand-gold/10' : 'border-brand-border'}`}>{t}</button>) : <p className="text-xs text-brand-muted">Pick a record.</p>}</div>
+            <div className="border border-brand-border rounded-lg p-3"><p className="text-xs font-semibold mb-2">4) Actions</p><div className="flex flex-wrap gap-2">{['Flag Risk', 'Assign Owner', 'Approve', 'Escalate', 'Update Forecast'].map((a) => <button key={a} onClick={() => handleAction(a)} className="text-xs px-2 py-1 rounded border border-brand-border hover:border-brand-gold">{a}</button>)}</div><div className="mt-2 space-y-1">{actionLog.slice(0, 4).map((l) => <p className="text-[11px]" key={l}>• {l}</p>)}</div></div>
           </div>
         </section>
       )}
@@ -371,6 +410,24 @@ export default function OperatingSystem() {
               ))}
             </div>
           </div>
+      {activeView === 'workflows' && (
+        <section className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          <div className="bg-brand-card border border-brand-border rounded-lg p-3"><h3 className="font-semibold text-sm flex items-center gap-2"><GitBranch size={14} className="text-brand-gold" />Role Entry Map</h3><div className="space-y-2 mt-2">{pageHierarchy.map((p) => <div className="text-xs border border-brand-border rounded p-2" key={p.role}><div className="font-medium">{p.role} → {p.landing}</div><div className="text-brand-muted">{p.modules}</div></div>)}</div></div>
+          <div className="bg-brand-card border border-brand-border rounded-lg p-3"><h3 className="font-semibold text-sm flex items-center gap-2"><Users2 size={14} className="text-brand-gold" />Workflow Specs</h3><div className="space-y-2 mt-2">{workflowSpecs.map((s) => <div key={s.page} className="text-xs border border-brand-border rounded p-2"><div className="font-medium">{s.page}</div><div><span className="font-medium">Users:</span> {s.users}</div><div><span className="font-medium">Decisions:</span> {s.decisions}</div><div><span className="font-medium">Actions:</span> {s.actions}</div></div>)}</div></div>
+        </section>
+      )}
+
+      {activeView === 'traceability' && (
+        <section className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          <div className="bg-brand-card border border-brand-border rounded-lg p-3"><h3 className="font-semibold text-sm mb-2">Job Cost Chain</h3><div className="flex flex-wrap gap-2">{chain.map((step, i) => <div key={step} className="text-xs flex items-center gap-2"><span className="px-2 py-1 rounded border border-brand-border bg-brand-surface">{step}</span>{i < chain.length - 1 && <ArrowRight size={11} className="text-brand-muted" />}</div>)}</div></div>
+          <div className="bg-brand-card border border-brand-border rounded-lg p-3"><h3 className="font-semibold text-sm mb-2">Traceability Map</h3><div className="space-y-2">{traceabilityRows.map(([c, m]) => <div key={c} className="text-xs border border-brand-border rounded p-2"><div className="font-medium">{c}</div><div className="text-brand-muted">{m}</div></div>)}</div><div className="flex gap-2 mt-3"><button className="text-xs px-2 py-1 border rounded border-brand-border flex items-center gap-1"><Filter size={12}/>Filter</button><button className="text-xs px-2 py-1 border rounded border-brand-border">Compare</button><button className="text-xs px-2 py-1 border rounded border-brand-border flex items-center gap-1"><Download size={12}/>Export</button></div></div>
+        </section>
+      )}
+
+      {activeView === 'scenario' && (
+        <section className="space-y-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">{scenarioPlaybooks.map((s) => <div key={s.id} className="bg-brand-card border border-brand-border rounded-lg p-3"><p className="text-[11px] uppercase text-brand-gold">{s.role}</p><h4 className="font-medium text-sm">{s.title}</h4><p className="text-xs text-brand-muted mt-1"><span className="font-medium text-brand-text">Trigger:</span> {s.trigger}</p><p className="text-xs text-brand-muted"><span className="font-medium text-brand-text">Objective:</span> {s.objective}</p><div className="mt-2 space-y-1">{s.sequence.map((step, i) => <p key={step} className="text-xs"><span className="text-brand-gold font-semibold mr-1">{i + 1}.</span>{step}</p>)}</div></div>)}</div>
+          <div className="bg-brand-card border border-brand-border rounded-lg p-4"><h3 className="font-semibold text-sm mb-2">Runbook Output</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-2"><TinyMetric label="Time to first action" value="11 min" icon={Clock3} /><TinyMetric label="Actions created" value="7 assignments" icon={Users2} /><TinyMetric label="Forecast delta locked" value="+$86,000" icon={Layers3} /></div></div>
         </section>
       )}
 

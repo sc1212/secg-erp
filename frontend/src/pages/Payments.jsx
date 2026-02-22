@@ -83,6 +83,7 @@ export default function Payments() {
               const Icon = accountIcon[a.type] || Landmark;
               return (
                 <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-xl px-5 py-4 lg:hover:border-brand-gold/20 transition-colors">
+                <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-lg px-5 py-4 hover:border-brand-gold/20 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-brand-surface flex items-center justify-center">
                       <Icon size={18} className="text-brand-gold" />
@@ -111,7 +112,7 @@ export default function Payments() {
 
       {/* Pay Vendors Tab */}
       {tab === 'pay_vendors' && (
-        <div className="bg-brand-card border border-brand-border rounded-xl p-6 space-y-5">
+        <div className="bg-brand-card border border-brand-border rounded-lg p-6 space-y-5">
           <h3 className="font-semibold">Pay a Vendor</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -167,7 +168,7 @@ export default function Payments() {
 
       {/* Request Payment Tab */}
       {tab === 'request_payment' && (
-        <div className="bg-brand-card border border-brand-border rounded-xl p-6 space-y-5">
+        <div className="bg-brand-card border border-brand-border rounded-lg p-6 space-y-5">
           <h3 className="font-semibold">Create Invoice / Draw Request</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
