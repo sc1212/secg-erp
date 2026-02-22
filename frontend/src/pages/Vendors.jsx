@@ -1,96 +1,3 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
-import { money, shortDate } from '../lib/format';
-import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
-import {
-  Star, Search, Filter, Phone, Mail, ChevronUp, ChevronDown,
-  AlertTriangle, Check, X, Plus, Shield, ChevronLeft, ChevronRight,
-  CheckSquare, Square, MoreHorizontal, FileText, Download, Trash2,
-} from 'lucide-react';
-
-/* ========================================================================== */
-/*  DEMO DATA - 18 realistic construction vendors                             */
-/* ========================================================================== */
-
-const TRADES = ['Plumbing', 'Electrical', 'Concrete', 'HVAC', 'Framing', 'Drywall', 'Roofing', 'Painting', 'Flooring', 'Landscaping', 'Excavation', 'Masonry', 'Insulation', 'Glass/Glazing', 'Fire Protection'];
-const PROJECTS = ['PRJ-042 Elm Street', 'PRJ-038 Lakewood', 'PRJ-051 Riverdale', 'PRJ-055 Oak Manor', 'PRJ-060 Pinehurst'];
-const COI_STATUSES = ['current', 'expiring', 'expired'];
-const W9_STATUSES = ['on_file', 'incomplete', 'missing'];
-const RATING_OPTIONS = [1, 2, 3, 4, 5];
-
-const today = new Date();
-const daysFromNow = (d) => Math.ceil((new Date(d) - today) / (1000 * 60 * 60 * 24));
-
-const demoVendors = [
-  { id: 1,  name: 'ABC Plumbing LLC',            trade: 'Plumbing',        contact: 'Mike Anderson',      phone: '(555) 234-5678', email: 'mike@abcplumbing.com',        status: 'active',   favorite: true,  coi_expiry: '2026-08-15', w9_status: 'on_file',    rating: 4.5, balance: 8500,  projects: ['PRJ-042 Elm Street', 'PRJ-038 Lakewood'] },
-  { id: 2,  name: 'Williams Electric',            trade: 'Electrical',      contact: 'Bill Williams',      phone: '(555) 345-6789', email: 'bill@willelectric.com',       status: 'active',   favorite: true,  coi_expiry: '2026-06-01', w9_status: 'on_file',    rating: 4.8, balance: 6200,  projects: ['PRJ-038 Lakewood'] },
-  { id: 3,  name: 'Miller Concrete Works',        trade: 'Concrete',        contact: 'Dave Miller',        phone: '(555) 456-7890', email: 'info@millerconcrete.com',     status: 'active',   favorite: false, coi_expiry: '2026-03-10', w9_status: 'on_file',    rating: 3.8, balance: 12400, projects: ['PRJ-042 Elm Street'] },
-  { id: 4,  name: 'Southeast HVAC Services',      trade: 'HVAC',            contact: 'Tom Garcia',         phone: '(555) 567-8901', email: 'service@sehvac.com',          status: 'active',   favorite: false, coi_expiry: '2026-12-31', w9_status: 'missing',    rating: 4.2, balance: 3100,  projects: ['PRJ-055 Oak Manor'] },
-  { id: 5,  name: 'Carolina Framing Co',          trade: 'Framing',         contact: 'Jake Roberts',       phone: '(555) 678-9012', email: 'jobs@carolinaframing.com',    status: 'active',   favorite: true,  coi_expiry: '2026-05-15', w9_status: 'on_file',    rating: 4.0, balance: 15800, projects: ['PRJ-042 Elm Street', 'PRJ-051 Riverdale'] },
-  { id: 6,  name: 'Pro Drywall Inc',              trade: 'Drywall',         contact: 'Steve Brown',        phone: '(555) 789-0123', email: 'bids@prodrywall.com',         status: 'active',   favorite: false, coi_expiry: '2025-12-01', w9_status: 'on_file',    rating: 3.5, balance: 4200,  projects: ['PRJ-038 Lakewood'] },
-  { id: 7,  name: 'Summit Roofing & Gutters',     trade: 'Roofing',         contact: 'Carlos Mendez',      phone: '(555) 890-1234', email: 'carlos@summitroofing.com',    status: 'active',   favorite: false, coi_expiry: '2026-04-20', w9_status: 'on_file',    rating: 4.6, balance: 22000, projects: ['PRJ-051 Riverdale', 'PRJ-055 Oak Manor'] },
-  { id: 8,  name: 'Brushworks Painting',          trade: 'Painting',        contact: 'Amy Chen',           phone: '(555) 901-2345', email: 'amy@brushworks.com',          status: 'active',   favorite: false, coi_expiry: '2026-09-30', w9_status: 'on_file',    rating: 4.7, balance: 0,     projects: ['PRJ-042 Elm Street'] },
-  { id: 9,  name: 'Precision Tile & Stone',       trade: 'Flooring',        contact: 'Rick Palmer',        phone: '(555) 012-3456', email: 'rick@precisiontile.com',      status: 'active',   favorite: false, coi_expiry: '2026-03-01', w9_status: 'incomplete', rating: 3.9, balance: 7600,  projects: ['PRJ-055 Oak Manor'] },
-  { id: 10, name: 'Greenscape Landscaping',       trade: 'Landscaping',     contact: 'Maria Sanchez',      phone: '(555) 123-4567', email: 'maria@greenscape.net',        status: 'active',   favorite: false, coi_expiry: '2026-11-15', w9_status: 'on_file',    rating: 4.3, balance: 3400,  projects: ['PRJ-042 Elm Street'] },
-  { id: 11, name: 'Trident Excavation',           trade: 'Excavation',      contact: 'Ron Walker',         phone: '(555) 234-5670', email: 'ron@tridentexcavation.com',   status: 'active',   favorite: true,  coi_expiry: '2026-07-01', w9_status: 'on_file',    rating: 4.1, balance: 18500, projects: ['PRJ-060 Pinehurst'] },
-  { id: 12, name: 'Heritage Masonry',             trade: 'Masonry',         contact: 'Frank DiNapoli',     phone: '(555) 345-6780', email: 'frank@heritagemasonry.com',   status: 'inactive', favorite: false, coi_expiry: '2025-10-15', w9_status: 'on_file',    rating: 3.2, balance: 0,     projects: [] },
-  { id: 13, name: 'Comfort Zone Insulation',      trade: 'Insulation',      contact: 'Larry Price',        phone: '(555) 456-7891', email: 'larry@comfortzone.com',       status: 'active',   favorite: false, coi_expiry: '2026-02-28', w9_status: 'on_file',    rating: 4.0, balance: 2800,  projects: ['PRJ-051 Riverdale'] },
-  { id: 14, name: 'Crystal Clear Glass',          trade: 'Glass/Glazing',   contact: 'Sarah Kim',          phone: '(555) 567-8902', email: 'sarah@crystalclearglass.com', status: 'active',   favorite: false, coi_expiry: '2026-01-15', w9_status: 'missing',    rating: 3.6, balance: 5100,  projects: ['PRJ-055 Oak Manor'] },
-  { id: 15, name: 'Patriot Fire Protection',      trade: 'Fire Protection', contact: 'Jim O\'Brien',       phone: '(555) 678-9013', email: 'jim@patriotfire.com',         status: 'active',   favorite: false, coi_expiry: '2026-10-01', w9_status: 'on_file',    rating: 4.9, balance: 9200,  projects: ['PRJ-060 Pinehurst'] },
-  { id: 16, name: 'Lowcountry Plumbing',          trade: 'Plumbing',        contact: 'Danny Hart',         phone: '(555) 789-0124', email: 'danny@lowcountryplmb.com',   status: 'inactive', favorite: false, coi_expiry: '2025-08-30', w9_status: 'incomplete', rating: 2.8, balance: 0,     projects: [] },
-  { id: 17, name: 'PowerLine Electrical',         trade: 'Electrical',      contact: 'Kevin Cho',          phone: '(555) 890-1235', email: 'kevin@powerlineelec.com',     status: 'active',   favorite: false, coi_expiry: '2026-06-15', w9_status: 'on_file',    rating: 4.4, balance: 11200, projects: ['PRJ-042 Elm Street', 'PRJ-060 Pinehurst'] },
-  { id: 18, name: 'Apex Concrete Solutions',       trade: 'Concrete',        contact: 'Tony Russo',         phone: '(555) 901-2346', email: 'tony@apexconcrete.com',       status: 'active',   favorite: false, coi_expiry: '2026-03-18', w9_status: 'on_file',    rating: 4.1, balance: 6800,  projects: ['PRJ-051 Riverdale'] },
-];
-
-
-/* ========================================================================== */
-/*  HELPER FUNCTIONS                                                          */
-/* ========================================================================== */
-
-function getCoiStatus(expiryDate) {
-  if (!expiryDate) return 'expired';
-  const days = daysFromNow(expiryDate);
-  if (days < 0) return 'expired';
-  if (days <= 30) return 'expiring';
-  return 'current';
-}
-
-function getCoiDaysLabel(expiryDate) {
-  if (!expiryDate) return 'No COI';
-  const days = daysFromNow(expiryDate);
-  if (days < 0) return `Expired ${Math.abs(days)}d ago`;
-  if (days === 0) return 'Expires today';
-  if (days <= 30) return `${days}d remaining`;
-  return shortDate(expiryDate);
-}
-
-
-/* ========================================================================== */
-/*  SUB-COMPONENTS                                                            */
-/* ========================================================================== */
-
-/** Star rating display (1-5) */
-function StarRating({ score, size = 12 }) {
-  const rounded = Math.round(score);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={size}
-          style={{
-            color: i <= rounded ? 'var(--accent)' : 'var(--border-medium)',
-            fill: i <= rounded ? 'var(--accent)' : 'none',
-          }}
-        />
-      ))}
-      <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 4, fontVariantNumeric: 'tabular-nums' }}>
-        {Number(score).toFixed(1)}
-      </span>
-    </div>
-  );
 import { useMemo, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
@@ -228,28 +135,12 @@ export default function Vendors() {
   const ROWS_PER_PAGE = 25;
 
   // --- API ---
-  const { data, loading, error, isDemo } = useApi(
+  const { data, loading, error, refetch, isDemo } = useApi(
     () => api.vendors({ page: 1, per_page: 50, ...(search && { search }) }),
     [search]
   );
 
   const items = data?.items || (loading ? [] : demoVendors);
-  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
-  const [selected, setSelected] = useState(null);
-  const { data, loading, error, refetch } = useApi(() => api.vendors({ page: 1, per_page: 100, ...(search && { search }) }), [search]);
-
-  const items = data?.items?.length ? data.items : demoVendors;
-  const rows = useMemo(() => {
-    const filtered = search ? items.filter((v) => `${v.name} ${v.trade || ''}`.toLowerCase().includes(search.toLowerCase())) : items;
-    const sorted = [...filtered].sort((a, b) => {
-      const av = a[sort.key] ?? '';
-      const bv = b[sort.key] ?? '';
-      return sort.dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-    });
-    return sorted;
-  }, [items, search, sort]);
-
-  const setSortKey = (key) => setSort((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }));
 
   if (loading) return <PageLoading />;
   if (error && !data) return <ErrorState message={error} onRetry={refetch} />;
@@ -1188,6 +1079,11 @@ export default function Vendors() {
               </table>
             </div>
           )}
+        </div>
+      )}
+      </div>
+      </div>
+      </div>
       {selected && (
         <div className="fixed inset-y-0 right-0 w-[500px] bg-brand-surface border-l border-brand-border p-4 z-50">
           <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">{selected.name}</h3><button onClick={() => setSelected(null)}>✕</button></div>

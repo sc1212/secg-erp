@@ -71,7 +71,7 @@ function ConstructionAlerts({ temp, precip, wind }) {
 export default function Weather() {
   const navigate = useNavigate();
   const { data, isDemo } = useApi(() => api.weatherWeekly(), []);
-  const weather = DEMO_WEATHER; // Always show data — zero config required
+  const weather = data || DEMO_WEATHER;
 
   const WeatherIcon = CONDITION_ICONS[weather.current.conditions] || Cloud;
 

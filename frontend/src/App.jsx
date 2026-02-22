@@ -1,42 +1,41 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './pages/Login';
+
 import Dashboard from './pages/Dashboard';
+import MissionControl from './pages/MissionControl';
+import MorningBriefing from './pages/MorningBriefing';
+
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import Calendar from './pages/Calendar';
+import DailyLogs from './pages/DailyLogs';
+import Fleet from './pages/Fleet';
+import Inventory from './pages/Inventory';
+import Permits from './pages/Permits';
+
 import Financials from './pages/Financials';
 import Payments from './pages/Payments';
 import Vendors from './pages/Vendors';
-import CRM from './pages/CRM';
-import Team from './pages/Team';
-import MorningBriefing from './pages/MorningBriefing';
-import Calendar from './pages/Calendar';
-import DailyLogs from './pages/DailyLogs';
-import Fleet from './pages/Fleet';
-import Inventory from './pages/Inventory';
-import Documents from './pages/Documents';
-import Safety from './pages/Safety';
-import Warranties from './pages/Warranties';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import MissionControl from './pages/MissionControl';
-import Calendar from './pages/Calendar';
-import DailyLogs from './pages/DailyLogs';
-import Weather from './pages/Weather';
-import Documents from './pages/Documents';
-import Inventory from './pages/Inventory';
-import Fleet from './pages/Fleet';
-import Safety from './pages/Safety';
-import Warranties from './pages/Warranties';
-import Scorecard from './pages/Scorecard';
-import ClientPortal from './pages/ClientPortal';
-import MorningBriefing from './pages/MorningBriefing';
 import Draws from './pages/Draws';
-import TimeClock from './pages/TimeClock';
-import Decisions from './pages/Decisions';
-import Exceptions from './pages/Exceptions';
-import Permits from './pages/Permits';
 import ProfitFade from './pages/ProfitFade';
 import CashFlow from './pages/CashFlow';
+
+import Team from './pages/Team';
+import TimeClock from './pages/TimeClock';
+import CRM from './pages/CRM';
+
+import Documents from './pages/Documents';
+import Safety from './pages/Safety';
+import Warranties from './pages/Warranties';
+
+import Decisions from './pages/Decisions';
+import Exceptions from './pages/Exceptions';
+
+import Weather from './pages/Weather';
+import Scorecard from './pages/Scorecard';
+import ClientPortal from './pages/ClientPortal';
 
 export default function App() {
   return (
@@ -44,22 +43,9 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/morning-briefing" element={<MorningBriefing />} />
-
-          <Route path="/mission-control" element={<OperatingSystem />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/daily-logs" element={<DailyLogs />} />
-          <Route path="/fleet" element={<Fleet />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/safety" element={<Safety />} />
-          <Route path="/warranties" element={<Warranties />} />
-
-        <Route element={<Layout />}>
           {/* Command */}
           <Route path="/" element={<Dashboard />} />
-          <Route path="/mission" element={<MissionControl />} />
+          <Route path="/mission-control" element={<MissionControl />} />
           <Route path="/briefing" element={<MorningBriefing />} />
 
           {/* Operations */}
@@ -89,11 +75,11 @@ export default function App() {
           <Route path="/safety" element={<Safety />} />
           <Route path="/warranties" element={<Warranties />} />
 
-          {/* Phase 0 — Decision / Exception queues */}
+          {/* Decision / Exception queues */}
           <Route path="/decisions" element={<Decisions />} />
           <Route path="/exceptions" element={<Exceptions />} />
 
-          {/* Legacy routes (still accessible, not in main sidebar) */}
+          {/* Legacy */}
           <Route path="/weather" element={<Weather />} />
           <Route path="/scorecard" element={<Scorecard />} />
           <Route path="/portal" element={<ClientPortal />} />

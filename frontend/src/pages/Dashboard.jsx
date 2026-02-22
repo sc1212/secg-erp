@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useNavigate } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { api } from '../lib/api';
 import { money } from '../lib/format';
@@ -21,48 +19,6 @@ import {
   AreaChart, Area, CartesianGrid,
 } from 'recharts';
 
-const demoProjects = [
-  { name: 'PRJ-042', budget: 120000, spent: 82800, pct: 69 },
-  { name: 'PRJ-038', budget: 95000, spent: 66500, pct: 70 },
-  { name: 'PRJ-051', budget: 80000, spent: 76800, pct: 96 },
-  { name: 'PRJ-033', budget: 150000, spent: 139500, pct: 93 },
-  { name: 'PRJ-027', budget: 200000, spent: 124000, pct: 62 },
-];
-
-const demoCashFlow = [
-  { week: 'W1', inflow: 85000, outflow: 62000 },
-  { week: 'W2', inflow: 45000, outflow: 71000 },
-  { week: 'W3', inflow: 92000, outflow: 58000 },
-  { week: 'W4', inflow: 78000, outflow: 65000 },
-  { week: 'W5', inflow: 110000, outflow: 74000 },
-  { week: 'W6', inflow: 65000, outflow: 82000 },
-  { week: 'W7', inflow: 98000, outflow: 60000 },
-  { week: 'W8', inflow: 72000, outflow: 68000 },
-];
-
-const alertIcon = { critical: AlertCircle, warning: AlertTriangle, info: Info };
-const alertColor = { critical: 'text-danger', warning: 'text-warn', info: 'text-ok' };
-const alertBg = { critical: 'bg-danger/10', warning: 'bg-warn/10', info: 'bg-ok/10' };
-
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg text-brand-text">
-      <p className="text-brand-muted mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.dataKey} style={{ color: p.color }}>
-          {p.name}: {money(p.value)}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-export default function Dashboard() {
-  const colors = useThemeColors();
-  const navigate = useNavigate();
-  const [showBriefing, setShowBriefing] = useState(false);
-  const { data, loading, error, refetch } = useApi(() => api.dashboard());
 const alertStyles = {
   critical: { color: 'var(--status-loss)',    bg: 'var(--status-loss-bg)' },
   warning:  { color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
@@ -99,6 +55,7 @@ const DEMO_ACTIVITY = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [showBriefing, setShowBriefing] = useState(false);
   const { data, loading, error, isDemo, refetch } = useApi(() => api.dashboard());
   const tc = useThemeColors();
 
@@ -162,13 +119,6 @@ export default function Dashboard() {
       </div>
 
 
-      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-brand-text mb-3">Weather — Murfreesboro, TN</h3>
-        <div className="text-sm">48°F · Partly Cloudy · Wind 8mph NW</div>
-        <div className="text-xs text-brand-muted mt-1">Freeze warning tonight — protect exposed pipes</div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {/* KPI Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-live="polite" aria-label="Key performance indicators">
         <KPICard label="Cash on Hand" value={money(cash.cash_on_hand ?? 0)} icon={Banknote} trend={8.3} />
@@ -298,21 +248,6 @@ export default function Dashboard() {
                 <span className="text-[10px] flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
                   {item.time}
                 </span>
-        <div className="space-y-2" aria-live="polite" aria-label="Financial alerts">
-          {alerts.map((a, i) => {
-            const Icon = alertIcon[a.level] || Info;
-            const style = alertStyles[a.level] || alertStyles.info;
-            return (
-              <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-lg ${alertBg[a.level]}`}>
-                <Icon size={16} className={alertColor[a.level]} />
-                <span className="text-sm flex-1">{a.message}</span>
-                <button onClick={() => navigate(a.action_url)} className="text-xs text-brand-gold hover:text-brand-gold-light transition-colors font-medium">View &rarr;</button>
-              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: style.bg }}>
-                <Icon size={16} style={{ color: style.color }} />
-                <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{a.message}</span>
-                <button className="text-xs font-medium transition-colors" style={{ color: 'var(--accent)' }}>
-                  View &rarr;
-                </button>
               </div>
             ))}
           </div>

@@ -1,278 +1,19 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
-import { useThemeColors } from '../hooks/useThemeColors';
-import { api } from '../lib/api';
-import { money, moneyExact, pct, shortDate, statusBadge, moneyClass } from '../lib/format';
-import KPICard from '../components/KPICard';
-import ChartTooltip from '../components/ChartTooltip';
-import DemoBanner from '../components/DemoBanner';
-import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
-import {
-  DollarSign, TrendingUp, TrendingDown, CreditCard, FileText, Receipt,
-  AlertCircle, AlertTriangle, Clock, ArrowUpRight, ArrowDownRight,
-  CheckCircle, RefreshCw, Banknote, Building2, Users, Send,
-  ChevronRight, ExternalLink, CircleDot, Zap, Calendar, Shield,
-} from 'lucide-react';
+import { AlertCircle, ArrowDownRight, ArrowUpRight, CheckCircle, RefreshCw } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import { useApi } from '../hooks/useApi';
+import { useThemeColors } from '../hooks/useThemeColors';
+import { api } from '../lib/api';
+import DemoBanner from '../components/DemoBanner';
+import KPICard from '../components/KPICard';
+import ChartTooltip from '../components/ChartTooltip';
 
-/* ─── Tab Configuration ─────────────────────────────────────────────────────── */
-const tabs = ['overview', 'ap', 'ar', 'pl', 'sync', 'snapshots'];
-const tabLabels = {
-  overview: 'Overview',
-  ap: 'Accounts Payable',
-  ar: 'Accounts Receivable',
-  pl: 'P&L',
-  sync: 'QuickBooks Sync',
-  snapshots: 'Snapshots',
-};
-const tabIcons = {
-  overview: Zap,
-  ap: Receipt,
-  ar: FileText,
-  pl: TrendingUp,
-  sync: RefreshCw,
-  snapshots: Calendar,
-};
+const tabs = ['overview', 'ar', 'ap', 'pl', 'sync', 'snapshots'];
 
-/* ─── Demo Data ─────────────────────────────────────────────────────────────── */
-
-// 13-Week Cash Flow Forecast
-function buildDemoForecast() {
-  const startDate = new Date(2026, 1, 23);
-  const weeks = [];
-  let cash = 247800;
-  const threshold = 75000;
-
-  const patterns = [
-    { inflow: 62000, outflow: 48000 },
-    { inflow: 41000, outflow: 55000 },
-    { inflow: 88000, outflow: 52000 },
-    { inflow: 35000, outflow: 61000 },
-    { inflow: 72000, outflow: 47000 },
-    { inflow: 28000, outflow: 58000 },
-    { inflow: 95000, outflow: 54000 },
-    { inflow: 44000, outflow: 63000 },
-    { inflow: 81000, outflow: 49000 },
-    { inflow: 32000, outflow: 72000 },
-    { inflow: 68000, outflow: 51000 },
-    { inflow: 56000, outflow: 67000 },
-    { inflow: 91000, outflow: 53000 },
-  ];
-
-  for (let i = 0; i < 13; i++) {
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + i * 7);
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const p = patterns[i];
-    cash += p.inflow - p.outflow;
-
-    weeks.push({
-      week: `W${i + 1}`,
-      weekLabel: label,
-      inflow: p.inflow,
-      outflow: p.outflow,
-      cash: Math.round(cash),
-      threshold,
-      belowThreshold: cash < threshold,
-    });
-  }
-  return weeks;
-}
-
-const demoCashForecast = buildDemoForecast();
-
-// Money In vs Out (monthly bars)
-const demoMoneyInOut = [
-  { month: 'Sep', moneyIn: 284000, moneyOut: 218000 },
-  { month: 'Oct', moneyIn: 312000, moneyOut: 267000 },
-  { month: 'Nov', moneyIn: 258000, moneyOut: 241000 },
-  { month: 'Dec', moneyIn: 296000, moneyOut: 278000 },
-  { month: 'Jan', moneyIn: 341000, moneyOut: 259000 },
-  { month: 'Feb', moneyIn: 278000, moneyOut: 232000 },
-];
-
-// Action Items
-const demoActionItems = [
-  {
-    id: 1,
-    type: 'overdue',
-    icon: AlertCircle,
-    severity: 'critical',
-    title: '3 Invoices Overdue',
-    description: '$45,200 outstanding past due date — oldest is 38 days',
-    cta: 'View Overdue',
-    ctaRoute: '/financials?tab=ar',
-    amount: 45200,
-  },
-  {
-    id: 2,
-    type: 'ap_due',
-    icon: Clock,
-    severity: 'warning',
-    title: '5 AP Bills Due This Week',
-    description: '$18,400 in vendor bills due within 7 days',
-    cta: 'Pay Now',
-    ctaRoute: '/financials?tab=ap',
-    amount: 18400,
-  },
-  {
-    id: 3,
-    type: 'draw_ready',
-    icon: Send,
-    severity: 'info',
-    title: '2 Draw Requests Ready',
-    description: 'PRJ-042 Draw #4 ($41,400) and PRJ-038 Draw #2 ($28,600) — approved, awaiting submission',
-    cta: 'Submit Draws',
-    ctaRoute: '/draws',
-    amount: 70000,
-  },
-  {
-    id: 4,
-    type: 'payroll',
-    icon: Users,
-    severity: 'info',
-    title: 'Payroll Processing — Feb 28',
-    description: '$24,200 biweekly payroll due in 6 days — 18 employees',
-    cta: 'Review',
-    ctaRoute: '/team?tab=payroll',
-    amount: 24200,
-  },
-];
-
-// Project Financial Health
-const demoProjectHealth = [
-  { id: 1, code: 'PRJ-042', name: 'Custom Home — Brentwood', budget: 420000, spent: 289800, pctUsed: 69, status: 'green', margin: 12.4 },
-  { id: 2, code: 'PRJ-038', name: 'Spec Home — Franklin', budget: 310000, spent: 217000, pctUsed: 70, status: 'green', margin: 10.8 },
-  { id: 3, code: 'PRJ-051', name: 'Remodel — Green Hills', budget: 185000, spent: 177600, pctUsed: 96, status: 'red', margin: 2.1 },
-  { id: 4, code: 'PRJ-033', name: 'Insurance Rehab — Antioch', budget: 275000, spent: 255750, pctUsed: 93, status: 'yellow', margin: 5.2 },
-  { id: 5, code: 'PRJ-027', name: 'Commercial — Berry Hill', budget: 540000, spent: 334800, pctUsed: 62, status: 'green', margin: 15.6 },
-];
-
-// Recent Transactions
-const demoTransactions = [
-  { id: 1, date: '2026-02-22', group: 'today', description: 'Draw #3 — PRJ-042 Brentwood', amount: 41400, direction: 'in', category: 'Draw', counterparty: 'First Horizon Bank' },
-  { id: 2, date: '2026-02-22', group: 'today', description: 'ABC Electrical — Invoice #4821', amount: 8400, direction: 'out', category: 'Vendor', counterparty: 'ABC Electrical' },
-  { id: 3, date: '2026-02-22', group: 'today', description: 'Lumber Depot — PO #1247', amount: 12600, direction: 'out', category: 'Materials', counterparty: 'Lumber Depot' },
-  { id: 4, date: '2026-02-21', group: 'yesterday', description: 'Client Payment — Invoice INV-2024-004', amount: 32000, direction: 'in', category: 'AR Payment', counterparty: 'Henderson Family' },
-  { id: 5, date: '2026-02-21', group: 'yesterday', description: 'Payroll — Biweekly #4', amount: 24200, direction: 'out', category: 'Payroll', counterparty: '18 Employees' },
-  { id: 6, date: '2026-02-21', group: 'yesterday', description: 'Insurance Premium — GL Policy', amount: 2850, direction: 'out', category: 'Insurance', counterparty: 'Hartford Ins.' },
-  { id: 7, date: '2026-02-21', group: 'yesterday', description: 'Retainage Release — PRJ-027', amount: 14200, direction: 'in', category: 'Retainage', counterparty: 'Berry Hill Holdings' },
-  { id: 8, date: '2026-02-20', group: 'earlier', description: 'Chase LOC — Monthly Payment', amount: 1250, direction: 'out', category: 'Debt', counterparty: 'Chase Bank' },
-  { id: 9, date: '2026-02-20', group: 'earlier', description: 'Plumbing Pro — Invoice #7792', amount: 6200, direction: 'out', category: 'Vendor', counterparty: 'Plumbing Pro LLC' },
-  { id: 10, date: '2026-02-20', group: 'earlier', description: 'Client Deposit — PRJ-055', amount: 15000, direction: 'in', category: 'Deposit', counterparty: 'New Client' },
-];
-
-// AP Bills
-const demoAPBills = [
-  { id: 1, vendor: 'ABC Electrical', invoice: 'INV-4821', amount: 8400, due: '2026-02-25', age: 0, status: 'due_soon' },
-  { id: 2, vendor: 'Lumber Depot', invoice: 'PO-1247', amount: 12600, due: '2026-02-26', age: 0, status: 'due_soon' },
-  { id: 3, vendor: 'Plumbing Pro LLC', invoice: 'INV-7792', amount: 6200, due: '2026-02-28', age: 0, status: 'due_soon' },
-  { id: 4, vendor: 'Concrete Masters', invoice: 'INV-2218', amount: 4800, due: '2026-02-23', age: 0, status: 'due_soon' },
-  { id: 5, vendor: 'HVAC Solutions', invoice: 'INV-0934', amount: 9200, due: '2026-03-04', age: 0, status: 'scheduled' },
-  { id: 6, vendor: 'Roofing Co.', invoice: 'INV-5541', amount: 15400, due: '2026-02-18', age: 4, status: 'overdue' },
-  { id: 7, vendor: 'Drywall Experts', invoice: 'INV-3316', amount: 7800, due: '2026-02-15', age: 7, status: 'overdue' },
-  { id: 8, vendor: 'Paint Supply Co', invoice: 'INV-8812', amount: 3200, due: '2026-03-10', age: 0, status: 'scheduled' },
-];
-
-// AR Invoices
-const demoARInvoices = [
-  { id: 1, number: 'INV-2024-001', client: 'Henderson Family', project: 'PRJ-042', amount: 45000, balance: 45000, issued: '2026-01-15', due: '2026-02-14', age: 8, status: 'overdue' },
-  { id: 2, number: 'INV-2024-005', client: 'Wilson Properties', project: 'PRJ-051', amount: 28200, balance: 28200, issued: '2026-01-20', due: '2026-02-19', age: 3, status: 'overdue' },
-  { id: 3, number: 'INV-2024-002', client: 'Franklin Dev Corp', project: 'PRJ-038', amount: 38500, balance: 38500, issued: '2026-02-01', due: '2026-03-03', age: 0, status: 'sent' },
-  { id: 4, number: 'INV-2024-003', client: 'Antioch Insurance', project: 'PRJ-033', amount: 41400, balance: 41400, issued: '2026-02-10', due: '2026-03-12', age: 0, status: 'sent' },
-  { id: 5, number: 'INV-2024-006', client: 'Berry Hill Holdings', project: 'PRJ-027', amount: 33300, balance: 33300, issued: '2026-02-15', due: '2026-03-17', age: 0, status: 'sent' },
-  { id: 6, number: 'INV-2024-004', client: 'Henderson Family', project: 'PRJ-042', amount: 32000, balance: 0, issued: '2025-12-01', due: '2025-12-31', age: 0, status: 'paid' },
-];
-
-// QuickBooks Sync Status
-const demoQBSync = {
-  connected: true,
-  lastSync: '2026-02-22T14:32:00Z',
-  nextSync: '2026-02-22T15:32:00Z',
-  status: 'synced',
-  company: 'Southeast Construction Group',
-  syncHistory: [
-    { id: 1, timestamp: '2026-02-22T14:32:00Z', type: 'auto', records: 24, status: 'success', duration: '12s' },
-    { id: 2, timestamp: '2026-02-22T13:32:00Z', type: 'auto', records: 18, status: 'success', duration: '8s' },
-    { id: 3, timestamp: '2026-02-22T12:32:00Z', type: 'auto', records: 31, status: 'success', duration: '15s' },
-    { id: 4, timestamp: '2026-02-22T11:32:00Z', type: 'manual', records: 42, status: 'success', duration: '22s' },
-    { id: 5, timestamp: '2026-02-22T10:32:00Z', type: 'auto', records: 12, status: 'warning', duration: '45s', note: '2 records skipped — duplicate check numbers' },
-    { id: 6, timestamp: '2026-02-21T14:32:00Z', type: 'auto', records: 28, status: 'success', duration: '11s' },
-  ],
-  pendingItems: 3,
-  arSynced: 23,
-  apSynced: 41,
-  journalEntries: 156,
-};
-
-/* ─── Severity Styles ───────────────────────────────────────────────────────── */
-const severityStyles = {
-  critical: { color: 'var(--status-loss)', bg: 'var(--status-loss-bg, rgba(251,113,133,0.1))' },
-  warning: { color: 'var(--status-warning)', bg: 'var(--status-warning-bg, rgba(251,191,36,0.1))' },
-  info: { color: 'var(--status-profit)', bg: 'var(--status-profit-bg, rgba(52,211,153,0.1))' },
-};
-
-const trafficLightColors = {
-  green: 'var(--status-profit)',
-  yellow: 'var(--status-warning)',
-  red: 'var(--status-loss)',
-};
-
-/* ─── Custom Forecast Tooltip ───────────────────────────────────────────────── */
-function ForecastTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  const byKey = Object.fromEntries(payload.map((p) => [p.dataKey, p.value]));
-  return (
-    <div
-      style={{
-        background: 'var(--bg-elevated)',
-        border: '1px solid var(--border-medium)',
-        borderRadius: 8,
-        padding: '10px 14px',
-        fontSize: 12,
-        color: 'var(--text-primary)',
-        minWidth: 180,
-        boxShadow: 'var(--shadow-card)',
-      }}
-    >
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 700 }}>{label}</p>
-      {byKey.inflow != null && <p style={{ color: 'var(--status-profit)', margin: '2px 0' }}>Inflows: {money(byKey.inflow)}</p>}
-      {byKey.outflow != null && <p style={{ color: 'var(--status-loss)', margin: '2px 0' }}>Outflows: {money(byKey.outflow)}</p>}
-      {byKey.cash != null && (
-        <p
-          style={{
-            color: byKey.cash < 75000 ? 'var(--status-loss)' : 'var(--accent)',
-            margin: '2px 0',
-            borderTop: '1px solid var(--border-subtle)',
-            paddingTop: 4,
-            marginTop: 4,
-            fontWeight: 700,
-          }}
-        >
-          Cash Position: {money(byKey.cash)}
-        </p>
-      )}
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg text-brand-text">
-      <p className="text-brand-muted mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.dataKey} style={{ color: p.color }}>{p.name}: {money(p.value)}</p>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Main Component ────────────────────────────────────────────────────────── */
-export default function Financials() {
-  const colors = useThemeColors();
-  const [tab, setTab] = useState('overview');
-  const [showCashFlowTable, setShowCashFlowTable] = useState(false);
 export default function Financials() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -590,58 +331,55 @@ function OverviewTab({ tc, navigate, cashOnHand, cashMoM, arOutstanding, apDue, 
                 >
                   {item.type === 'ap_due' ? 'Pay Now' : 'View'} &rarr;
                 </button>
-        <div className="space-y-4">
-          <div className="bg-brand-card border border-brand-border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold">13-Week Cash Flow Forecast</h3>
-              <button onClick={() => setShowCashFlowTable((current) => !current)} className="text-xs font-medium text-brand-gold lg:hover:text-brand-gold-light transition-colors">
-                {showCashFlowTable ? 'View Chart' : 'View as Table'}
-              </button>
-            </div>
-            {showCashFlowTable ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-brand-border text-left text-xs text-brand-muted uppercase">
-                      <th className="pb-3 pr-4">Week</th>
-                      <th className="pb-3 pr-4 num">Inflows</th>
-                      <th className="pb-3 pr-4 num">Outflows</th>
-                      <th className="pb-3 num">Net</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {demoWeekly.map((row) => (
-                      <tr key={row.week} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
-                        <td className="py-3 pr-4 font-medium">{row.week}</td>
-                        <td className="py-3 pr-4 num">{moneyExact(row.inflows)}</td>
-                        <td className="py-3 pr-4 num">{moneyExact(row.outflows)}</td>
-                        <td className={`py-3 num ${row.net < 0 ? 'text-danger' : 'text-ok'}`}>{row.net < 0 ? `(${moneyExact(Math.abs(row.net))})` : moneyExact(row.net)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={demoWeekly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-                  <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
-                  <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="inflows" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
-                  <Area type="monotone" dataKey="outflows" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
-            <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
-              <div>
-                <h3 className="panel-title">13-Week Cash Flow Forecast</h3>
-                <div className="panel-sub">Projected inflows vs outflows</div>
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* ── 13-Week Cash Flow Forecast ─────────────────────────────────────────── */}
+      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold">13-Week Cash Flow Forecast</h3>
+          <button onClick={() => setShowCashFlowTable((current) => !current)} className="text-xs font-medium text-brand-gold lg:hover:text-brand-gold-light transition-colors">
+            {showCashFlowTable ? 'View Chart' : 'View as Table'}
+          </button>
+        </div>
+        {showCashFlowTable ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-brand-border text-left text-xs text-brand-muted uppercase">
+                  <th className="pb-3 pr-4">Week</th>
+                  <th className="pb-3 pr-4 num">Inflows</th>
+                  <th className="pb-3 pr-4 num">Outflows</th>
+                  <th className="pb-3 num">Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                {demoWeekly.map((row) => (
+                  <tr key={row.week} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
+                    <td className="py-3 pr-4 font-medium">{row.week}</td>
+                    <td className="py-3 pr-4 num">{moneyExact(row.inflows)}</td>
+                    <td className="py-3 pr-4 num">{moneyExact(row.outflows)}</td>
+                    <td className={`py-3 num ${row.net < 0 ? 'text-danger' : 'text-ok'}`}>{row.net < 0 ? `(${moneyExact(Math.abs(row.net))})` : moneyExact(row.net)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={demoWeekly}>
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+              <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
+              <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
+              <Tooltip content={<ChartTooltip />} />
+              <Area type="monotone" dataKey="inflows" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
+              <Area type="monotone" dataKey="outflows" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* ── Project Financial Health + Recent Transactions ────────── */}
@@ -1002,21 +740,6 @@ function APTab({ navigate }) {
                       Pay Now &rarr;
                     </button>
                   </td>
-              {demoDebts.map((d) => (
-                <tr key={d.id} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
-                  <td className="py-3 pr-4 font-medium">{d.name}</td>
-                  <td className="py-3 pr-4 text-brand-muted">{d.lender}</td>
-                  <td className="py-3 pr-4 text-xs capitalize">{d.debt_type.replace('_', ' ')}</td>
-                  <td className="py-3 pr-4 num font-bold">{moneyExact(d.current_balance)}</td>
-                  <td className="py-3 pr-4 num">{d.interest_rate}%</td>
-                  <td className="py-3 num">{moneyExact(d.monthly_payment)}</td>
-                <tr key={d.id}>
-                  <td style={{ fontWeight: 500 }}>{d.name}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{d.lender}</td>
-                  <td className="text-xs capitalize">{d.debt_type.replace('_', ' ')}</td>
-                  <td className="num right" style={{ fontWeight: 600 }}>{moneyExact(d.current_balance)}</td>
-                  <td className="num right">{d.interest_rate}%</td>
-                  <td className="num right">{moneyExact(d.monthly_payment)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1121,18 +844,6 @@ function ARTab({ arInvoices, navigate }) {
                   className="cursor-pointer"
                   onClick={() => navigate(`/financials?tab=ar`)}
                 >
-                  <td className="font-mono text-xs" style={{ color: 'var(--accent)' }}>{inv.number}</td>
-                  <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{inv.client}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{inv.project}</td>
-              {demoInvoices.map((inv) => (
-                <tr key={inv.id} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
-                  <td className="py-3 pr-4 font-mono text-brand-gold text-xs">{inv.invoice_number}</td>
-                  <td className="py-3 pr-4 text-brand-muted">{shortDate(inv.date_issued)}</td>
-                  <td className="py-3 pr-4 text-brand-muted">{shortDate(inv.date_due)}</td>
-                  <td className="py-3 pr-4 num">{moneyExact(inv.amount)}</td>
-                  <td className="py-3 pr-4 num font-medium">{moneyExact(inv.balance)}</td>
-                  <td className="py-3">
-                <tr key={inv.id}>
                   <td className="font-mono text-xs" style={{ color: 'var(--accent)' }}>{inv.invoice_number}</td>
                   <td style={{ color: 'var(--text-secondary)' }}>{shortDate(inv.date_issued)}</td>
                   <td style={{ color: 'var(--text-secondary)' }}>{shortDate(inv.date_due)}</td>
