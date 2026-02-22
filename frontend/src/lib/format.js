@@ -72,6 +72,13 @@ export function moneyClass(value) {
   return 'num';
 }
 
+export function moneyAccounting(value) {
+  if (value == null) return '$0.00';
+  const num = Number(value);
+  const absolute = Math.abs(num).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  return num < 0 ? `(${absolute})` : absolute;
+}
+
 export function pct(value) {
   if (value == null) return '0%';
   return Number(value).toFixed(1) + '%';

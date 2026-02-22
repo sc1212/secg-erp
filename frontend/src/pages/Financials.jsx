@@ -39,6 +39,22 @@ const demoWeekly = [
   { week: 'W6', inflows: 65000, outflows: 82000, net: -17000 },
 ];
 
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg text-brand-text">
+      <p className="text-brand-muted mb-1">{label}</p>
+      {payload.map((p) => (
+        <p key={p.dataKey} style={{ color: p.color }}>{p.name}: {money(p.value)}</p>
+      ))}
+    </div>
+  );
+}
+
+export default function Financials() {
+  const colors = useThemeColors();
+  const [tab, setTab] = useState('overview');
+  const [showCashFlowTable, setShowCashFlowTable] = useState(false);
 export default function Financials() {
   const [searchParams] = useSearchParams();
   const validTabs = ['overview', 'debts', 'ar', 'retainage', 'recurring', 'properties'];
@@ -62,6 +78,9 @@ export default function Financials() {
           <button
             key={t}
             onClick={() => setTab(t)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              tab === t ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-muted lg:hover:text-brand-text'
+            }`}
             className="mc-tab"
             style={tab === t ? { color: 'var(--accent)', borderBottomColor: 'var(--accent)' } : undefined}
           >
@@ -72,6 +91,48 @@ export default function Financials() {
 
       {tab === 'overview' && (
         <div className="space-y-4">
+          <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold">13-Week Cash Flow Forecast</h3>
+              <button onClick={() => setShowCashFlowTable((current) => !current)} className="text-xs font-medium text-brand-gold lg:hover:text-brand-gold-light transition-colors">
+                {showCashFlowTable ? 'View Chart' : 'View as Table'}
+              </button>
+            </div>
+            {showCashFlowTable ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-brand-border text-left text-xs text-brand-muted uppercase">
+                      <th className="pb-3 pr-4">Week</th>
+                      <th className="pb-3 pr-4 num">Inflows</th>
+                      <th className="pb-3 pr-4 num">Outflows</th>
+                      <th className="pb-3 num">Net</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {demoWeekly.map((row) => (
+                      <tr key={row.week} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
+                        <td className="py-3 pr-4 font-medium">{row.week}</td>
+                        <td className="py-3 pr-4 num">{moneyExact(row.inflows)}</td>
+                        <td className="py-3 pr-4 num">{moneyExact(row.outflows)}</td>
+                        <td className={`py-3 num ${row.net < 0 ? 'text-danger' : 'text-ok'}`}>{row.net < 0 ? `(${moneyExact(Math.abs(row.net))})` : moneyExact(row.net)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={demoWeekly}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                  <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
+                  <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area type="monotone" dataKey="inflows" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
+                  <Area type="monotone" dataKey="outflows" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
             <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
               <div>
@@ -109,6 +170,13 @@ export default function Financials() {
             </thead>
             <tbody>
               {demoDebts.map((d) => (
+                <tr key={d.id} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
+                  <td className="py-3 pr-4 font-medium">{d.name}</td>
+                  <td className="py-3 pr-4 text-brand-muted">{d.lender}</td>
+                  <td className="py-3 pr-4 text-xs capitalize">{d.debt_type.replace('_', ' ')}</td>
+                  <td className="py-3 pr-4 num font-bold">{moneyExact(d.current_balance)}</td>
+                  <td className="py-3 pr-4 num">{d.interest_rate}%</td>
+                  <td className="py-3 num">{moneyExact(d.monthly_payment)}</td>
                 <tr key={d.id}>
                   <td style={{ fontWeight: 500 }}>{d.name}</td>
                   <td style={{ color: 'var(--text-secondary)' }}>{d.lender}</td>
@@ -138,6 +206,13 @@ export default function Financials() {
             </thead>
             <tbody>
               {demoInvoices.map((inv) => (
+                <tr key={inv.id} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
+                  <td className="py-3 pr-4 font-mono text-brand-gold text-xs">{inv.invoice_number}</td>
+                  <td className="py-3 pr-4 text-brand-muted">{shortDate(inv.date_issued)}</td>
+                  <td className="py-3 pr-4 text-brand-muted">{shortDate(inv.date_due)}</td>
+                  <td className="py-3 pr-4 num">{moneyExact(inv.amount)}</td>
+                  <td className="py-3 pr-4 num font-medium">{moneyExact(inv.balance)}</td>
+                  <td className="py-3">
                 <tr key={inv.id}>
                   <td className="font-mono text-xs" style={{ color: 'var(--accent)' }}>{inv.invoice_number}</td>
                   <td style={{ color: 'var(--text-secondary)' }}>{shortDate(inv.date_issued)}</td>

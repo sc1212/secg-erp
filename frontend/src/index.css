@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
@@ -15,7 +16,36 @@
   --color-ok: #16A34A;
   --color-danger: #DC2626;
   --color-warn: #D97706;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+}
+
+
+:root,
+[data-theme="arctic"] {
+  --color-brand-gold: #2563EB;
+  --color-brand-gold-light: #3B82F6;
+  --color-brand-gold-dark: #1E40AF;
+  --color-brand-bg: #F8FAFC;
+  --color-brand-surface: #F1F5F9;
+  --color-brand-card: #FFFFFF;
+  --color-brand-card-hover: #F8FAFC;
+  --color-brand-text: #0F172A;
+  --color-brand-muted: #64748B;
+  --color-brand-border: #E2E8F0;
+}
+
+[data-theme="midnight"] {
+  --color-brand-gold: #7AA2FF;
+  --color-brand-gold-light: #A2BEFF;
+  --color-brand-gold-dark: #5E86E6;
+  --color-brand-bg: #0B1020;
+  --color-brand-surface: #111830;
+  --color-brand-card: #131D38;
+  --color-brand-card-hover: #1A2647;
+  --color-brand-text: #E7ECFF;
+  --color-brand-muted: #95A6CF;
+  --color-brand-border: #2A3963;
 }
 
 /* ── Design System — Midnight Studio ─────────────────────────────────────── */
@@ -134,6 +164,8 @@
 
 body {
   margin: 0;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
   font-family: var(--font-family, 'Inter', system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -142,6 +174,34 @@ body {
   min-height: 100vh;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-brand-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-brand-border); border-radius: 3px; }
+
+@media (hover: hover) {
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-brand-muted); }
+}
+
+@media print {
+  html,
+  body {
+    background: #f4f5f7 !important;
+    color: #1a1a2e !important;
+  }
+}
+
+
+.display-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
@@ -640,6 +700,11 @@ textarea:focus-visible,
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+.shimmer {
+  background-image: linear-gradient(90deg, color-mix(in oklab, var(--color-brand-surface) 88%, white), color-mix(in oklab, var(--color-brand-surface) 70%, white), color-mix(in oklab, var(--color-brand-surface) 88%, white));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,

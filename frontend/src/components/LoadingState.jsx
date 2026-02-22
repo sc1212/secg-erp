@@ -1,3 +1,5 @@
+function SkeletonBlock({ className = '' }) {
+  return <div className={`rounded-lg bg-brand-surface shimmer ${className}`} aria-hidden="true" />;
 /* ── Loading States — Skeleton Shimmer (Design System Compliant) ──────────── */
 
 export function Skeleton({ className = '', style = {} }) {
@@ -14,6 +16,12 @@ export function Skeleton({ className = '', style = {} }) {
 
 export function PageLoading() {
   return (
+    <div className="space-y-4" role="status" aria-live="polite" aria-label="Loading content">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => <SkeletonBlock key={i} className="h-20" />)}
+      </div>
+      <SkeletonBlock className="h-64" />
+      <SkeletonBlock className="h-48" />
     <div className="space-y-6 animate-pulse">
       {/* KPI row skeleton */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -54,6 +62,10 @@ export function TableLoading({ rows = 5, cols = 4 }) {
 
 export function ErrorState({ message, onRetry }) {
   return (
+    <div className="flex flex-col items-center justify-center h-64 gap-4" aria-live="polite">
+      <div className="text-danger text-sm">{message || 'Something went wrong'}</div>
+      {onRetry && (
+        <button onClick={onRetry} className="px-4 py-2 bg-brand-card border border-brand-border rounded-lg text-sm lg:hover:border-brand-gold/40 transition-colors">
     <div className="flex flex-col items-center justify-center h-64 gap-4">
       <div className="text-sm" style={{ color: 'var(--status-loss)' }}>
         {message || 'Something went wrong'}

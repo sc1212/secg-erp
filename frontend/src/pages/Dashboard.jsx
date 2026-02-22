@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { useApi } from '../hooks/useApi';
+import { useNavigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useThemeColors } from '../hooks/useThemeColors';
@@ -38,6 +41,28 @@ const demoCashFlow = [
 ];
 
 const alertIcon = { critical: AlertCircle, warning: AlertTriangle, info: Info };
+const alertColor = { critical: 'text-danger', warning: 'text-warn', info: 'text-ok' };
+const alertBg = { critical: 'bg-danger/10', warning: 'bg-warn/10', info: 'bg-ok/10' };
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg text-brand-text">
+      <p className="text-brand-muted mb-1">{label}</p>
+      {payload.map((p) => (
+        <p key={p.dataKey} style={{ color: p.color }}>
+          {p.name}: {money(p.value)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const colors = useThemeColors();
+  const navigate = useNavigate();
+  const [showBriefing, setShowBriefing] = useState(false);
+  const { data, loading, error, refetch } = useApi(() => api.dashboard());
 const alertStyles = {
   critical: { color: 'var(--status-loss)',    bg: 'var(--status-loss-bg)' },
   warning:  { color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
@@ -53,18 +78,49 @@ export default function Dashboard() {
   const pipeline = data?.pipeline || {};
   const payroll = data?.payroll || {};
   const debt = data?.debt || {};
-  const alerts = data?.alerts || [
+  const alerts = (data?.alerts || [
     { level: 'critical', category: 'AR', message: '3 invoices overdue totaling $45,200' },
     { level: 'warning', category: 'Budget', message: 'PRJ-051 is 96% of budget with 2 months remaining' },
     { level: 'warning', category: 'Compliance', message: '5 lien waivers pending from vendors' },
     { level: 'info', category: 'Draws', message: 'Draw #3 for PRJ-042 approved ($41,400)' },
-  ];
+  ]).map((a, i) => ({ ...a, action_url: a.action_url || ['/financials','/projects','/vendors','/calendar'][i % 4] }));
+
+  useEffect(() => {
+    const lastShown = localStorage.getItem('briefing_last_shown_at');
+    const dismissedToday = localStorage.getItem('briefing_dismissed_date') === new Date().toDateString();
+    const tooSoon = lastShown && (Date.now() - Number(lastShown) < 4 * 60 * 60 * 1000);
+    setShowBriefing(!dismissedToday && !tooSoon);
+  }, []);
+
+  const closeBriefing = (dismissToday = false) => {
+    localStorage.setItem('briefing_last_shown_at', String(Date.now()));
+    if (dismissToday) localStorage.setItem('briefing_dismissed_date', new Date().toDateString());
+    setShowBriefing(false);
+  };
+
 
   if (loading) return <PageLoading />;
   if (error && !data) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">
+      {showBriefing && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-3xl w-full bg-brand-card border border-brand-border rounded-xl p-6 space-y-4 animate-in fade-in">
+            <h2 className="text-xl font-bold">☀️ Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, Samuel.</h2>
+            <div className="text-sm">Weather — Murfreesboro, TN · 48°F Partly Cloudy · Freeze warning tonight.</div>
+            <div className="space-y-2 text-sm">
+              <button onClick={() => { navigate('/financials'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• 3 new invoices synced from QuickBooks ($14,280) →</button>
+              <button onClick={() => { navigate('/payments'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• Vendor payment processed — Miller Concrete ($8,400) →</button>
+              <button onClick={() => { navigate('/daily-logs'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• Connor submitted daily log — Riverside Custom →</button>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => closeBriefing(true)} className="px-3 py-2 rounded border border-brand-border text-sm">Don't show today</button>
+              <button onClick={() => closeBriefing()} className="px-3 py-2 rounded bg-brand-gold text-brand-bg text-sm font-semibold">Go to Dashboard</button>
+            </div>
+          </div>
+        </div>
+      )}
       {isDemo && <DemoBanner />}
 
       <div className="flex items-center justify-between">
@@ -76,6 +132,14 @@ export default function Dashboard() {
         </div>
       </div>
 
+
+      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-brand-text mb-3">Weather — Murfreesboro, TN</h3>
+        <div className="text-sm">48°F · Partly Cloudy · Wind 8mph NW</div>
+        <div className="text-xs text-brand-muted mt-1">Freeze warning tonight — protect exposed pipes</div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {/* KPI Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-live="polite" aria-label="Key performance indicators">
         <KPICard label="Cash on Hand" value={money(cash.cash_on_hand ?? 0)} icon={Banknote} trend={8.3} />
@@ -108,6 +172,11 @@ export default function Dashboard() {
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={demoProjects} layout="vertical" margin={{ left: 10 }}>
+              <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
+              <YAxis type="category" dataKey="name" stroke={colors.textMuted} fontSize={11} width={60} />
+              <Tooltip content={<ChartTooltip />} />
+              <Bar dataKey="budget" fill={colors.border} radius={[0, 4, 4, 0]} name="Budget" />
+              <Bar dataKey="spent" fill={colors.gold} radius={[0, 4, 4, 0]} name="Spent" />
               <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={11} />
               <YAxis type="category" dataKey="name" stroke={tc.textSecondary} fontSize={11} width={60} />
               <Tooltip content={<ChartTooltip />} />
@@ -128,6 +197,12 @@ export default function Dashboard() {
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={demoCashFlow}>
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+              <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
+              <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
+              <Tooltip content={<ChartTooltip />} />
+              <Area type="monotone" dataKey="inflow" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
+              <Area type="monotone" dataKey="outflow" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
               <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
               <XAxis dataKey="week" stroke={tc.textSecondary} fontSize={11} />
               <YAxis tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={11} />
@@ -152,6 +227,10 @@ export default function Dashboard() {
             const Icon = alertIcon[a.level] || Info;
             const style = alertStyles[a.level] || alertStyles.info;
             return (
+              <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-lg ${alertBg[a.level]}`}>
+                <Icon size={16} className={alertColor[a.level]} />
+                <span className="text-sm flex-1">{a.message}</span>
+                <button onClick={() => navigate(a.action_url)} className="text-xs text-brand-gold hover:text-brand-gold-light transition-colors font-medium">View &rarr;</button>
               <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: style.bg }}>
                 <Icon size={16} style={{ color: style.color }} />
                 <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{a.message}</span>
