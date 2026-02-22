@@ -83,7 +83,7 @@ const NAV_MENUS = [
   },
   {
     label: 'Financial',
-    activeRoutes: ['/financials', '/cash-flow', '/payments', '/draws', '/exceptions'],
+    activeRoutes: ['/financials', '/cash-flow', '/payments', '/draws', '/exceptions', '/purchase-orders', '/cost-codes', '/accounting', '/period-close', '/pl-by-job', '/historical-costs'],
     groups: [
       {
         items: [
@@ -106,14 +106,14 @@ const NAV_MENUS = [
       },
       {
         items: [
-          { icon: '\u{1F4CB}', label: 'Purchase Orders', to: '/exceptions', desc: 'Commitments & PO control' },
-          { icon: '\u{1F4D2}', label: 'Cost Code Manager', to: '/projects?view=costcodes', desc: 'Chart of accounts setup' },
+          { icon: '\u{1F4CB}', label: 'Purchase Orders', to: '/purchase-orders', desc: 'Commitments & PO control' },
+          { icon: '\u{1F4D2}', label: 'Cost Code Manager', to: '/cost-codes', desc: 'Chart of accounts setup' },
         ],
       },
       {
         items: [
-          { icon: '\u{1F504}', label: 'QuickBooks Sync Status', to: '/financials?tab=sync', desc: 'Integration status' },
-          { icon: '\u{1F4D1}', label: 'Period Close / Snapshots', to: '/financials?tab=snapshots', desc: 'Monthly close' },
+          { icon: '\u{1F504}', label: 'QuickBooks Sync Status', to: '/accounting', desc: 'Integration status' },
+          { icon: '\u{1F4D1}', label: 'Period Close / Snapshots', to: '/period-close', desc: 'Monthly close' },
         ],
       },
     ],
@@ -163,7 +163,7 @@ const NAV_MENUS = [
       {
         items: [
           { icon: '\u{1F4B0}', label: 'Job Cost Detail', to: '/projects?report=cost', desc: 'Per-project cost breakdown' },
-          { icon: '\u{1F4C8}', label: 'Profit & Loss by Job', to: '/financials?tab=pl', desc: 'P&L per project' },
+          { icon: '\u{1F4C8}', label: 'Profit & Loss by Job', to: '/pl-by-job', desc: 'P&L per project' },
           { icon: '\u{1F4B5}', label: 'Cash Flow Report', to: '/cash-flow', desc: 'Historical + projected' },
           { icon: '\u{1F477}', label: 'Labor Cost Report', to: '/team', desc: 'Payroll by project' },
         ],
@@ -171,7 +171,7 @@ const NAV_MENUS = [
       {
         items: [
           { icon: '\u{1F4CA}', label: 'Budget vs Actual', to: '/projects?report=variance', desc: 'Variance analysis' },
-          { icon: '\u{1F3C6}', label: 'Historical Cost Intel', to: '/mission?tab=intel', desc: 'Completed project costs' },
+          { icon: '\u{1F3C6}', label: 'Historical Cost Intel', to: '/historical-costs', desc: 'Completed project costs' },
         ],
       },
       {
@@ -207,6 +207,12 @@ const ROUTE_LABELS = {
   '/warranties': 'Warranties',
   '/decisions': 'Approvals',
   '/exceptions': 'Purchase Orders',
+  '/purchase-orders': 'Purchase Orders',
+  '/cost-codes': 'Cost Code Manager',
+  '/accounting': 'QuickBooks Sync',
+  '/period-close': 'Period Close',
+  '/pl-by-job': 'P&L by Job',
+  '/historical-costs': 'Historical Cost Intel',
   '/weather': 'Weather',
   '/scorecard': 'Scorecard',
   '/portal': 'Client Portal',
