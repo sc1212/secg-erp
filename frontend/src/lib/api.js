@@ -81,6 +81,33 @@ export const api = {
   lienWaivers: () => request('/team/lien-waivers'),
   lienWaiverRisk: () => request('/team/lien-waivers/risk'),
 
+  // Calendar
+  calendarEvents: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/calendar${q ? '?' + q : ''}`);
+  },
+  calendarEvent: (id) => request(`/calendar/${id}`),
+  createCalendarEvent: (data) => request('/calendar', { method: 'POST', body: JSON.stringify(data) }),
+  updateCalendarEvent: (id, data) => request(`/calendar/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteCalendarEvent: (id) => request(`/calendar/${id}`, { method: 'DELETE' }),
+  crewBoard: (week) => request(`/calendar/crew-board${week ? '?week=' + week : ''}`),
+
+  // Daily Logs
+  dailyLogFeed: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/daily-logs/feed${q ? '?' + q : ''}`);
+  },
+  dailyLogTodayStatus: () => request('/daily-logs/today-status'),
+  projectDailyLogs: (projectId, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/daily-logs/project/${projectId}${q ? '?' + q : ''}`);
+  },
+  dailyLog: (id) => request(`/daily-logs/${id}`),
+  createDailyLog: (data) => request('/daily-logs', { method: 'POST', body: JSON.stringify(data) }),
+  updateDailyLog: (id, data) => request(`/daily-logs/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  submitDailyLog: (id) => request(`/daily-logs/${id}/submit`, { method: 'POST' }),
+  reviewDailyLog: (id, reviewerId) => request(`/daily-logs/${id}/review?reviewer_id=${reviewerId}`, { method: 'POST' }),
+
   // Admin
   adminStatus: () => request('/admin/status'),
 };

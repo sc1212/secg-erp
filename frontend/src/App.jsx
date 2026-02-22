@@ -10,6 +10,8 @@ import Vendors from './pages/Vendors';
 import CRM from './pages/CRM';
 import Team from './pages/Team';
 import MissionControl from './pages/MissionControl';
+import Calendar from './pages/Calendar';
+import DailyLogs from './pages/DailyLogs';
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
           <Route path="/mission" element={<MissionControl />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/daily-logs" element={<DailyLogs />} />
           <Route path="/financials" element={<Financials />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/vendors" element={<Vendors />} />

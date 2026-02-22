@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { api } from '../lib/api';
@@ -9,7 +10,7 @@ import { PageLoading, ErrorState } from '../components/LoadingState';
 import {
   Banknote, FileText, Receipt, FolderKanban,
   TrendingUp, Building2, CalendarDays, CreditCard,
-  AlertTriangle, AlertCircle, Info,
+  AlertTriangle, AlertCircle, Info, CheckCircle, Camera, Clock,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -134,6 +135,9 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Today's Field Logs */}
+      <TodaysLogs />
+
       {/* Alerts */}
       <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
         <div className="panel-head" style={{ marginBottom: 12 }}>
@@ -154,6 +158,73 @@ export default function Dashboard() {
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const demoTodayStatus = {
+  date: new Date().toISOString().split('T')[0],
+  total_projects: 5,
+  submitted_count: 3,
+  projects: [
+    { project_id: 1, project_code: 'PRJ-042', project_name: 'Custom Home — Brentwood', has_log: true, status: 'submitted', author_name: 'Connor M.', submitted_at: new Date(new Date().setHours(16, 32)).toISOString(), work_performed: 'Completed rough plumbing inspection. Passed.', photo_count: 4 },
+    { project_id: 2, project_code: 'PRJ-038', project_name: 'Spec Home — Franklin', has_log: true, status: 'submitted', author_name: 'Joseph K.', submitted_at: new Date(new Date().setHours(17, 15)).toISOString(), work_performed: 'Framing crew progress — 2nd floor joists complete', photo_count: 7 },
+    { project_id: 3, project_code: 'PRJ-051', project_name: 'Remodel — Green Hills', has_log: true, status: 'submitted', author_name: 'Connor M.', submitted_at: new Date(new Date().setHours(16, 45)).toISOString(), work_performed: 'Drywall hanging — 85% complete', photo_count: 3 },
+    { project_id: 4, project_code: 'PRJ-033', project_name: 'Insurance Rehab — Antioch', has_log: false },
+    { project_id: 5, project_code: 'PRJ-027', project_name: 'Commercial — Berry Hill', has_log: false },
+  ],
+};
+
+function TodaysLogs() {
+  const navigate = useNavigate();
+  const { data } = useApi(() => api.dailyLogTodayStatus(), []);
+  const status = data || demoTodayStatus;
+
+  return (
+    <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
+      <div className="panel-head" style={{ marginBottom: 12 }}>
+        <div>
+          <h3 className="panel-title">Today's Field Logs</h3>
+          <div className="panel-sub">{status.submitted_count} of {status.total_projects} submitted</div>
+        </div>
+        <button className="ghost-btn" onClick={() => navigate('/daily-logs')}>View All</button>
+      </div>
+      <div className="space-y-2">
+        {status.projects?.map((p) => (
+          <div
+            key={p.project_id}
+            className="flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
+            style={{ background: p.has_log ? 'var(--status-profit-bg)' : 'var(--status-warning-bg)' }}
+            onClick={() => navigate(`/projects/${p.project_id}?tab=daily-log`)}
+          >
+            {p.has_log ? (
+              <CheckCircle size={16} style={{ color: 'var(--status-profit)', flexShrink: 0, marginTop: 2 }} />
+            ) : (
+              <AlertTriangle size={16} style={{ color: 'var(--status-warning)', flexShrink: 0, marginTop: 2 }} />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{p.project_code}</span>
+                {p.has_log ? (
+                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    — {p.author_name} submitted at {new Date(p.submitted_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium" style={{ color: 'var(--status-warning)' }}>No log submitted</span>
+                )}
+              </div>
+              {p.work_performed && (
+                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{p.work_performed}</p>
+              )}
+              {p.photo_count > 0 && (
+                <div className="flex items-center gap-1 mt-0.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                  <Camera size={11} /> {p.photo_count} photos
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

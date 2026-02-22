@@ -21,6 +21,8 @@ import ChangeOrdersTab from '../components/jobcosting/ChangeOrdersTab';
 import ScheduleTab from '../components/jobcosting/ScheduleTab';
 import CashflowWipTab from '../components/jobcosting/CashflowWipTab';
 import WhatChangedTab from '../components/jobcosting/WhatChangedTab';
+import DailyLogTab from '../components/DailyLogTab';
+import { Notebook } from 'lucide-react';
 
 const tabs = [
   { key: 'costs', label: 'Cost Codes', icon: DollarSign },
@@ -34,6 +36,7 @@ const tabs = [
   { key: 'milestones', label: 'Schedule', icon: Calendar },
   { key: 'cashflow', label: 'Cashflow / WIP', icon: BarChart3 },
   { key: 'changed', label: 'What Changed', icon: GitCommit },
+  { key: 'daily-log', label: 'Daily Log', icon: Notebook },
 ];
 
 export default function ProjectDetail() {
@@ -137,6 +140,7 @@ export default function ProjectDetail() {
       {tab === 'milestones' && <ScheduleTab project={project} />}
       {tab === 'cashflow' && <CashflowWipTab project={project} />}
       {tab === 'changed' && <WhatChangedTab project={project} />}
+      {tab === 'daily-log' && <DailyLogTab projectId={id} />}
     </div>
   );
 }

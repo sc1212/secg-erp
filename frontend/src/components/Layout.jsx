@@ -4,18 +4,41 @@ import {
   LayoutDashboard, FolderKanban, DollarSign, CreditCard,
   Users, Handshake, UserCog, ChevronLeft, ChevronRight,
   Bell, Search, Menu, X, Sun, Moon, Crosshair,
+  CalendarDays, FileText,
 } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
 
-const nav = [
-  { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/mission',   icon: Crosshair,       label: 'Mission Control' },
-  { to: '/projects',  icon: FolderKanban,    label: 'Projects' },
-  { to: '/financials',icon: DollarSign,      label: 'Financials' },
-  { to: '/payments',  icon: CreditCard,      label: 'Payments' },
-  { to: '/vendors',   icon: Handshake,       label: 'Vendors' },
-  { to: '/crm',       icon: Users,           label: 'CRM' },
-  { to: '/team',      icon: UserCog,         label: 'Team' },
+const navSections = [
+  {
+    label: 'Command',
+    items: [
+      { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/mission',   icon: Crosshair,       label: 'Mission Control' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { to: '/projects',   icon: FolderKanban, label: 'Projects' },
+      { to: '/calendar',   icon: CalendarDays, label: 'Calendar' },
+      { to: '/daily-logs', icon: FileText,     label: 'Daily Logs' },
+    ],
+  },
+  {
+    label: 'Finance',
+    items: [
+      { to: '/financials', icon: DollarSign, label: 'Financials' },
+      { to: '/payments',   icon: CreditCard, label: 'Payments' },
+      { to: '/vendors',    icon: Handshake,  label: 'Vendors' },
+    ],
+  },
+  {
+    label: 'People',
+    items: [
+      { to: '/team', icon: UserCog, label: 'Team' },
+      { to: '/crm',  icon: Users,   label: 'CRM' },
+    ],
+  },
 ];
 
 function SideLink({ to, icon: Icon, label, collapsed }) {
@@ -99,20 +122,25 @@ export default function Layout() {
           )}
         </div>
 
-        {/* Section label */}
-        {!collapsed && (
-          <div
-            className="px-4 pt-5 pb-1 text-[10px] font-semibold uppercase tracking-widest"
-            style={{ color: 'var(--sidebar-text)', opacity: 0.6 }}
-          >
-            Navigation
-          </div>
-        )}
-
-        {/* Nav */}
-        <nav className="flex-1 px-2 pb-3 space-y-0.5 overflow-y-auto">
-          {nav.map((n) => (
-            <SideLink key={n.to} {...n} collapsed={collapsed} />
+        {/* Nav sections */}
+        <nav className="flex-1 px-2 pb-3 overflow-y-auto">
+          {navSections.map((section) => (
+            <div key={section.label}>
+              {!collapsed && (
+                <div
+                  className="px-2 pt-5 pb-1 text-[10px] font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--sidebar-text)', opacity: 0.5 }}
+                >
+                  {section.label}
+                </div>
+              )}
+              {collapsed && <div className="pt-3" />}
+              <div className="space-y-0.5">
+                {section.items.map((n) => (
+                  <SideLink key={n.to} {...n} collapsed={collapsed} />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
