@@ -4,7 +4,8 @@ import {
   LayoutDashboard, FolderKanban, DollarSign, CreditCard,
   Users, Handshake, UserCog, ChevronLeft, ChevronRight,
   Bell, Search, Menu, X, Sun, Moon, Crosshair,
-  CalendarDays, FileText, CloudSun, FolderArchive,
+  CalendarDays, FileText, CloudSun, FolderArchive, Truck, Package,
+  ShieldCheck, Trophy, Wrench, Globe, Sunrise,
 } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -23,6 +24,8 @@ const navSections = [
       { to: '/calendar',   icon: CalendarDays, label: 'Calendar' },
       { to: '/daily-logs', icon: FileText,     label: 'Daily Logs' },
       { to: '/weather',    icon: CloudSun,     label: 'Weather' },
+      { to: '/fleet',      icon: Truck,        label: 'Fleet' },
+      { to: '/inventory',  icon: Package,      label: 'Inventory' },
     ],
   },
   {
@@ -36,14 +39,24 @@ const navSections = [
   {
     label: 'People',
     items: [
-      { to: '/team', icon: UserCog, label: 'Team' },
-      { to: '/crm',  icon: Users,   label: 'CRM' },
+      { to: '/team',       icon: UserCog,  label: 'Team' },
+      { to: '/crm',        icon: Users,    label: 'CRM' },
+      { to: '/scorecard',  icon: Trophy,   label: 'Scorecard' },
     ],
   },
   {
     label: 'Compliance',
     items: [
-      { to: '/documents', icon: FolderArchive, label: 'Documents' },
+      { to: '/documents',   icon: FolderArchive, label: 'Documents' },
+      { to: '/safety',      icon: ShieldCheck,   label: 'Safety' },
+      { to: '/warranties',  icon: Wrench,        label: 'Warranties' },
+    ],
+  },
+  {
+    label: 'External',
+    items: [
+      { to: '/portal',    icon: Globe,   label: 'Client Portal' },
+      { to: '/briefing',  icon: Sunrise, label: 'Briefing' },
     ],
   },
 ];

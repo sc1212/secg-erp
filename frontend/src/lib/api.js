@@ -138,6 +138,92 @@ export const api = {
   createDocument: (data) => request('/documents', { method: 'POST', body: JSON.stringify(data) }),
   updateDocument: (id, data) => request(`/documents/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
+  // Fleet
+  fleetVehicles: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/fleet${q ? '?' + q : ''}`);
+  },
+  fleetVehicle: (id) => request(`/fleet/${id}`),
+  createFleetVehicle: (data) => request('/fleet', { method: 'POST', body: JSON.stringify(data) }),
+  updateFleetVehicle: (id, data) => request(`/fleet/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  fleetMaintenance: (id) => request(`/fleet/${id}/maintenance`),
+  createFleetMaintenance: (id, data) => request(`/fleet/${id}/maintenance`, { method: 'POST', body: JSON.stringify(data) }),
+  fleetFuel: (id) => request(`/fleet/${id}/fuel`),
+  createFleetFuel: (id, data) => request(`/fleet/${id}/fuel`, { method: 'POST', body: JSON.stringify(data) }),
+  fleetAlerts: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/fleet/alerts${q ? '?' + q : ''}`);
+  },
+
+  // Inventory
+  inventoryMaterials: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/inventory/materials${q ? '?' + q : ''}`);
+  },
+  inventoryMaterial: (id) => request(`/inventory/materials/${id}`),
+  createInventoryMaterial: (data) => request('/inventory/materials', { method: 'POST', body: JSON.stringify(data) }),
+  inventoryEntries: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/inventory/entries${q ? '?' + q : ''}`);
+  },
+  inventoryTransactions: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/inventory/transactions${q ? '?' + q : ''}`);
+  },
+  createInventoryTransaction: (data) => request('/inventory/transactions', { method: 'POST', body: JSON.stringify(data) }),
+  inventoryAlerts: () => request('/inventory/alerts'),
+
+  // Safety
+  safetyDashboard: () => request('/safety/dashboard'),
+  safetyIncidents: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/safety/incidents${q ? '?' + q : ''}`);
+  },
+  createSafetyIncident: (data) => request('/safety/incidents', { method: 'POST', body: JSON.stringify(data) }),
+  updateSafetyIncident: (id, status) => request(`/safety/incidents/${id}?status=${status}`, { method: 'PATCH' }),
+  toolboxTalks: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/safety/toolbox-talks${q ? '?' + q : ''}`);
+  },
+  createToolboxTalk: (data) => request('/safety/toolbox-talks', { method: 'POST', body: JSON.stringify(data) }),
+  certifications: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/safety/certifications${q ? '?' + q : ''}`);
+  },
+  createCertification: (data) => request('/safety/certifications', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Warranties
+  warranties: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/warranties${q ? '?' + q : ''}`);
+  },
+  warrantySummary: () => request('/warranties/summary'),
+  warranty: (id) => request(`/warranties/${id}`),
+  createWarranty: (data) => request('/warranties', { method: 'POST', body: JSON.stringify(data) }),
+  updateWarranty: (id, data) => request(`/warranties/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  // Scorecard
+  scorecardPrograms: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/scorecard/programs${q ? '?' + q : ''}`);
+  },
+  createScorecardProgram: (data) => request('/scorecard/programs', { method: 'POST', body: JSON.stringify(data) }),
+  scorecardLeaderboard: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/scorecard/leaderboard${q ? '?' + q : ''}`);
+  },
+  scorecardScores: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/scorecard/scores${q ? '?' + q : ''}`);
+  },
+
+  // Client Portal
+  portalClients: () => request('/portal/clients'),
+  portalClient: (id) => request(`/portal/clients/${id}`),
+
+  // Morning Briefing
+  morningBriefing: () => request('/briefing/today'),
+
   // Admin
   adminStatus: () => request('/admin/status'),
 };

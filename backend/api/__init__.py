@@ -15,6 +15,13 @@ from backend.api.calendar import router as calendar_router
 from backend.api.daily_logs import router as daily_logs_router
 from backend.api.weather import router as weather_router
 from backend.api.documents import router as documents_router
+from backend.api.inventory import router as inventory_router
+from backend.api.fleet import router as fleet_router
+from backend.api.safety import router as safety_router
+from backend.api.warranty import router as warranty_router
+from backend.api.scorecard import router as scorecard_router
+from backend.api.portal import router as portal_router
+from backend.api.briefing import router as briefing_router
 
 api_router = APIRouter()
 api_router.include_router(admin_router)
@@ -30,3 +37,10 @@ api_router.include_router(calendar_router)
 api_router.include_router(daily_logs_router)
 api_router.include_router(weather_router)
 api_router.include_router(documents_router)
+api_router.include_router(inventory_router)
+api_router.include_router(fleet_router)
+api_router.include_router(safety_router)
+api_router.include_router(warranty_router)
+api_router.include_router(scorecard_router)
+api_router.include_router(portal_router)
+api_router.include_router(briefing_router)

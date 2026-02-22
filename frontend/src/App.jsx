@@ -14,6 +14,13 @@ import Calendar from './pages/Calendar';
 import DailyLogs from './pages/DailyLogs';
 import Weather from './pages/Weather';
 import Documents from './pages/Documents';
+import Inventory from './pages/Inventory';
+import Fleet from './pages/Fleet';
+import Safety from './pages/Safety';
+import Warranties from './pages/Warranties';
+import Scorecard from './pages/Scorecard';
+import ClientPortal from './pages/ClientPortal';
+import MorningBriefing from './pages/MorningBriefing';
 
 export default function App() {
   return (
@@ -34,6 +41,13 @@ export default function App() {
           <Route path="/crm" element={<CRM />} />
           <Route path="/team" element={<Team />} />
           <Route path="/documents" element={<Documents />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/fleet" element={<Fleet />} />
+          <Route path="/safety" element={<Safety />} />
+          <Route path="/warranties" element={<Warranties />} />
+          <Route path="/scorecard" element={<Scorecard />} />
+          <Route path="/portal" element={<ClientPortal />} />
+          <Route path="/briefing" element={<MorningBriefing />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
