@@ -14,10 +14,11 @@ from sqlalchemy.orm import Session
 
 from backend.importers.base import BaseImporter, ImportResult
 from backend.models.core import (
-    ChangeOrder, ChangeOrderStatus, CostCode, CostEvent, CostEventSource,
+    ChangeOrder, ChangeOrderStatus, CostCode, CostEventSource,
     CostEventType, Employee, Invoice, InvoiceStatus, Payment, PayApp,
     PayAppLine, Project, ProjectStatus, ProjectType, Quote, SOVLine, Vendor,
 )
+from backend.models.extended import CostEvent
 from backend.models.extended import (
     BidPipeline, BidStatus, CashForecastLine, CashSnapshot, ChartOfAccounts,
     CrewAllocation, DataSource, Debt, DebtType, Lead, LienWaiver,
