@@ -353,9 +353,6 @@ export const api = {
   cashRunway: () => request('/cash-flow/runway'),
   generateCashForecast: () => request('/cash-flow/generate', { method: 'POST' }),
 
-  // Search
-  search: (q) => request(`/search?q=${encodeURIComponent(q)}`),
-
   // Admin
   adminStatus: () => request('/admin/status'),
 };

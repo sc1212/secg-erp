@@ -60,7 +60,7 @@ def list_proposals(
     q = db.query(LeadProposal)
     if status:
         q = q.filter(LeadProposal.status == status)
-    proposals = q.order_by(LeadProposal.proposal_amount.desc().nullslast()).all()
+    proposals = q.order_by(LeadProposal.client_price.desc().nullslast()).all()
     return [LeadProposalOut.model_validate(p) for p in proposals]
 
 
@@ -136,7 +136,7 @@ def leads_by_salesperson(db: Session = Depends(get_db)):
     rows = db.query(
         Lead.salesperson,
         func.count(Lead.id),
-        func.coalesce(func.sum(Lead.estimated_value), 0),
+        func.coalesce(func.sum(Lead.estimated_revenue), 0),
     ).group_by(Lead.salesperson).all()
 
     return [
