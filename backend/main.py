@@ -3,7 +3,7 @@
 Main entry point. Run with:
     uvicorn backend.main:app --reload --port 8000
 
-Production (Railway):
+Production (Render):
     uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 """
 
@@ -18,14 +18,24 @@ from backend.core.config import settings
 from backend.core.database import Base, engine
 
 
-def _seed_admin_user(log) -> None:
-    """Create the default admin user from env vars if not already present."""
-    email = os.getenv("ADMIN_EMAIL", "")
-    password = os.getenv("ADMIN_PASSWORD", "")
-    username = os.getenv("ADMIN_USERNAME", "")
-    full_name = os.getenv("ADMIN_FULL_NAME", "")
-    if not (email and password and username and full_name):
-        return
+_DEFAULT_USERS = [
+    {
+        "email": "scarson@southeastenterprise.com",
+        "username": "scarson",
+        "full_name": "Samuel Carson",
+        "password": "Southeast123!",
+    },
+    {
+        "email": "matt@southeastenterprise.com",
+        "username": "mseibert",
+        "full_name": "Matt Seibert",
+        "password": "Southeast123!",
+    },
+]
+
+
+def _seed_admin_users(log) -> None:
+    """Seed default admin users on every startup (skips if already present)."""
     try:
         from passlib.context import CryptContext
         from sqlalchemy.orm import Session
@@ -34,18 +44,21 @@ def _seed_admin_user(log) -> None:
         pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
         db: Session = SessionLocal()
         try:
-            existing = db.query(UserAccount).filter(UserAccount.email == email).first()
-            if not existing:
-                user = UserAccount(
-                    email=email,
-                    username=username,
-                    full_name=full_name,
-                    password_hash=pwd_ctx.hash(password),
-                    is_active=True,
-                )
-                db.add(user)
-                db.commit()
-                log.info("Admin user seeded: %s", email)
+            for u in _DEFAULT_USERS:
+                existing = db.query(UserAccount).filter(UserAccount.email == u["email"]).first()
+                if not existing:
+                    user = UserAccount(
+                        email=u["email"],
+                        username=u["username"],
+                        full_name=u["full_name"],
+                        password_hash=pwd_ctx.hash(u["password"]),
+                        is_active=True,
+                    )
+                    db.add(user)
+                    db.commit()
+                    log.info("Admin user seeded: %s", u["email"])
+                else:
+                    log.info("Admin user already exists: %s", u["email"])
         finally:
             db.close()
     except Exception as exc:
@@ -54,14 +67,14 @@ def _seed_admin_user(log) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create tables on startup if they don't exist, then seed admin user."""
+    """Create tables on startup if they don't exist, then seed admin users."""
     import logging
     log = logging.getLogger(__name__)
     try:
         Base.metadata.create_all(bind=engine)
     except Exception as exc:
         log.warning("DB not ready, skipping create_all: %s", exc)
-    _seed_admin_user(log)
+    _seed_admin_users(log)
     yield
 
 
@@ -74,15 +87,21 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
-# CORS — hardcoded production + local origins
+# CORS — all known Render frontend URLs + local dev
+_cors_origins = [
+    "https://secg-erp.onrender.com",
+    "https://secg-erp-pj9h.onrender.com",
+    "https://secg-erp-frontend.onrender.com",
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+_extra = os.getenv("CORS_ORIGINS", "")
+if _extra:
+    _cors_origins.extend([o.strip() for o in _extra.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://secg-erp.onrender.com",
-        "https://secg-erp-pj9h.onrender.com",
-        "http://localhost:5173",
-        "http://localhost:3000",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
