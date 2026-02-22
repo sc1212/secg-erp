@@ -19,6 +19,30 @@ import {
   AreaChart, Area, CartesianGrid,
 } from 'recharts';
 
+const alertIcon = {
+  critical: AlertCircle,
+  warning:  AlertTriangle,
+  info:     Info,
+};
+
+const demoProjects = [
+  { name: 'Brentwood', budget: 320000, spent: 280000 },
+  { name: 'Franklin',  budget: 410000, spent: 310000 },
+  { name: 'Green Hills', budget: 180000, spent: 172000 },
+  { name: 'Antioch',   budget: 260000, spent: 195000 },
+];
+
+const demoCashFlow = [
+  { week: 'Wk 1', inflow: 95000, outflow: 78000 },
+  { week: 'Wk 2', inflow: 60000, outflow: 82000 },
+  { week: 'Wk 3', inflow: 110000, outflow: 74000 },
+  { week: 'Wk 4', inflow: 85000, outflow: 90000 },
+  { week: 'Wk 5', inflow: 120000, outflow: 88000 },
+  { week: 'Wk 6', inflow: 70000, outflow: 76000 },
+  { week: 'Wk 7', inflow: 95000, outflow: 85000 },
+  { week: 'Wk 8', inflow: 105000, outflow: 92000 },
+];
+
 const alertStyles = {
   critical: { color: 'var(--status-loss)',    bg: 'var(--status-loss-bg)' },
   warning:  { color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
@@ -151,11 +175,6 @@ export default function Dashboard() {
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={demoProjects} layout="vertical" margin={{ left: 10 }}>
-              <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
-              <YAxis type="category" dataKey="name" stroke={colors.textMuted} fontSize={11} width={60} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="budget" fill={colors.border} radius={[0, 4, 4, 0]} name="Budget" />
-              <Bar dataKey="spent" fill={colors.gold} radius={[0, 4, 4, 0]} name="Spent" />
               <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={11} />
               <YAxis type="category" dataKey="name" stroke={tc.textSecondary} fontSize={11} width={60} />
               <Tooltip content={<ChartTooltip />} />
@@ -176,12 +195,6 @@ export default function Dashboard() {
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={demoCashFlow}>
-              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-              <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
-              <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="inflow" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
-              <Area type="monotone" dataKey="outflow" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
               <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
               <XAxis dataKey="week" stroke={tc.textSecondary} fontSize={11} />
               <YAxis tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={11} />

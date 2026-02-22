@@ -35,7 +35,9 @@ class Settings:
     cors_origins: List[str] = field(default_factory=lambda: [
         o.strip() for o in os.getenv(
             "CORS_ORIGINS",
-            "http://localhost:3000,http://localhost:5173,https://*.up.railway.app"
+            "http://localhost:3000,http://localhost:5173,"
+            "https://secg-erp.onrender.com,https://secg-erp-pi9h.onrender.com,"
+            "https://secg-erp-api.onrender.com"
         ).split(",")
     ])
 
