@@ -1,24 +1,25 @@
-export function Spinner({ size = 'md' }) {
-  const s = size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-8 h-8' : 'w-6 h-6';
-  return (
-    <div className={`${s} border-2 border-brand-border border-t-brand-gold rounded-full animate-spin`} />
-  );
+function SkeletonBlock({ className = '' }) {
+  return <div className={`rounded-lg bg-brand-surface shimmer ${className}`} aria-hidden="true" />;
 }
 
 export function PageLoading() {
   return (
-    <div className="flex items-center justify-center h-64">
-      <Spinner size="lg" />
+    <div className="space-y-4" role="status" aria-live="polite" aria-label="Loading content">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => <SkeletonBlock key={i} className="h-20" />)}
+      </div>
+      <SkeletonBlock className="h-64" />
+      <SkeletonBlock className="h-48" />
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }) {
   return (
-    <div className="flex flex-col items-center justify-center h-64 gap-4">
+    <div className="flex flex-col items-center justify-center h-64 gap-4" aria-live="polite">
       <div className="text-danger text-sm">{message || 'Something went wrong'}</div>
       {onRetry && (
-        <button onClick={onRetry} className="px-4 py-2 bg-brand-card border border-brand-border rounded-lg text-sm hover:border-brand-gold/40 transition-colors">
+        <button onClick={onRetry} className="px-4 py-2 bg-brand-card border border-brand-border rounded-lg text-sm lg:hover:border-brand-gold/40 transition-colors">
           Try again
         </button>
       )}

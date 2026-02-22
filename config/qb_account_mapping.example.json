@@ -1,0 +1,7 @@
+{
+  "account_to_cost_code": {
+    "5000": {"cost_code": "01-000", "name": "General Conditions", "division": "custom_homes"},
+    "5100": {"cost_code": "03-000", "name": "Concrete", "division": "custom_homes"},
+    "5200": {"cost_code": "06-100", "name": "Rough Carpentry", "division": "custom_homes"}
+  }
+}
