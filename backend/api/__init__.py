@@ -34,6 +34,7 @@ from backend.api.draw_requests import router as draw_requests_router
 from backend.api.permits import router as permits_router
 from backend.api.profit_fade import router as profit_fade_router
 from backend.api.cash_flow import router as cash_flow_router
+from backend.api.search import router as search_router
 
 api_router = APIRouter()
 api_router.include_router(admin_router)
@@ -70,3 +71,4 @@ api_router.include_router(draw_requests_router)
 api_router.include_router(permits_router)
 api_router.include_router(profit_fade_router)
 api_router.include_router(cash_flow_router)
+api_router.include_router(search_router)

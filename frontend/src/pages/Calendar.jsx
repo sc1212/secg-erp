@@ -130,11 +130,12 @@ export default function Calendar() {
         </div>
       )}
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import { CalendarDays, Plus, ChevronLeft, ChevronRight, Clock, MapPin, Users } from 'lucide-react';
+import { CalendarDays, Plus, ChevronLeft, ChevronRight, Clock, MapPin, Users, X, Download, Edit3, Trash2, ExternalLink } from 'lucide-react';
 
 const EVENT_COLORS = {
   inspection: 'var(--chart-primary)',
@@ -161,15 +162,23 @@ const EVENT_LABELS = {
 const VIEWS = ['week', 'crew', 'month'];
 const VIEW_LABELS = { week: 'Week', crew: 'Crew Board', month: 'Month' };
 
+const DEMO_PROJECTS = {
+  1: { id: 1, code: 'PRJ-042', name: 'Custom Home — Brentwood' },
+  2: { id: 2, code: 'PRJ-038', name: 'Spec Home — Franklin' },
+  3: { id: 3, code: 'PRJ-051', name: 'Remodel — Green Hills' },
+  4: { id: 4, code: 'PRJ-033', name: 'Insurance Rehab — Antioch' },
+  5: { id: 5, code: 'PRJ-027', name: 'Commercial — Berry Hill' },
+};
+
 const demoEvents = [
-  { id: 1, title: 'Rough Plumbing Inspection', event_type: 'inspection', start_datetime: nextWeekday(1, 9), end_datetime: nextWeekday(1, 10), project_id: 1, created_by: 1, all_day: false, attendees: [] },
-  { id: 2, title: 'Draw #3 Deadline — PRJ-042', event_type: 'draw_due', start_datetime: nextWeekday(2, 0), end_datetime: null, project_id: 1, created_by: 1, all_day: true, attendees: [] },
-  { id: 3, title: 'Owner Walkthrough — PRJ-038', event_type: 'walkthrough', start_datetime: nextWeekday(3, 14), end_datetime: nextWeekday(3, 16), project_id: 2, created_by: 1, all_day: false, attendees: [] },
-  { id: 4, title: 'Drywall Delivery', event_type: 'delivery', start_datetime: nextWeekday(1, 8), end_datetime: nextWeekday(1, 9), project_id: 3, created_by: 1, all_day: false, attendees: [] },
-  { id: 5, title: 'Joseph PTO', event_type: 'pto', start_datetime: nextWeekday(5, 0), end_datetime: null, project_id: null, created_by: 3, all_day: true, attendees: [] },
-  { id: 6, title: 'Safety Meeting', event_type: 'meeting', start_datetime: nextWeekday(0, 7), end_datetime: nextWeekday(0, 7, 30), project_id: null, created_by: 1, all_day: false, attendees: [] },
-  { id: 7, title: 'Electrical Inspection', event_type: 'inspection', start_datetime: nextWeekday(4, 10), end_datetime: nextWeekday(4, 11), project_id: 2, created_by: 1, all_day: false, attendees: [] },
-  { id: 8, title: 'Framing Milestone Complete', event_type: 'milestone', start_datetime: nextWeekday(3, 0), end_datetime: null, project_id: 2, created_by: 1, all_day: true, attendees: [] },
+  { id: 1, title: 'Rough Plumbing Inspection', event_type: 'inspection', start_datetime: nextWeekday(1, 9), end_datetime: nextWeekday(1, 10), project_id: 1, project_name: 'Custom Home — Brentwood', created_by: 1, all_day: false, location: '1247 Tyne Blvd, Brentwood, TN', description: 'Metro codes rough plumbing inspection — ensure all work is accessible before drywall.', attendees: ['Matt S.', 'Connor M.', 'Metro Inspector'] },
+  { id: 2, title: 'Draw #3 Deadline — PRJ-042', event_type: 'draw_due', start_datetime: nextWeekday(2, 0), end_datetime: null, project_id: 1, project_name: 'Custom Home — Brentwood', created_by: 1, all_day: true, location: '', description: 'Submit draw request #3 to lender. Framing + rough-in milestone reached.', attendees: ['Matt S.'] },
+  { id: 3, title: 'Owner Walkthrough — PRJ-038', event_type: 'walkthrough', start_datetime: nextWeekday(3, 14), end_datetime: nextWeekday(3, 16), project_id: 2, project_name: 'Spec Home — Franklin', created_by: 1, all_day: false, location: '830 Evans St, Franklin, TN', description: 'Pre-drywall walkthrough with homeowner. Review framing, mechanicals, and any change orders.', attendees: ['Matt S.', 'Joseph K.', 'Homeowner'] },
+  { id: 4, title: 'Drywall Delivery', event_type: 'delivery', start_datetime: nextWeekday(1, 8), end_datetime: nextWeekday(1, 9), project_id: 3, project_name: 'Remodel — Green Hills', created_by: 1, all_day: false, location: '2100 Abbott Martin Rd, Green Hills, TN', description: 'Drywall delivery — 120 sheets. Crew must have garage cleared for staging.', attendees: ['Jake R.', 'Chris T.'] },
+  { id: 5, title: 'Joseph PTO', event_type: 'pto', start_datetime: nextWeekday(5, 0), end_datetime: null, project_id: null, project_name: null, created_by: 3, all_day: true, location: '', description: 'Personal day off.', attendees: ['Joseph K.'] },
+  { id: 6, title: 'Safety Meeting', event_type: 'meeting', start_datetime: nextWeekday(0, 7), end_datetime: nextWeekday(0, 7, 30), project_id: null, project_name: null, created_by: 1, all_day: false, location: 'SECG Office — Conference Room A', description: 'Weekly safety standup. Review incidents, near-misses, and upcoming OSHA topics.', attendees: ['Matt S.', 'Connor M.', 'Joseph K.', 'Jake R.', 'Chris T.'] },
+  { id: 7, title: 'Electrical Inspection', event_type: 'inspection', start_datetime: nextWeekday(4, 10), end_datetime: nextWeekday(4, 11), project_id: 2, project_name: 'Spec Home — Franklin', created_by: 1, all_day: false, location: '830 Evans St, Franklin, TN', description: 'Rough electrical inspection — all circuits labeled, panels accessible.', attendees: ['Joseph K.', 'Metro Inspector'] },
+  { id: 8, title: 'Framing Milestone Complete', event_type: 'milestone', start_datetime: nextWeekday(3, 0), end_datetime: null, project_id: 2, project_name: 'Spec Home — Franklin', created_by: 1, all_day: true, location: '', description: 'Framing 100% complete. Ready for mechanical rough-in phase.', attendees: ['Joseph K.'] },
 ];
 
 const demoCrew = [
@@ -221,10 +230,55 @@ function formatDayHeader(d) {
   };
 }
 
+function formatICSDate(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+function generateICS(event) {
+  const dtStart = formatICSDate(event.start_datetime);
+  const dtEnd = event.end_datetime
+    ? formatICSDate(event.end_datetime)
+    : formatICSDate(event.start_datetime);
+  const summary = (event.title || '').replace(/[,;\\]/g, '\\$&');
+  const description = (event.description || '').replace(/[,;\\]/g, '\\$&').replace(/\n/g, '\\n');
+  const location = (event.location || '').replace(/[,;\\]/g, '\\$&');
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//SECG ERP//Calendar//EN',
+    'BEGIN:VEVENT',
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:${summary}`,
+    `DESCRIPTION:${description}`,
+    `LOCATION:${location}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(event.title || 'event').replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function Calendar() {
+  const navigate = useNavigate();
   const [view, setView] = useState('week');
   const [weekOffset, setWeekOffset] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  const onEventClick = (event) => setSelectedEvent(event);
 
   const weekStart = getWeekDays(weekOffset)[0];
   const weekEnd = getWeekDays(weekOffset)[6];
@@ -331,7 +385,8 @@ export default function Calendar() {
                   {dayEvents.map((e) => (
                     <div
                       key={e.id}
-                      className="rounded px-2 py-1.5 text-xs cursor-pointer transition-opacity"
+                      onClick={() => onEventClick(e)}
+                      className="rounded px-2 py-1.5 text-xs cursor-pointer transition-opacity hover:opacity-80"
                       style={{
                         background: `color-mix(in srgb, ${EVENT_COLORS[e.event_type] || 'var(--accent)'} 15%, transparent)`,
                         borderLeft: `3px solid ${EVENT_COLORS[e.event_type] || 'var(--accent)'}`,
@@ -357,10 +412,10 @@ export default function Calendar() {
         </div>
       )}
 
-      {view === 'crew' && <CrewBoard days={days} events={events} crew={demoCrew} />}
+      {view === 'crew' && <CrewBoard days={days} events={events} crew={demoCrew} onEventClick={onEventClick} />}
 
       {view === 'month' && (
-        <MonthView weekOffset={weekOffset} events={events} />
+        <MonthView weekOffset={weekOffset} events={events} onEventClick={onEventClick} />
       )}
 
       {/* Event Type Legend */}
@@ -374,11 +429,19 @@ export default function Calendar() {
       </div>
 
       {showModal && <EventModal onClose={() => setShowModal(false)} />}
+
+      {selectedEvent && (
+        <EventDetailPanel
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          navigate={navigate}
+        />
+      )}
     </div>
   );
 }
 
-function CrewBoard({ days, events, crew }) {
+function CrewBoard({ days, events, crew, onEventClick }) {
   return (
     <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid var(--color-brand-border)' }}>
       <table className="mc-table" style={{ minWidth: 800 }}>
@@ -412,7 +475,8 @@ function CrewBoard({ days, events, crew }) {
                         {dayEvents.slice(0, 2).map((e) => (
                           <div
                             key={e.id}
-                            className="text-[10px] px-2 py-1 rounded truncate"
+                            onClick={() => onEventClick(e)}
+                            className="text-[10px] px-2 py-1 rounded truncate cursor-pointer hover:opacity-80"
                             style={{
                               background: `color-mix(in srgb, ${EVENT_COLORS[e.event_type] || 'var(--accent)'} 15%, transparent)`,
                               color: EVENT_COLORS[e.event_type] || 'var(--accent)',
@@ -437,7 +501,7 @@ function CrewBoard({ days, events, crew }) {
   );
 }
 
-function MonthView({ weekOffset, events }) {
+function MonthView({ weekOffset, events, onEventClick }) {
   const baseDate = new Date();
   baseDate.setDate(baseDate.getDate() + weekOffset * 7);
   const year = baseDate.getFullYear();
@@ -478,7 +542,7 @@ function MonthView({ weekOffset, events }) {
                 {d.getDate()}
               </div>
               {dayEvents.slice(0, 3).map((e) => (
-                <div key={e.id} className="text-[9px] truncate rounded px-1 py-0.5 mb-0.5" style={{ background: `color-mix(in srgb, ${EVENT_COLORS[e.event_type] || 'var(--accent)'} 15%, transparent)`, color: EVENT_COLORS[e.event_type] || 'var(--accent)' }}>
+                <div key={e.id} onClick={() => onEventClick(e)} className="text-[9px] truncate rounded px-1 py-0.5 mb-0.5 cursor-pointer hover:opacity-80" style={{ background: `color-mix(in srgb, ${EVENT_COLORS[e.event_type] || 'var(--accent)'} 15%, transparent)`, color: EVENT_COLORS[e.event_type] || 'var(--accent)' }}>
                   {e.title}
                 </div>
               ))}
@@ -490,6 +554,180 @@ function MonthView({ weekOffset, events }) {
         })}
       </div>
     </div>
+  );
+}
+
+function EventDetailPanel({ event, onClose, navigate }) {
+  const color = EVENT_COLORS[event.event_type] || 'var(--accent)';
+  const typeLabel = EVENT_LABELS[event.event_type] || event.event_type;
+  const project = event.project_id ? DEMO_PROJECTS[event.project_id] : null;
+  const startDate = new Date(event.start_datetime);
+  const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const timeStr = event.all_day
+    ? 'All day'
+    : `${formatTime(event.start_datetime)}${event.end_datetime ? ` — ${formatTime(event.end_datetime)}` : ''}`;
+  const attendees = event.attendees || [];
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[90]"
+        style={{ background: 'rgba(0,0,0,0.3)' }}
+        onClick={onClose}
+      />
+      {/* Slide-out panel */}
+      <div
+        className="fixed top-0 right-0 h-full z-[100] flex flex-col"
+        style={{
+          width: 400,
+          maxWidth: '90vw',
+          background: 'var(--bg-surface)',
+          borderLeft: '1px solid var(--border-subtle)',
+          boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
+          animation: 'slideInRight 0.25s ease-out',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Event Details</h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--text-tertiary)', background: 'var(--bg-elevated)' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          {/* Title + Badge */}
+          <div>
+            <div className="flex items-start gap-2">
+              <h3 className="text-lg font-bold flex-1" style={{ color: 'var(--text-primary)' }}>{event.title}</h3>
+            </div>
+            <span
+              className="inline-block mt-2 text-[11px] font-semibold px-2.5 py-1 rounded-full"
+              style={{
+                background: `color-mix(in srgb, ${color} 15%, transparent)`,
+                color: color,
+              }}
+            >
+              {typeLabel}
+            </span>
+          </div>
+
+          {/* Date & Time */}
+          <div className="flex items-start gap-3">
+            <Clock size={16} style={{ color: 'var(--text-tertiary)', marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{dateStr}</div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{timeStr}</div>
+            </div>
+          </div>
+
+          {/* Project */}
+          {project && (
+            <div className="flex items-start gap-3">
+              <CalendarDays size={16} style={{ color: 'var(--text-tertiary)', marginTop: 2, flexShrink: 0 }} />
+              <div>
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Project</div>
+                <button
+                  onClick={() => { navigate(`/projects/${project.id}`); onClose(); }}
+                  className="text-sm font-medium flex items-center gap-1 hover:underline"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  {project.code} — {project.name}
+                  <ExternalLink size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Location */}
+          {event.location && (
+            <div className="flex items-start gap-3">
+              <MapPin size={16} style={{ color: 'var(--text-tertiary)', marginTop: 2, flexShrink: 0 }} />
+              <div>
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Location</div>
+                <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{event.location}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {event.description && (
+            <div
+              className="rounded-md p-3 text-sm leading-relaxed"
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              {event.description}
+            </div>
+          )}
+
+          {/* Attendees */}
+          {attendees.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Users size={14} style={{ color: 'var(--text-tertiary)' }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-tertiary)' }}>
+                  Attendees ({attendees.length})
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {attendees.map((name, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+                      style={{ background: `color-mix(in srgb, ${color} 20%, transparent)`, color: color }}
+                    >
+                      {name.split(' ').map(w => w[0]).join('').toUpperCase()}
+                    </div>
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer actions */}
+        <div className="p-4 flex gap-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+          <button
+            onClick={() => generateICS(event)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium flex-1 justify-center hover:opacity-90 transition-opacity"
+            style={{ background: 'var(--accent)', color: '#fff' }}
+          >
+            <Download size={13} /> Export .ics
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium flex-1 justify-center hover:opacity-90 transition-opacity"
+            style={{ border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', background: 'var(--bg-elevated)' }}
+          >
+            <Edit3 size={13} /> Edit
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium justify-center hover:opacity-90 transition-opacity"
+            style={{ border: '1px solid var(--border-medium)', color: 'var(--status-loss)', background: 'var(--bg-elevated)' }}
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Keyframe for slide-in animation */}
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
+    </>
   );
 }
 
