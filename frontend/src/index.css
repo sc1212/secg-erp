@@ -57,6 +57,20 @@
   --chart-primary:   #38bdf8;
   --chart-secondary: #818cf8;
   --chart-tertiary:  #34d399;
+  /* ── Tailwind brand-color bridge — makes all existing pages theme-aware ── */
+  --color-brand-gold:       #38bdf8;
+  --color-brand-gold-light: #62cbfa;
+  --color-brand-gold-dark:  #0c8fd4;
+  --color-brand-bg:         #0c1220;
+  --color-brand-surface:    #151f30;
+  --color-brand-card:       #111828;
+  --color-brand-card-hover: #1a2540;
+  --color-brand-text:       #f0f2f5;
+  --color-brand-muted:      #94a3b8;
+  --color-brand-border:     rgba(255, 255, 255, 0.08);
+  --color-ok:               #34d399;
+  --color-danger:           #fb7185;
+  --color-warn:             #fbbf24;
 }
 
 /* ── Design System — Arctic Command ──────────────────────────────────────── */
@@ -99,6 +113,20 @@
   --chart-primary:   #1e3a5f;
   --chart-secondary: #1e6ab0;
   --chart-tertiary:  #16803c;
+  /* ── Tailwind brand-color bridge — makes all existing pages theme-aware ── */
+  --color-brand-gold:       #1e3a5f;
+  --color-brand-gold-light: #2a4f7c;
+  --color-brand-gold-dark:  #15304d;
+  --color-brand-bg:         #f4f5f7;
+  --color-brand-surface:    #f8f9fb;
+  --color-brand-card:       #ffffff;
+  --color-brand-card-hover: #eef0f4;
+  --color-brand-text:       #1a1a2e;
+  --color-brand-muted:      #5a6378;
+  --color-brand-border:     rgba(0, 0, 0, 0.10);
+  --color-ok:               #16803c;
+  --color-danger:           #c62828;
+  --color-warn:             #d48c20;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
@@ -304,7 +332,26 @@ body {
   border-radius: 6px;
   padding: 14px 16px;
   min-width: 0;
-  transition: border-color 0.15s ease, background-color 0.25s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.mc-flow-step[data-clickable="true"] {
+  cursor: pointer;
+}
+.mc-flow-step[data-clickable="true"]:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+.mc-flow-step[data-clickable="true"]:hover .mc-flow-view-hint {
+  opacity: 1;
+}
+.mc-flow-view-hint {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  margin-top: 6px;
 }
 
 /* Objective row */

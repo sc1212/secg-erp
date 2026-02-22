@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { money, pct, shortDate, statusBadge } from '../lib/format';
@@ -38,7 +38,10 @@ const tabs = [
 
 export default function ProjectDetail() {
   const { id } = useParams();
-  const [tab, setTab] = useState('costs');
+  const [searchParams] = useSearchParams();
+  const validTabs = tabs.map(t => t.key);
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'costs';
+  const [tab, setTab] = useState(initialTab);
   const [bidRef, setBidRef] = useState(null);
   const { data, loading, error, refetch } = useApi(() => api.project(id), [id]);
 
