@@ -12,6 +12,7 @@ from backend.models.core import TimestampMixin
 
 class SafetyIncident(TimestampMixin, Base):
     __tablename__ = "safety_incidents"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -31,6 +32,7 @@ class SafetyIncident(TimestampMixin, Base):
 
 class ToolboxTalk(TimestampMixin, Base):
     __tablename__ = "toolbox_talks"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -44,6 +46,7 @@ class ToolboxTalk(TimestampMixin, Base):
 
 class Certification(TimestampMixin, Base):
     __tablename__ = "certifications"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)

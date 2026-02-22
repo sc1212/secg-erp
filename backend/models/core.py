@@ -164,6 +164,7 @@ class TimestampMixin:
 
 class Client(TimestampMixin, Base):
     __tablename__ = "clients"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
@@ -184,6 +185,7 @@ class Client(TimestampMixin, Base):
 
 class Employee(TimestampMixin, Base):
     __tablename__ = "employees"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     first_name = Column(String(100), nullable=False)
@@ -203,6 +205,7 @@ class Employee(TimestampMixin, Base):
 
 class Vendor(TimestampMixin, Base):
     __tablename__ = "vendors"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
@@ -233,6 +236,7 @@ class Vendor(TimestampMixin, Base):
 
 class Project(TimestampMixin, Base):
     __tablename__ = "projects"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     code = Column(String(20), unique=True, nullable=False)
@@ -272,6 +276,7 @@ class Project(TimestampMixin, Base):
 
 class CostCode(TimestampMixin, Base):
     __tablename__ = "cost_codes"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -294,6 +299,7 @@ class CostCode(TimestampMixin, Base):
 
 class Contract(TimestampMixin, Base):
     __tablename__ = "contracts"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -309,6 +315,7 @@ class Contract(TimestampMixin, Base):
 
 class Commitment(TimestampMixin, Base):
     __tablename__ = "commitments"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -332,6 +339,7 @@ class Commitment(TimestampMixin, Base):
 
 class ChangeOrder(TimestampMixin, Base):
     __tablename__ = "change_orders"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -355,6 +363,7 @@ class ChangeOrder(TimestampMixin, Base):
 
 class CostEvent(TimestampMixin, Base):
     __tablename__ = "cost_events"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -382,6 +391,7 @@ class CostEvent(TimestampMixin, Base):
 
 class Quote(TimestampMixin, Base):
     __tablename__ = "quotes"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -407,6 +417,7 @@ class Quote(TimestampMixin, Base):
 
 class SOVLine(TimestampMixin, Base):
     __tablename__ = "sov_lines"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -430,6 +441,7 @@ class SOVLine(TimestampMixin, Base):
 
 class PayApp(TimestampMixin, Base):
     __tablename__ = "pay_apps"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -453,6 +465,7 @@ class PayApp(TimestampMixin, Base):
 
 class PayAppLine(TimestampMixin, Base):
     __tablename__ = "pay_app_lines"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     pay_app_id = Column(Integer, ForeignKey("pay_apps.id"), nullable=False)
@@ -474,6 +487,7 @@ class PayAppLine(TimestampMixin, Base):
 
 class Invoice(TimestampMixin, Base):
     __tablename__ = "invoices"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -493,6 +507,7 @@ class Invoice(TimestampMixin, Base):
 
 class InvoiceLine(TimestampMixin, Base):
     __tablename__ = "invoice_lines"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
@@ -506,6 +521,7 @@ class InvoiceLine(TimestampMixin, Base):
 
 class Payment(TimestampMixin, Base):
     __tablename__ = "payments"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"))
@@ -524,6 +540,7 @@ class Payment(TimestampMixin, Base):
 
 class Document(TimestampMixin, Base):
     __tablename__ = "documents"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     title = Column(String(300), nullable=False)
@@ -536,6 +553,7 @@ class Document(TimestampMixin, Base):
 
 class DocumentVersion(TimestampMixin, Base):
     __tablename__ = "document_versions"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
@@ -547,6 +565,7 @@ class DocumentVersion(TimestampMixin, Base):
 
 class DocumentLink(TimestampMixin, Base):
     __tablename__ = "document_links"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
@@ -558,6 +577,7 @@ class DocumentLink(TimestampMixin, Base):
 
 class WorkflowTask(TimestampMixin, Base):
     __tablename__ = "workflow_tasks"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     action = Column(Enum(WorkflowAction), nullable=False)
@@ -575,6 +595,7 @@ class WorkflowTask(TimestampMixin, Base):
 
 class AuditLog(Base):
     __tablename__ = "audit_log"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     table_name = Column(String(100), nullable=False)

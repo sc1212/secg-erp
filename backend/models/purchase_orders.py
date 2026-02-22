@@ -16,6 +16,7 @@ class TimestampMixin:
 
 class PurchaseOrder(TimestampMixin, Base):
     __tablename__ = "purchase_orders"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     po_number = Column(String(50), nullable=False)
@@ -42,6 +43,7 @@ class PurchaseOrder(TimestampMixin, Base):
 
 class PurchaseOrderLine(TimestampMixin, Base):
     __tablename__ = "purchase_order_lines"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     po_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=False)
@@ -58,6 +60,7 @@ class PurchaseOrderLine(TimestampMixin, Base):
 
 class DrawRequest(TimestampMixin, Base):
     __tablename__ = "draw_requests"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -79,6 +82,7 @@ class DrawRequest(TimestampMixin, Base):
 
 class DrawLineItem(TimestampMixin, Base):
     __tablename__ = "draw_line_items"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     draw_request_id = Column(Integer, ForeignKey("draw_requests.id"), nullable=False)

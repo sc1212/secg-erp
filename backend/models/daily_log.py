@@ -14,6 +14,7 @@ from backend.models.core import TimestampMixin
 
 class DailyLog(TimestampMixin, Base):
     __tablename__ = "daily_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -48,6 +49,7 @@ class DailyLog(TimestampMixin, Base):
 
 class DailyLogCrewEntry(Base):
     __tablename__ = "daily_log_crew"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     daily_log_id = Column(Integer, ForeignKey("daily_logs.id"), nullable=False)
@@ -65,6 +67,7 @@ class DailyLogCrewEntry(Base):
 
 class DailyLogPhoto(Base):
     __tablename__ = "daily_log_photos"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     daily_log_id = Column(Integer, ForeignKey("daily_logs.id"), nullable=False)

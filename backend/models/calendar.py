@@ -14,6 +14,7 @@ from backend.models.core import TimestampMixin
 
 class CalendarEvent(TimestampMixin, Base):
     __tablename__ = "calendar_events"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     title = Column(String(300), nullable=False)
@@ -40,6 +41,7 @@ class CalendarEvent(TimestampMixin, Base):
 
 class CalendarAttendee(Base):
     __tablename__ = "calendar_attendees"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     event_id = Column(Integer, ForeignKey("calendar_events.id"), nullable=False)

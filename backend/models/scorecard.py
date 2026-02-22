@@ -12,6 +12,7 @@ from backend.models.core import TimestampMixin
 
 class IncentiveProgram(TimestampMixin, Base):
     __tablename__ = "incentive_programs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
@@ -27,6 +28,7 @@ class IncentiveProgram(TimestampMixin, Base):
 
 class IncentiveMetric(TimestampMixin, Base):
     __tablename__ = "incentive_metrics"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     program_id = Column(Integer, ForeignKey("incentive_programs.id"), nullable=False)
@@ -42,6 +44,7 @@ class IncentiveMetric(TimestampMixin, Base):
 
 class EmployeeScore(TimestampMixin, Base):
     __tablename__ = "employee_scores"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     program_id = Column(Integer, ForeignKey("incentive_programs.id"), nullable=False)

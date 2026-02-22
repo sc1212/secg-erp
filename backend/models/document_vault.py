@@ -13,6 +13,7 @@ from backend.models.core import TimestampMixin
 class VaultDocument(TimestampMixin, Base):
     """Enhanced document model for the Document Vault module."""
     __tablename__ = "vault_documents"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"))

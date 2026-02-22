@@ -47,6 +47,7 @@ class FuelType(str, enum.Enum):
 
 class FleetVehicle(TimestampMixin, Base):
     __tablename__ = "fleet_vehicles"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
@@ -79,6 +80,7 @@ class FleetVehicle(TimestampMixin, Base):
 
 class MaintenanceSchedule(Base):
     __tablename__ = "maintenance_schedules"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     vehicle_id = Column(Integer, ForeignKey("fleet_vehicles.id"), nullable=False)
@@ -99,6 +101,7 @@ class MaintenanceSchedule(Base):
 
 class MaintenanceLog(TimestampMixin, Base):
     __tablename__ = "maintenance_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     vehicle_id = Column(Integer, ForeignKey("fleet_vehicles.id"), nullable=False)
@@ -118,6 +121,7 @@ class MaintenanceLog(TimestampMixin, Base):
 
 class FuelLog(Base):
     __tablename__ = "fuel_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     vehicle_id = Column(Integer, ForeignKey("fleet_vehicles.id"), nullable=False)

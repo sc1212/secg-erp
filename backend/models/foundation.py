@@ -23,6 +23,7 @@ class SystemEvent(TimestampMixin, Base):
       "profit_fade.warning", "cash_runway.low", "maintenance.due"
     """
     __tablename__ = "system_events"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     event_type = Column(String(100), nullable=False, index=True)
@@ -35,6 +36,7 @@ class SystemEvent(TimestampMixin, Base):
 
 class NotificationRule(TimestampMixin, Base):
     __tablename__ = "notification_rules"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     event_type = Column(String(100), nullable=False)
@@ -46,6 +48,7 @@ class NotificationRule(TimestampMixin, Base):
 
 class Notification(TimestampMixin, Base):
     __tablename__ = "notifications"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     user_id = Column(String(100))  # string user identifier
@@ -60,6 +63,7 @@ class Notification(TimestampMixin, Base):
 
 class NotificationPreference(TimestampMixin, Base):
     __tablename__ = "notification_preferences"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     user_id = Column(String(100), nullable=False)
@@ -70,6 +74,7 @@ class NotificationPreference(TimestampMixin, Base):
 
 class ExceptionItem(TimestampMixin, Base):
     __tablename__ = "exception_items"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     exception_type = Column(String(100), nullable=False)  # unmapped_cost_code, duplicate_invoice, expired_coi, low_confidence_ocr, other
@@ -86,6 +91,7 @@ class ExceptionItem(TimestampMixin, Base):
 
 class ApprovalThreshold(TimestampMixin, Base):
     __tablename__ = "approval_thresholds"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     workflow_type = Column(String(100), nullable=False)  # purchase_order, change_order, draw_request
@@ -97,6 +103,7 @@ class ApprovalThreshold(TimestampMixin, Base):
 
 class ApprovalRequest(TimestampMixin, Base):
     __tablename__ = "approval_requests"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     entity_type = Column(String(50), nullable=False)
@@ -113,6 +120,7 @@ class ApprovalRequest(TimestampMixin, Base):
 
 class ApprovalStep(TimestampMixin, Base):
     __tablename__ = "approval_steps"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     approval_request_id = Column(Integer, ForeignKey("approval_requests.id"), nullable=False)
@@ -128,6 +136,7 @@ class ApprovalStep(TimestampMixin, Base):
 
 class PeriodSnapshot(TimestampMixin, Base):
     __tablename__ = "period_snapshots"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     period_type = Column(String(20), nullable=False)  # daily, weekly, monthly
@@ -140,6 +149,7 @@ class PeriodSnapshot(TimestampMixin, Base):
 
 class VendorCompliance(TimestampMixin, Base):
     __tablename__ = "vendor_compliance"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     vendor_id = Column(Integer, ForeignKey("vendors.id"), nullable=False)
@@ -156,6 +166,7 @@ class VendorCompliance(TimestampMixin, Base):
 
 class Geofence(TimestampMixin, Base):
     __tablename__ = "geofences"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -170,6 +181,7 @@ class Geofence(TimestampMixin, Base):
 
 class TimeEntry(TimestampMixin, Base):
     __tablename__ = "time_entries"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)

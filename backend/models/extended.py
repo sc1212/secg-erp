@@ -70,6 +70,7 @@ class MilestoneStatus(str, enum.Enum):
 
 class Debt(TimestampMixin, Base):
     __tablename__ = "debts"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"))
@@ -91,6 +92,7 @@ class Debt(TimestampMixin, Base):
 
 class Property(TimestampMixin, Base):
     __tablename__ = "properties"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"))
@@ -113,6 +115,7 @@ class Property(TimestampMixin, Base):
 
 class ChartOfAccounts(TimestampMixin, Base):
     __tablename__ = "chart_of_accounts"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     account_number = Column(String(20), unique=True, nullable=False)
@@ -128,6 +131,7 @@ class ChartOfAccounts(TimestampMixin, Base):
 
 class RecurringExpense(TimestampMixin, Base):
     __tablename__ = "recurring_expenses"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     vendor_id = Column(Integer, ForeignKey("vendors.id"))
@@ -145,6 +149,7 @@ class RecurringExpense(TimestampMixin, Base):
 
 class CashSnapshot(TimestampMixin, Base):
     __tablename__ = "cash_snapshots"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     snapshot_date = Column(Date, nullable=False)
@@ -159,6 +164,7 @@ class CashSnapshot(TimestampMixin, Base):
 
 class CashForecastLine(TimestampMixin, Base):
     __tablename__ = "cash_forecast_lines"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     week_starting = Column(Date, nullable=False)
@@ -176,6 +182,7 @@ class CashForecastLine(TimestampMixin, Base):
 
 class PhaseSyncEntry(TimestampMixin, Base):
     __tablename__ = "phase_sync_entries"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -193,6 +200,7 @@ class PhaseSyncEntry(TimestampMixin, Base):
 
 class PayrollEntry(TimestampMixin, Base):
     __tablename__ = "payroll_entries"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
@@ -211,6 +219,7 @@ class PayrollEntry(TimestampMixin, Base):
 
 class PayrollCalendar(TimestampMixin, Base):
     __tablename__ = "payroll_calendar"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     pay_date = Column(Date, nullable=False)
@@ -226,6 +235,7 @@ class PayrollCalendar(TimestampMixin, Base):
 
 class PLEntry(TimestampMixin, Base):
     __tablename__ = "pl_entries"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     period_year = Column(Integer, nullable=False)
@@ -242,6 +252,7 @@ class PLEntry(TimestampMixin, Base):
 
 class Scenario(TimestampMixin, Base):
     __tablename__ = "scenarios"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
@@ -253,6 +264,7 @@ class Scenario(TimestampMixin, Base):
 
 class ScenarioAssumption(TimestampMixin, Base):
     __tablename__ = "scenario_assumptions"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     scenario_id = Column(Integer, ForeignKey("scenarios.id"), nullable=False)
@@ -267,6 +279,7 @@ class ScenarioAssumption(TimestampMixin, Base):
 
 class DataSource(TimestampMixin, Base):
     __tablename__ = "data_sources"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
@@ -281,6 +294,7 @@ class DataSource(TimestampMixin, Base):
 
 class LienWaiver(TimestampMixin, Base):
     __tablename__ = "lien_waivers"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -298,6 +312,7 @@ class LienWaiver(TimestampMixin, Base):
 
 class ProjectMilestone(TimestampMixin, Base):
     __tablename__ = "project_milestones"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -319,6 +334,7 @@ class ProjectMilestone(TimestampMixin, Base):
 
 class RetainageEntry(TimestampMixin, Base):
     __tablename__ = "retainage_entries"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
@@ -334,6 +350,7 @@ class RetainageEntry(TimestampMixin, Base):
 
 class BidPipeline(TimestampMixin, Base):
     __tablename__ = "bid_pipeline"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     opportunity_name = Column(String(300), nullable=False)
@@ -351,6 +368,7 @@ class BidPipeline(TimestampMixin, Base):
 
 class CrewAllocation(TimestampMixin, Base):
     __tablename__ = "crew_allocations"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     employee_id = Column(Integer, ForeignKey("employees.id"))
@@ -365,6 +383,7 @@ class CrewAllocation(TimestampMixin, Base):
 
 class Lead(TimestampMixin, Base):
     __tablename__ = "leads"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     opportunity_title = Column(String(300))
@@ -403,6 +422,7 @@ class Lead(TimestampMixin, Base):
 
 class LeadProposal(TimestampMixin, Base):
     __tablename__ = "lead_proposals"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     lead_id = Column(Integer, ForeignKey("leads.id"))
@@ -419,6 +439,7 @@ class LeadProposal(TimestampMixin, Base):
 
 class BillingCustomer(TimestampMixin, Base):
     __tablename__ = "billing_customers"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     org_id = Column(String(64), unique=True, nullable=False, index=True)
@@ -430,6 +451,7 @@ class BillingCustomer(TimestampMixin, Base):
 
 class BillingSubscription(TimestampMixin, Base):
     __tablename__ = "billing_subscriptions"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     org_id = Column(String(64), nullable=False, index=True)
@@ -442,6 +464,7 @@ class BillingSubscription(TimestampMixin, Base):
 
 class BillingEvent(TimestampMixin, Base):
     __tablename__ = "billing_events"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     org_id = Column(String(64), index=True)
@@ -455,6 +478,7 @@ class BillingEvent(TimestampMixin, Base):
 
 class UserAccount(TimestampMixin, Base):
     __tablename__ = "user_accounts"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
@@ -559,6 +583,7 @@ class DailyLogPhoto(Base):
 
 class PhotoPromptTemplate(TimestampMixin, Base):
     __tablename__ = "photo_prompt_templates"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -571,6 +596,7 @@ class PhotoPromptTemplate(TimestampMixin, Base):
 
 class Tenant(TimestampMixin, Base):
     __tablename__ = "tenants"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     name = Column(String(300), nullable=False)
@@ -580,6 +606,7 @@ class Tenant(TimestampMixin, Base):
 
 class Role(TimestampMixin, Base):
     __tablename__ = "roles"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -697,6 +724,7 @@ class ApprovalRequest(TimestampMixin, Base):
 
 class ApprovalRule(TimestampMixin, Base):
     __tablename__ = "approval_rules"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -774,6 +802,7 @@ class CostEvent(TimestampMixin, Base):
 
 class Integration(TimestampMixin, Base):
     __tablename__ = "integrations"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -790,6 +819,7 @@ class Integration(TimestampMixin, Base):
 
 class SyncLog(TimestampMixin, Base):
     __tablename__ = "sync_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     integration_id = Column(Integer, ForeignKey("integrations.id"), nullable=False, index=True)
