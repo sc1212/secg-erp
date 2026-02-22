@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { money } from '../lib/format';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import { Package, Warehouse, AlertTriangle, Clock, Search, Plus, MapPin } from 'lucide-react';
+import { AlertTriangle, Clock, Filter, MapPin, Package, Plus, Search, Table, Warehouse } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

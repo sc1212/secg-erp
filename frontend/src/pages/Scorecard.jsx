@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { money } from '../lib/format';
 import { PageLoading, ErrorState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import { Trophy, Target, TrendingUp, DollarSign, Users, Calendar, Award, BarChart3 } from 'lucide-react';
+import { Award, BarChart3, Calendar, DollarSign, Info, Target, TrendingUp, Trophy, Users, Weight } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

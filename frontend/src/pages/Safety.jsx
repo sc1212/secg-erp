@@ -4,20 +4,7 @@ import { api } from '../lib/api';
 import { shortDate, money } from '../lib/format';
 import { PageLoading, ErrorState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import {
-  ShieldCheck,
-  AlertTriangle,
-  FileText,
-  Award,
-  Users,
-  Clock,
-  CheckCircle,
-  Search,
-  Flame,
-  HardHat,
-  Ban,
-  Zap,
-} from 'lucide-react';
+import { AlertTriangle, Award, Ban, CheckCircle, Clock, Construction, FileText, Flame, HardHat, Lock, Search, ShieldCheck, Table, Tag, Users, Wind, Zap } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

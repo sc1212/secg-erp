@@ -5,7 +5,7 @@ import { shortDate, money } from '../lib/format';
 import { PageLoading, ErrorState } from '../components/LoadingState';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
-import { Truck, Wrench, Fuel, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Car, Filter, Fuel, Mountain, Search, Table, Truck, Wrench } from 'lucide-react';
 
 /* ── Demo data ────────────────────────────────────────────────────────── */
 

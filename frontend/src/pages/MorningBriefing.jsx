@@ -4,10 +4,7 @@ import { api } from '../lib/api';
 import { shortDate, money } from '../lib/format';
 import { PageLoading, ErrorState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import {
-  DollarSign, FolderKanban, Users, AlertTriangle,
-  Sun, Clock, Sparkles,
-} from 'lucide-react';
+import { AlertTriangle, Clock, DollarSign, FolderKanban, Map, Sparkles, Sun, Users } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

@@ -5,7 +5,7 @@ import { money, pct, moneyClass } from '../lib/format';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { AlertTriangle, TrendingDown, Activity, ChevronDown, ChevronRight, Camera } from 'lucide-react';
+import { Activity, AlertTriangle, Camera, ChevronDown, ChevronRight, Code, Table, TrendingDown } from 'lucide-react';
 
 // ─── Demo data ────────────────────────────────────────────────────────────────
 const DEMO_PROJECTS = [

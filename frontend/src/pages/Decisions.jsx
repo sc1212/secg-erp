@@ -3,10 +3,7 @@ import { api } from '../lib/api';
 import { money, shortDate } from '../lib/format';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
-import {
-  CheckCircle, XCircle, Clock, DollarSign,
-  AlertTriangle, CheckSquare, ListChecks,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle, CheckSquare, Clock, DollarSign, Filter, ListChecks, Table, XCircle } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

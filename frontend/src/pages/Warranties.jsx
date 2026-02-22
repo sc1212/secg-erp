@@ -5,7 +5,7 @@ import { shortDate, money } from '../lib/format';
 import { PageLoading, ErrorState } from '../components/LoadingState';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
-import { ShieldCheck, AlertTriangle, DollarSign, ClipboardList } from 'lucide-react';
+import { AlertTriangle, ClipboardList, DollarSign, Filter, Home, ShieldCheck, Table } from 'lucide-react';
 
 /* ── Demo data ────────────────────────────────────────────────────────── */
 

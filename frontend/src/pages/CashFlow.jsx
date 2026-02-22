@@ -6,7 +6,7 @@ import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ReferenceLine, ResponsiveContainer,
 } from 'recharts';
-import { AlertTriangle, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { AlertTriangle, Calendar, DollarSign, Table, TrendingDown } from 'lucide-react';
 
 // ─── Demo data generator ──────────────────────────────────────────────────────
 function buildDemoWeeks() {

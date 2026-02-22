@@ -9,11 +9,7 @@ import { api } from '../lib/api';
 import { money, moneyExact, moneyAccounting, shortDate } from '../lib/format';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
-import {
-  Banknote, ArrowUpRight, ArrowDownLeft, Clock,
-  Check, AlertTriangle, Shield, FileText, Eye,
-  Filter, Plus, Search, ChevronDown,
-} from 'lucide-react';
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Banknote, Check, ChevronDown, Clock, Eye, FileText, Filter, Home, Info, List, Plus, Search, Send, Settings, Shield } from 'lucide-react';
 
 const DEMO_BILLS = [
   {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, FolderKanban, Handshake, FileText, Users, File } from 'lucide-react';
+import { ArrowDown, ArrowUp, Construction, File, FileText, FolderKanban, Handshake, Home, Save, Search, Users } from 'lucide-react';
 import { api } from '../lib/api';
 
 const ENTITY_ICONS = {

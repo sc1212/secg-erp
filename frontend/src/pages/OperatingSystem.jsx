@@ -1,27 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  AlertTriangle,
-  ArrowRight,
-  Banknote,
-  Building2,
-  CheckCircle2,
-  ClipboardList,
-  Clock3,
-  DatabaseZap,
-  Download,
-  FileText,
-  Filter,
-  FolderKanban,
-  GitBranch,
-  HandCoins,
-  Layers3,
-  MessageSquareMore,
-  ShieldCheck,
-  Sparkles,
-  TrendingUp,
-  Users2,
-  Wallet,
-} from 'lucide-react';
+import { AlertTriangle, ArrowRight, Banknote, Building2, CheckCircle2, ClipboardList, Clock3, Construction, DatabaseZap, Download, FileText, Filter, Flag, FolderKanban, GitBranch, HandCoins, Home, Layers3, Map, MessageSquareMore, ShieldCheck, Sparkles, TrendingUp, Users, Users2, Wallet } from 'lucide-react';
 
 function TinyMetric({ label, value, icon: Icon }) {
   return (

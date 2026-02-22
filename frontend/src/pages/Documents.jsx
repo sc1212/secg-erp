@@ -4,12 +4,7 @@ import { api } from '../lib/api';
 import { shortDate } from '../lib/format';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import {
-  FileText, Upload, Search, FolderOpen, AlertTriangle, Image, Shield,
-  Receipt, File, ChevronLeft, Download, Eye, Calendar, Filter, X,
-  Folder, List, Tag, Clock, User, HardDrive, CheckCircle, FileImage,
-  FilePlus, UploadCloud,
-} from 'lucide-react';
+import { AlertTriangle, Building, Calendar, CheckCircle, ChevronLeft, Clock, Download, Eye, File, FileImage, FilePlus, FileText, Filter, Folder, FolderOpen, Grid, HardDrive, Image, List, Mountain, Receipt, Search, Shield, Table, Tag, Tags, Upload, UploadCloud, User } from 'lucide-react';
 
 /* ── Type Mapping ─────────────────────────────────────────────────────── */
 

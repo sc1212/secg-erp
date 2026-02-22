@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { money, statusBadge } from '../lib/format';
 import KPICard from '../components/KPICard';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
-import { Users, DollarSign, Target, TrendingUp } from 'lucide-react';
+import { DollarSign, Home, Target, TrendingUp, Users } from 'lucide-react';
 
 const tabs = ['pipeline', 'leads', 'proposals'];
 

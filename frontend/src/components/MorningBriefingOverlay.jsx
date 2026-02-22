@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { money } from '../lib/format';
-import { Sun, Cloud, CloudRain, AlertTriangle, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Cloud, CloudRain, Key, Sun } from 'lucide-react';
 
 function getGreeting() {
   const h = new Date().getHours();

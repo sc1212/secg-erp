@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { moneyExact, shortDate, statusBadge } from '../../lib/format';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Code } from 'lucide-react';
 import { EmptyState } from '../LoadingState';
 
 export default function ChangeOrdersTab({ project }) {
