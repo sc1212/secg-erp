@@ -44,33 +44,14 @@ export function useApi(fetcher, deps = []) {
     return () => { cancelled = true; };
   }, deps);
 
-  return {
-    data,
-    loading,
-    error,
-    refetch: () => {
-      setLoading(true);
-      setError(null);
-      fetcher()
-        .then((result) => {
-          setData(result);
-          publishNetworkStatus(false);
-        })
-        .catch((e) => {
-          const isNetworkError = e.message === 'Failed to fetch' || e.name === 'TypeError';
-          setError(isNetworkError ? 'Network unavailable. Showing fallback/demo data.' : e.message);
-          publishNetworkStatus(isNetworkError);
-        })
-        .finally(() => setLoading(false));
-    },
-  };
   const refetch = useCallback(() => {
     setLoading(true);
     setError(null);
     fetcher()
-      .then((d) => { setData(d); setIsDemo(false); })
+      .then((d) => { setData(d); setIsDemo(false); publishNetworkStatus(false); })
       .catch((e) => {
         const isNetworkError = e.message === 'Failed to fetch' || e.name === 'TypeError';
+        publishNetworkStatus(isNetworkError);
         if (isNetworkError) setIsDemo(true);
         else setError(e.message);
       })

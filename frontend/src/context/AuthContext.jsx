@@ -4,8 +4,8 @@ import { clearAuthToken, setAuthToken } from '../lib/auth';
 
 const AuthContext = createContext(null);
 
-// TODO: remove once real auth backend is wired up
-const DEV_BYPASS = true;
+// Bypass auth in local dev only — always false in production builds
+const DEV_BYPASS = import.meta.env.DEV;
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(DEV_BYPASS ? 'dev-bypass' : null);

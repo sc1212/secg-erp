@@ -499,7 +499,7 @@ export default function Layout() {
       .then(data => { if (data?.length) setNotifications(data); else setNotifications(demoNotifs); })
       .catch(() => setNotifications(demoNotifs));
     api.unreadCount()
-      .then(r => setUnreadCount(r.count))
+      .then(r => setUnreadCount(r?.count ?? 0))
       .catch(() => setUnreadCount(3));
   }, []);
 

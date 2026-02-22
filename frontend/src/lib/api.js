@@ -46,20 +46,11 @@ export const api = {
 
 
   // Operations - Calendar + Daily Logs (Phase 1)
-  calendarEvents: (params = {}) => {
+  operationsCalendarEvents: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return request(`/operations/calendar${q ? '?' + q : ''}`);
   },
-  createCalendarEvent: (payload) => request('/operations/calendar', { method: 'POST', body: JSON.stringify(payload) }),
-  projectDailyLogs: (projectId, params = {}) => {
-    const q = new URLSearchParams(params).toString();
-    return request(`/operations/projects/${projectId}/daily-logs${q ? '?' + q : ''}`);
-  },
-  dailyLogFeed: (days = 7) => request(`/operations/daily-logs/feed?days=${days}`),
-  dailyLog: (id) => request(`/operations/daily-logs/${id}`),
-  createProjectDailyLog: (projectId, payload) => request(`/operations/projects/${projectId}/daily-logs`, { method: 'POST', body: JSON.stringify(payload) }),
-  updateDailyLog: (id, payload) => request(`/operations/daily-logs/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-  submitDailyLog: (id) => request(`/operations/daily-logs/${id}/submit`, { method: 'POST' }),
+  createOperationsCalendarEvent: (payload) => request('/operations/calendar', { method: 'POST', body: JSON.stringify(payload) }),
 
 
   // Shell
@@ -68,17 +59,6 @@ export const api = {
   markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: 'PATCH' }),
   markAllNotificationsRead: () => request('/notifications/read-all', { method: 'PATCH' }),
 
-
-  // Documents
-  documents: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
-    return request(`/documents${q ? '?' + q : ''}`);
-  },
-  uploadDocument: (file) => {
-    const form = new FormData();
-    form.append('file', file);
-    return requestForm('/documents/upload', form);
-  },
 
   // Dashboard
   dashboard: () => request('/dashboard'),
@@ -290,13 +270,13 @@ export const api = {
   morningBriefing: () => request('/briefing/today'),
 
   // Notifications (Phase 0 — real bell icon)
-  unreadCount: (userId = 'mike') => request(`/notifications/unread-count?user_id=${userId}`),
+  unreadCount: (userId) => request(`/notifications/unread-count${userId ? `?user_id=${userId}` : ''}`),
   myNotifications: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return request(`/notifications${q ? '?' + q : ''}`);
   },
   markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: 'POST' }),
-  markAllRead: (userId = 'mike') => request(`/notifications/read-all?user_id=${encodeURIComponent(userId)}`, { method: 'POST' }),
+  markAllRead: (userId) => request(`/notifications/read-all${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`, { method: 'POST' }),
 
   // Exception Queue (Phase 0)
   exceptions: (params = {}) => {
