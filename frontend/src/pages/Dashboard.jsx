@@ -1,385 +1,227 @@
-import { useEffect, useState } from 'react';
-import { useApi } from '../hooks/useApi';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeColors } from '../hooks/useThemeColors';
-import { api } from '../lib/api';
 import { money } from '../lib/format';
 import KPICard from '../components/KPICard';
 import ChartTooltip from '../components/ChartTooltip';
-import DemoBanner from '../components/DemoBanner';
-import { PageLoading, ErrorState } from '../components/LoadingState';
-import { Activity, AlertCircle, AlertTriangle, Banknote, Building2, CalendarDays, Camera, CheckCircle, Clock, Cloud, CloudRain, CreditCard, FileText, FolderKanban, Home, Info, Key, List, Receipt, Snowflake, Sun, Table, TrendingUp } from 'lucide-react';
+import { PROJECTS, STATUS_COLOR, STATUS_LABEL } from '../lib/demoData';
+import {
+  Banknote, FileText, Receipt, FolderKanban, TrendingUp, Building2,
+  AlertCircle, AlertTriangle, Info, CheckCircle, Clock,
+} from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   AreaChart, Area, CartesianGrid,
 } from 'recharts';
 
-const alertIcon = {
-  critical: AlertCircle,
-  warning:  AlertTriangle,
-  info:     Info,
-};
-
-const demoProjects = [
-  { name: 'Brentwood', budget: 320000, spent: 280000 },
-  { name: 'Franklin',  budget: 410000, spent: 310000 },
-  { name: 'Green Hills', budget: 180000, spent: 172000 },
-  { name: 'Antioch',   budget: 260000, spent: 195000 },
-];
-
-const demoCashFlow = [
-  { week: 'Wk 1', inflow: 95000, outflow: 78000 },
-  { week: 'Wk 2', inflow: 60000, outflow: 82000 },
-  { week: 'Wk 3', inflow: 110000, outflow: 74000 },
-  { week: 'Wk 4', inflow: 85000, outflow: 90000 },
+const CASH_FLOW_DATA = [
+  { week: 'Wk 1', inflow: 95000,  outflow: 78000 },
+  { week: 'Wk 2', inflow: 60000,  outflow: 82000 },
+  { week: 'Wk 3', inflow: 116000, outflow: 72400 },
+  { week: 'Wk 4', inflow: 85000,  outflow: 90000 },
   { week: 'Wk 5', inflow: 120000, outflow: 88000 },
-  { week: 'Wk 6', inflow: 70000, outflow: 76000 },
-  { week: 'Wk 7', inflow: 95000, outflow: 85000 },
+  { week: 'Wk 6', inflow: 70000,  outflow: 76000 },
+  { week: 'Wk 7', inflow: 95000,  outflow: 85000 },
   { week: 'Wk 8', inflow: 105000, outflow: 92000 },
 ];
 
-const alertStyles = {
-  critical: { color: 'var(--status-loss)',    bg: 'var(--status-loss-bg)' },
-  warning:  { color: 'var(--status-warning)', bg: 'var(--status-warning-bg)' },
-  info:     { color: 'var(--status-profit)',  bg: 'var(--status-profit-bg)' },
-};
-
-// Issue 5: Alert drill-down targets — every alert navigates to its source record
-const ALERT_DRILL_DOWN = {
-  'AR': '/financials?tab=ar',
-  'Budget': '/projects/3?tab=costs',
-  'Compliance': '/vendors?tab=compliance',
-  'Draws': '/draws',
-  'AP': '/payments',
-  'Sync': '/financials?tab=sync',
-  'Safety': '/safety',
-  'Permits': '/permits',
-  'Daily Log': '/daily-logs',
-  'Weather': '/weather',
-  'Time Clock': '/timeclock',
-  'Punch List': '/decisions',
-};
-
-// Activity feed items — each is clickable (Issue 5)
-const DEMO_ACTIVITY = [
-  { id: 1, icon: '\u{1F4E5}', text: 'New invoice synced from QuickBooks \u2014 Miller Concrete ($8,400)', link: '/payments', time: '2h ago' },
-  { id: 2, icon: '\u{1F4B3}', text: 'Vendor payment processed \u2014 84 Lumber ($12,100)', link: '/payments', time: '3h ago' },
-  { id: 3, icon: '\u{1F4DD}', text: 'Daily log submitted \u2014 Connor, Riverside Custom', link: '/daily-logs', time: '5h ago' },
-  { id: 4, icon: '\u{26A0}\uFE0F', text: 'COI expiring in 3 days \u2014 Williams Electric', link: '/vendors?tab=compliance', time: '6h ago' },
-  { id: 5, icon: '\u2705', text: 'Change order approved \u2014 Oak Creek CO-003 ($4,200)', link: '/projects/2?tab=cos', time: '8h ago' },
-  { id: 6, icon: '\u{1F4B0}', text: 'Draw request submitted \u2014 Oak Creek ($45,000)', link: '/draws', time: 'Yesterday' },
-  { id: 7, icon: '\u{23F0}', text: 'Employee clocked in \u2014 Connor M. at Riverside Custom', link: '/timeclock', time: 'Yesterday' },
-  { id: 8, icon: '\u{1F4CA}', text: 'Budget threshold exceeded \u2014 PRJ-051 at 96%', link: '/projects/3?tab=costs', time: 'Yesterday' },
+const ACTION_QUEUE = [
+  { level: 'critical', text: 'PO-089 needs approval — 84 Lumber $10,284',       link: '/exceptions' },
+  { level: 'critical', text: '3 invoices overdue — AR total $48,200',            link: '/financials?tab=ar' },
+  { level: 'warning',  text: 'Miller Concrete COI expires Feb 28',               link: '/vendors' },
+  { level: 'warning',  text: 'Johnson Office TI is 8% over budget',              link: '/projects/5?tab=costs' },
+  { level: 'warning',  text: 'Magnolia Spec Draw #2 outstanding 12 days',        link: '/draws' },
+  { level: 'info',     text: '3 QuickBooks transactions need coding',            link: '/financials?tab=transactions' },
 ];
+
+const SCHEDULE_TODAY = [
+  { time: '8:00 AM',  event: 'Frame inspection — Riverside Custom', project: 'PRJ-042', assigned: 'Connor Mitchell' },
+  { time: '10:30 AM', event: 'Client walk-through — Magnolia Spec', project: 'PRJ-031', assigned: 'Joseph Kowalski' },
+  { time: '1:00 PM',  event: 'Concrete pour — Oak Creek foundation', project: 'PRJ-038', assigned: 'Connor Mitchell' },
+  { time: '3:30 PM',  event: 'Punch list review — Johnson Office TI', project: 'PRJ-027', assigned: 'Joseph Kowalski' },
+];
+
+const LEVEL_ICON  = { critical: AlertCircle, warning: AlertTriangle, info: Info };
+const LEVEL_COLOR = {
+  critical: { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.1)' },
+  warning:  { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.1)' },
+  info:     { color: 'var(--accent)',         bg: 'rgba(59,130,246,0.1)' },
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [showBriefing, setShowBriefing] = useState(false);
-  const { data, loading, error, isDemo, refetch } = useApi(() => api.dashboard());
   const tc = useThemeColors();
 
-  const cash = data?.cash || {};
-  const projects = data?.projects || {};
-  const pipeline = data?.pipeline || {};
-  const payroll = data?.payroll || {};
-  const debt = data?.debt || {};
-  const alerts = (data?.alerts || [
-    { level: 'critical', category: 'AR', message: '3 invoices overdue totaling $45,200' },
-    { level: 'warning', category: 'Budget', message: 'PRJ-051 is 96% of budget with 2 months remaining' },
-    { level: 'warning', category: 'Compliance', message: '5 lien waivers pending from vendors' },
-    { level: 'info', category: 'Draws', message: 'Draw #3 for PRJ-042 approved ($41,400)' },
-  ]).map((a, i) => ({ ...a, action_url: a.action_url || ['/financials','/projects','/vendors','/calendar'][i % 4] }));
-
-  useEffect(() => {
-    const lastShown = localStorage.getItem('briefing_last_shown_at');
-    const dismissedToday = localStorage.getItem('briefing_dismissed_date') === new Date().toDateString();
-    const tooSoon = lastShown && (Date.now() - Number(lastShown) < 4 * 60 * 60 * 1000);
-    setShowBriefing(!dismissedToday && !tooSoon);
-  }, []);
-
-  const closeBriefing = (dismissToday = false) => {
-    localStorage.setItem('briefing_last_shown_at', String(Date.now()));
-    if (dismissToday) localStorage.setItem('briefing_dismissed_date', new Date().toDateString());
-    setShowBriefing(false);
-  };
-
-
-  if (loading) return <PageLoading />;
-  if (error && !data) return <ErrorState message={error} onRetry={refetch} />;
+  const totalContract = PROJECTS.reduce((s, p) => s + p.contract, 0);
+  const totalAR = 312400;
 
   return (
     <div className="space-y-6">
-      {showBriefing && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-3xl w-full bg-brand-card border border-brand-border rounded-xl p-6 space-y-4 animate-in fade-in">
-            <h2 className="text-xl font-bold">☀️ Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, Samuel.</h2>
-            <div className="text-sm">Weather — Murfreesboro, TN · 48°F Partly Cloudy · Freeze warning tonight.</div>
-            <div className="space-y-2 text-sm">
-              <button onClick={() => { navigate('/financials'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• 3 new invoices synced from QuickBooks ($14,280) →</button>
-              <button onClick={() => { navigate('/payments'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• Vendor payment processed — Miller Concrete ($8,400) →</button>
-              <button onClick={() => { navigate('/daily-logs'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• Connor submitted daily log — Riverside Custom →</button>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => closeBriefing(true)} className="px-3 py-2 rounded border border-brand-border text-sm">Don't show today</button>
-              <button onClick={() => closeBriefing()} className="px-3 py-2 rounded bg-brand-gold text-brand-bg text-sm font-semibold">Go to Dashboard</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {isDemo && <DemoBanner />}
+      {/* Page header */}
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Command Center</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+        </p>
+      </div>
 
-      <div className="flex items-center justify-between">
+      {/* KPI Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+        <KPICard label="Cash in Bank"      value="$284,320"              icon={Banknote}     trend={3.1} />
+        <KPICard label="Effective Cash"    value="$127,840"              icon={Banknote}     sub="After payroll + AP" />
+        <KPICard label="Active Contract"   value={money(totalContract, true)} icon={FolderKanban} sub="8 projects" />
+        <KPICard label="AR Outstanding"    value={money(totalAR)}        icon={FileText}     trend={-2.1} />
+        <KPICard label="Avg Margin"        value="16.8%"                 icon={TrendingUp}   trend={1.4} />
+        <KPICard label="At Risk"           value="1 Job"                 icon={AlertTriangle} sub="Johnson Office TI" />
+      </div>
+
+      {/* Main two-column layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 16 }}>
+
+        {/* LEFT: Project Pulse Grid */}
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Dashboard</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-          </p>
-        </div>
-      </div>
-
-
-      {/* KPI Row 1 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-live="polite" aria-label="Key performance indicators">
-        <KPICard label="Cash on Hand" value={money(cash.cash_on_hand ?? 0)} icon={Banknote} trend={8.3} />
-        <KPICard label="Accounts Receivable" value={money(cash.ar_outstanding ?? 0)} icon={FileText} trend={-2.1} />
-        <KPICard label="Accounts Payable" value={money(cash.ap_outstanding ?? 0)} icon={Receipt} trend={5.7} />
-        <KPICard label="Active Projects" value={projects.active_projects ?? 0} icon={FolderKanban} sub="3 at risk" />
-      </div>
-
-      {/* KPI Row 2 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Pipeline Value" value={money(pipeline.total_value ?? 0, true)} icon={TrendingUp} sub={`${pipeline.total_opportunities ?? 0} active`} />
-        <KPICard label="Retainage Held" value={money(cash.retainage_receivable ?? 0)} icon={Building2} sub={`${projects.active_projects ?? 0} projects`} />
-        <KPICard label="Bi-Weekly Payroll" value={money(payroll.biweekly_cost ?? 0)} icon={CalendarDays} sub={`Next: ${payroll.next_pay_date ?? '—'}`} />
-        <KPICard label="Total Debt" value={money(debt.total_debt ?? 0)} icon={CreditCard} sub={`${debt.active_count ?? 0} active`} />
-      </div>
-
-      {/* Weather Bar */}
-      <WeatherBar />
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Budget vs Actuals */}
-        <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
-          <div className="panel-head">
-            <div>
-              <h3 className="panel-title">Budget vs Actuals — Top Projects</h3>
-              <div className="panel-sub">Current period spend against budget</div>
-            </div>
-            <button className="ghost-btn">View as Table</button>
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={demoProjects} layout="vertical" margin={{ left: 10 }}>
-              <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={11} />
-              <YAxis type="category" dataKey="name" stroke={tc.textSecondary} fontSize={11} width={60} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="budget" fill={tc.borderMedium} radius={[0, 4, 4, 0]} name="Budget" />
-              <Bar dataKey="spent" fill={tc.chartPrimary} radius={[0, 4, 4, 0]} name="Spent" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Cash Flow Forecast */}
-        <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
-          <div className="panel-head">
-            <div>
-              <h3 className="panel-title">Cash Flow Forecast — 8 Weeks</h3>
-              <div className="panel-sub">Projected inflows vs outflows</div>
-            </div>
-            <button className="ghost-btn">View as Table</button>
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={demoCashFlow}>
-              <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
-              <XAxis dataKey="week" stroke={tc.textSecondary} fontSize={11} />
-              <YAxis tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={11} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="inflow" stroke={tc.statusProfit} fill={tc.statusProfit} fillOpacity={0.1} name="Inflows" />
-              <Area type="monotone" dataKey="outflow" stroke={tc.statusLoss} fill={tc.statusLoss} fillOpacity={0.1} name="Outflows" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Today's Field Logs */}
-      <TodaysLogs />
-
-      {/* Alerts + Activity Feed — side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Alerts */}
-        <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
           <div className="panel-head" style={{ marginBottom: 12 }}>
-            <h3 className="panel-title">Alerts &amp; Action Items</h3>
+            <h3 className="panel-title">Project Pulse</h3>
+            <button className="ghost-btn" onClick={() => navigate('/projects')}>View All Jobs</button>
           </div>
-          <div className="space-y-2" aria-live="polite" aria-label="Financial alerts">
-            {alerts.map((a, i) => {
-              const Icon = alertIcon[a.level] || Info;
-              const style = alertStyles[a.level] || alertStyles.info;
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {PROJECTS.map((p) => {
+              const sc = STATUS_COLOR[p.status] || STATUS_COLOR.on_budget;
+              const spent_pct = Math.min(100, (p.spent / p.budget) * 100);
               return (
                 <div
-                  key={i}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
-                  style={{ background: style.bg }}
-                  onClick={() => navigate(ALERT_DRILL_DOWN[a.category] || '/')}
+                  key={p.id}
+                  onClick={() => navigate(`/projects/${p.id}`)}
+                  style={{
+                    background: 'var(--color-brand-card)',
+                    border: '1px solid var(--color-brand-border)',
+                    borderRadius: 10,
+                    padding: '14px 16px',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.12)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-brand-border)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 >
-                  <Icon size={16} style={{ color: style.color }} />
-                  <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{a.message}</span>
-                  <span className="text-xs font-medium transition-colors" style={{ color: 'var(--accent)' }}>
-                    View &rarr;
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</div>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: sc.bg, color: sc.color, whiteSpace: 'nowrap', marginLeft: 6 }}>
+                      {STATUS_LABEL[p.status]}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>{p.address}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10 }}>PM: {p.pm.split(' ')[0]}  ·  {p.phase}</div>
+
+                  {/* 5-segment progress bar */}
+                  <div style={{ display: 'flex', gap: 3, marginBottom: 8 }}>
+                    {[0,20,40,60,80].map((threshold, i) => {
+                      const filled = p.pct > threshold;
+                      const isOver = p.status === 'over_budget';
+                      const isWatch = p.status === 'watch';
+                      let bg = filled
+                        ? (isOver ? 'var(--status-loss)' : isWatch ? 'var(--status-warning)' : 'var(--status-profit)')
+                        : 'rgba(255,255,255,0.07)';
+                      return <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: bg, transition: 'background 0.3s' }} />;
+                    })}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{money(p.contract, true)}</span>
+                    <span style={{ color: 'var(--text-tertiary)' }}>{p.pct}% complete</span>
+                    <span style={{ color: sc.color, fontWeight: 600 }}>{p.margin_pct}% margin</span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Activity Feed — "What Changed" */}
-        <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
-          <div className="panel-head" style={{ marginBottom: 12 }}>
-            <h3 className="panel-title">What Changed</h3>
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Last 48 hours</span>
-          </div>
-          <div className="space-y-1" style={{ maxHeight: 320, overflowY: 'auto' }}>
-            {DEMO_ACTIVITY.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
-                style={{ background: 'transparent' }}
-                onClick={() => navigate(item.link)}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-elevated)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-              >
-                <span className="text-base flex-shrink-0">{item.icon}</span>
-                <span className="text-sm flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>
-                  {item.text}
-                </span>
-                <span className="text-[10px] flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
-                  {item.time}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        {/* RIGHT: Action Queue + Cash Flow + Schedule */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-const demoTodayStatus = {
-  date: new Date().toISOString().split('T')[0],
-  total_projects: 5,
-  submitted_count: 3,
-  projects: [
-    { project_id: 1, project_code: 'PRJ-042', project_name: 'Custom Home — Brentwood', has_log: true, status: 'submitted', author_name: 'Connor M.', submitted_at: new Date(new Date().setHours(16, 32)).toISOString(), work_performed: 'Completed rough plumbing inspection. Passed.', photo_count: 4 },
-    { project_id: 2, project_code: 'PRJ-038', project_name: 'Spec Home — Franklin', has_log: true, status: 'submitted', author_name: 'Joseph K.', submitted_at: new Date(new Date().setHours(17, 15)).toISOString(), work_performed: 'Framing crew progress — 2nd floor joists complete', photo_count: 7 },
-    { project_id: 3, project_code: 'PRJ-051', project_name: 'Remodel — Green Hills', has_log: true, status: 'submitted', author_name: 'Connor M.', submitted_at: new Date(new Date().setHours(16, 45)).toISOString(), work_performed: 'Drywall hanging — 85% complete', photo_count: 3 },
-    { project_id: 4, project_code: 'PRJ-033', project_name: 'Insurance Rehab — Antioch', has_log: false },
-    { project_id: 5, project_code: 'PRJ-027', project_name: 'Commercial — Berry Hill', has_log: false },
-  ],
-};
-
-function TodaysLogs() {
-  const navigate = useNavigate();
-  const { data } = useApi(() => api.dailyLogTodayStatus(), []);
-  const status = data || demoTodayStatus;
-
-  return (
-    <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
-      <div className="panel-head" style={{ marginBottom: 12 }}>
-        <div>
-          <h3 className="panel-title">Today's Field Logs</h3>
-          <div className="panel-sub">{status.submitted_count} of {status.total_projects} submitted</div>
-        </div>
-        <button className="ghost-btn" onClick={() => navigate('/daily-logs')}>View All</button>
-      </div>
-      <div className="space-y-2">
-        {status.projects?.map((p) => (
-          <div
-            key={p.project_id}
-            className="flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
-            style={{ background: p.has_log ? 'var(--status-profit-bg)' : 'var(--status-warning-bg)' }}
-            onClick={() => navigate(`/projects/${p.project_id}?tab=daily-log`)}
-          >
-            {p.has_log ? (
-              <CheckCircle size={16} style={{ color: 'var(--status-profit)', flexShrink: 0, marginTop: 2 }} />
-            ) : (
-              <AlertTriangle size={16} style={{ color: 'var(--status-warning)', flexShrink: 0, marginTop: 2 }} />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{p.project_code}</span>
-                {p.has_log ? (
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    — {p.author_name} submitted at {new Date(p.submitted_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                  </span>
-                ) : (
-                  <span className="text-xs font-medium" style={{ color: 'var(--status-warning)' }}>No log submitted</span>
-                )}
-              </div>
-              {p.work_performed && (
-                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{p.work_performed}</p>
-              )}
-              {p.photo_count > 0 && (
-                <div className="flex items-center gap-1 mt-0.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                  <Camera size={11} /> {p.photo_count} photos
-                </div>
-              )}
+          {/* Action Queue */}
+          <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: '16px' }}>
+            <div className="panel-head" style={{ marginBottom: 12 }}>
+              <h3 className="panel-title">Action Queue</h3>
+              <span style={{ fontSize: 11, color: 'var(--status-loss)', fontWeight: 600 }}>
+                {ACTION_QUEUE.filter(a => a.level === 'critical').length} Critical
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {ACTION_QUEUE.map((a, i) => {
+                const Icon = LEVEL_ICON[a.level];
+                const lc = LEVEL_COLOR[a.level];
+                return (
+                  <div
+                    key={i}
+                    onClick={() => navigate(a.link)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 10px', borderRadius: 7,
+                      background: lc.bg, cursor: 'pointer',
+                      transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  >
+                    <Icon size={13} style={{ color: lc.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: 'var(--text-primary)', flex: 1 }}>{a.text}</span>
+                    <span style={{ fontSize: 11, color: lc.color, fontWeight: 600 }}>Fix</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-const WEATHER_ICONS = { 'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud, 'Rain': CloudRain, 'Snowflake': Cloud };
-
-function WeatherBar() {
-  const navigate = useNavigate();
-  const { data } = useApi(() => api.weatherWeekly(), []);
-  const days = (data || []).slice(0, 5);
-
-  if (!days.length) return null;
-
-  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-  return (
-    <div
-      className="rounded-lg p-4 cursor-pointer"
-      style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-      onClick={() => navigate('/weather')}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>5-Day Weather</h3>
-        <span className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>View Details &rarr;</span>
-      </div>
-      <div className="grid grid-cols-5 gap-2">
-        {days.map((day, i) => {
-          const f = day.forecast;
-          const d = new Date(f.forecast_date + 'T12:00:00');
-          const WIcon = WEATHER_ICONS[f.conditions] || Cloud;
-          const hasImpact = day.affected_projects > 0;
-          const isStopWork = day.impacts?.some(im => im.severity === 'stop_work');
-          return (
-            <div key={f.forecast_date} className="text-center">
-              <div className="text-[10px] font-semibold" style={{ color: i === 0 ? 'var(--accent)' : 'var(--text-tertiary)' }}>
-                {i === 0 ? 'TODAY' : dayNames[d.getDay()]}
-              </div>
-              <div className="my-1 flex justify-center" style={{ color: hasImpact ? (isStopWork ? 'var(--status-loss)' : 'var(--status-warning)') : 'var(--text-secondary)' }}>
-                <WIcon size={20} />
-              </div>
-              <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
-                {f.temp_high_f}°<span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>/{f.temp_low_f}°</span>
-              </div>
-              <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{f.precipitation_pct}%</div>
-              {hasImpact && (
-                <div className="text-[9px] font-semibold mt-0.5" style={{ color: isStopWork ? 'var(--status-loss)' : 'var(--status-warning)' }}>
-                  {day.affected_projects} AFFECTED
-                </div>
-              )}
+          {/* Cash Flow Forecast */}
+          <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: '16px' }}>
+            <div className="panel-head" style={{ marginBottom: 8 }}>
+              <h3 className="panel-title">Cash Flow — 8 Weeks</h3>
+              <button className="ghost-btn" onClick={() => navigate('/cash-flow')}>Expand</button>
             </div>
-          );
-        })}
+            <ResponsiveContainer width="100%" height={140}>
+              <AreaChart data={CASH_FLOW_DATA} margin={{ left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
+                <XAxis dataKey="week" stroke={tc.textSecondary} fontSize={9} />
+                <YAxis tickFormatter={(v) => `$${v/1000}K`} stroke={tc.textSecondary} fontSize={9} />
+                <Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="inflow"  stroke={tc.statusProfit} fill={tc.statusProfit} fillOpacity={0.15} name="In" />
+                <Area type="monotone" dataKey="outflow" stroke={tc.statusLoss}   fill={tc.statusLoss}   fillOpacity={0.1}  name="Out" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Today's Schedule */}
+          <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: '16px' }}>
+            <div className="panel-head" style={{ marginBottom: 12 }}>
+              <h3 className="panel-title">Today&apos;s Schedule</h3>
+              <button className="ghost-btn" onClick={() => navigate('/calendar')}>Full Calendar</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {SCHEDULE_TODAY.map((ev, i) => (
+                <div
+                  key={i}
+                  onClick={() => navigate('/calendar')}
+                  style={{ display: 'flex', gap: 10, cursor: 'pointer', padding: '6px 0' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.75'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', width: 58, flexShrink: 0, paddingTop: 2, fontFamily: 'monospace' }}>{ev.time}</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{ev.event}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 1 }}>{ev.project}  ·  {ev.assigned}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,107 +1,173 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
-import { money, pct, shortDate, statusBadge } from '../lib/format';
-import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
-import { ChevronRight, Filter, Home, List, Search } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { money } from '../lib/format';
+import { PROJECTS, STATUS_LABEL, STATUS_COLOR } from '../lib/demoData';
 
-const statuses = ['all', 'active', 'pre_construction', 'on_hold', 'completed'];
+const FILTERS = ['All', 'Active', 'Pre-Con', 'At Risk', 'Completed'];
 
-// Demo data when backend isn't running
-const demoProjects = [
-  { id: 1, code: 'PRJ-042', name: '2847 Elm Street Renovation', status: 'active', project_type: 'remodel', budget_total: 120000, contract_amount: 145000, project_manager: 'Matt S.', start_date: '2025-09-15', target_completion: '2026-04-01' },
-  { id: 2, code: 'PRJ-038', name: 'Lakewood Custom Home', status: 'active', project_type: 'custom_home', budget_total: 485000, contract_amount: 550000, project_manager: 'Matt S.', start_date: '2025-06-01', target_completion: '2026-08-15' },
-  { id: 3, code: 'PRJ-051', name: 'Riverdale Spec Home #3', status: 'active', project_type: 'spec_home', budget_total: 320000, contract_amount: 389000, project_manager: 'Matt S.', start_date: '2025-11-01', target_completion: '2026-06-30' },
-  { id: 4, code: 'PRJ-033', name: 'Highland Park Multi-Family', status: 'active', project_type: 'multifamily', budget_total: 1200000, contract_amount: 1450000, project_manager: 'Matt S.', start_date: '2025-03-01', target_completion: '2026-12-01' },
-  { id: 5, code: 'PRJ-027', name: 'Insurance Claim — 114 Oak', status: 'active', project_type: 'insurance_claim', budget_total: 78000, contract_amount: 82000, project_manager: 'Matt S.', start_date: '2025-12-01', target_completion: '2026-03-15' },
-  { id: 6, code: 'PRJ-055', name: 'Crestview Commercial Build-Out', status: 'pre_construction', project_type: 'commercial', budget_total: 260000, contract_amount: 310000, project_manager: 'Matt S.', start_date: '2026-03-01', target_completion: '2026-09-01' },
-];
+function SortIcon({ field, sort }) {
+  if (sort.field !== field) return <ChevronUp size={10} style={{ opacity: 0.25, marginLeft: 3 }} />;
+  return sort.dir === 'asc'
+    ? <ChevronUp   size={10} style={{ marginLeft: 3, color: '#3b82f6' }} />
+    : <ChevronDown size={10} style={{ marginLeft: 3, color: '#3b82f6' }} />;
+}
+
+function matchFilter(p, f) {
+  if (f === 'All')       return true;
+  if (f === 'Active')    return p.phase !== 'Pre-Construction' && p.status !== 'complete';
+  if (f === 'Pre-Con')   return p.phase === 'Pre-Construction';
+  if (f === 'At Risk')   return p.status === 'over_budget' || p.status === 'watch';
+  if (f === 'Completed') return p.status === 'complete';
+  return true;
+}
 
 export default function Projects() {
-  const [statusFilter, setStatusFilter] = useState('all');
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
-  const { data, loading, error, refetch } = useApi(
-    () => api.projects({ page: 1, per_page: 50, ...(statusFilter !== 'all' && { status: statusFilter }), ...(search && { search }) }),
-    [statusFilter, search]
-  );
+  const [sort, setSort]     = useState({ field: 'name', dir: 'asc' });
 
-  const items = data?.items || (loading ? [] : demoProjects);
-  const filtered = statusFilter === 'all' ? items : items.filter(p => p.status === statusFilter);
+  function toggleSort(field) {
+    setSort(s => s.field === field ? { field, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field, dir: 'asc' });
+  }
+
+  const rows = useMemo(() => {
+    let list = PROJECTS.filter(p => matchFilter(p, filter));
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.address.toLowerCase().includes(q) ||
+        p.pm.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q)
+      );
+    }
+    return [...list].sort((a, b) => {
+      let av = a[sort.field], bv = b[sort.field];
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      if (av < bv) return sort.dir === 'asc' ? -1 : 1;
+      if (av > bv) return sort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filter, search, sort]);
+
+  const totalContract = rows.reduce((s, p) => s + p.contract, 0);
+  const totalSpent    = rows.reduce((s, p) => s + p.spent, 0);
+
+  const thStyle = (right) => ({
+    padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+    letterSpacing: '0.07em', color: 'var(--text-secondary)', cursor: 'pointer',
+    borderBottom: '1px solid var(--color-brand-border)',
+    textAlign: right ? 'right' : 'left', whiteSpace: 'nowrap', userSelect: 'none',
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Projects</h1>
-        <span className="text-sm text-brand-muted">{filtered.length} project{filtered.length !== 1 ? 's' : ''}</span>
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Jobs</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          {PROJECTS.length} projects  ·  {money(PROJECTS.reduce((s,p)=>s+p.contract,0), true)} total contract
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" />
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
+          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
           <input
-            type="text"
-            placeholder="Search projects..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-brand-card border border-brand-border rounded-lg pl-9 pr-4 py-2.5 text-sm text-brand-text placeholder:text-brand-muted/50 focus:outline-none focus:border-brand-gold/60 transition-colors"
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search project, PM, or address..."
+            style={{
+              width: '100%', paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
+              borderRadius: 8, border: '1px solid var(--color-brand-border)',
+              background: 'var(--color-brand-card)', color: 'var(--text-primary)', fontSize: 13,
+              outline: 'none', boxSizing: 'border-box',
+            }}
           />
         </div>
-        <div className="flex gap-2">
-          {statuses.map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium capitalize transition-colors ${
-                statusFilter === s
-                  ? 'bg-brand-gold/15 text-brand-gold border border-brand-gold/30'
-                  : 'bg-brand-card border border-brand-border text-brand-muted hover:text-brand-text'
-              }`}
-            >
-              {s === 'all' ? 'All' : s.replace('_', ' ')}
-            </button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {FILTERS.map(f => (
+            <button key={f} onClick={() => setFilter(f)} style={{
+              padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+              border: `1px solid ${filter === f ? '#3b82f6' : 'var(--color-brand-border)'}`,
+              background: filter === f ? 'rgba(59,130,246,0.14)' : 'transparent',
+              color: filter === f ? '#3b82f6' : 'var(--text-secondary)',
+              transition: 'all 0.15s',
+            }}>{f}</button>
           ))}
         </div>
       </div>
 
-      {/* Project List */}
-      {loading ? (
-        <PageLoading />
-      ) : error && !items.length ? (
-        <ErrorState message={error} onRetry={refetch} />
-      ) : !filtered.length ? (
-        <EmptyState title="No projects found" message="Try a different search or filter" />
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((p) => (
-            <Link
-              key={p.id}
-              to={`/projects/${p.id}`}
-              className="block bg-brand-card border border-brand-border rounded-lg p-5 hover:border-brand-gold/30 transition-colors group"
-            >
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="text-xs font-mono text-brand-gold">{p.code}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${statusBadge(p.status)}`}>
-                      {p.status?.replace('_', ' ')}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-brand-text group-hover:text-brand-gold transition-colors truncate">{p.name}</h3>
-                  <div className="flex gap-6 mt-2 text-xs text-brand-muted">
-                    <span>Budget: <b className="text-brand-text">{money(p.budget_total)}</b></span>
-                    <span>Contract: <b className="text-brand-text">{money(p.contract_amount)}</b></span>
-                    <span className="hidden sm:inline">PM: {p.project_manager}</span>
-                    <span className="hidden sm:inline">{shortDate(p.start_date)} → {shortDate(p.target_completion)}</span>
-                  </div>
-                </div>
-                <ChevronRight size={18} className="text-brand-muted group-hover:text-brand-gold shrink-0 ml-4 transition-colors" />
-              </div>
-            </Link>
-          ))}
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {[['Project','name',false],['Address','address',false],['PM','pm',false],
+                  ['Phase','phase',false],['Contract','contract',true],['Spent','spent',true],
+                  ['Remaining','rem',true],['Margin %','margin_pct',true],['Complete','pct',true],
+                ].map(([label, field, right]) => (
+                  <th key={label} onClick={() => toggleSort(field)} style={thStyle(right)}>
+                    {label} <SortIcon field={field} sort={sort} />
+                  </th>
+                ))}
+                <th style={{ ...thStyle(false), cursor: 'default' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr><td colSpan={10} style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>No projects match.</td></tr>
+              )}
+              {rows.map((p) => {
+                const sc  = STATUS_COLOR[p.status] || STATUS_COLOR.on_budget;
+                const rem = p.contract - p.spent;
+                return (
+                  <tr key={p.id} onClick={() => navigate(`/projects/${p.id}`)}
+                    style={{ borderTop: '1px solid var(--color-brand-border)', cursor: 'pointer', transition: 'background 0.12s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.04)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <td style={{ padding: '11px 14px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 2 }}>{p.code}</div>
+                    </td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{p.address}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{p.pm.split(' ')[0]}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{p.phase}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap' }}>{money(p.contract)}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap' }}>{money(p.spent)}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap', color: rem < 0 ? 'var(--status-loss)' : 'var(--text-primary)' }}>{money(rem)}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, color: p.margin_pct < 5 ? 'var(--status-loss)' : p.margin_pct < 12 ? 'var(--status-warning)' : 'var(--status-profit)' }}>{p.margin_pct}%</td>
+                    <td style={{ padding: '11px 14px', minWidth: 100 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 2 }}>
+                          <div style={{ height: '100%', width: `${p.pct}%`, borderRadius: 2, background: sc.color }} />
+                        </div>
+                        <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{p.pct}%</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: sc.bg, color: sc.color, whiteSpace: 'nowrap' }}>
+                        {STATUS_LABEL[p.status]}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {rows.length > 0 && (
+                <tr style={{ borderTop: '2px solid var(--color-brand-border)', background: 'rgba(255,255,255,0.02)' }}>
+                  <td colSpan={4} style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>TOTALS  ·  {rows.length} projects</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{money(totalContract)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{money(totalSpent)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{money(totalContract - totalSpent)}</td>
+                  <td colSpan={3} />
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }

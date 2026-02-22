@@ -1,431 +1,127 @@
-import { useState, useEffect } from 'react';
-import { api } from '../lib/api';
-import { shortDate } from '../lib/format';
-import KPICard from '../components/KPICard';
-import DemoBanner from '../components/DemoBanner';
-import { AlertOctagon, AlertTriangle, CheckCircle, Code, Copy, FileQuestion, FileX, Filter, Hash, Info, Layers, ShieldOff, Table, TrendingDown, TriangleAlert, Users } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, CheckCircle, X } from 'lucide-react';
+import { money } from '../lib/format';
 
-/* ── Demo Data ─────────────────────────────────────────────────────────── */
-
-const DEMO_DATA = [
-  {
-    id: 1,
-    type: 'unmapped_cost_code',
-    description: 'Cost code 09-220 not found in master chart — PRJ-042 lumber invoice #7714',
-    priority: 'high',
-    status: 'open',
-    assigned_to: null,
-    created_at: '2026-02-20T10:00:00Z',
-    age_days: 2,
-  },
-  {
-    id: 2,
-    type: 'duplicate_invoice',
-    description: 'Invoice INV-8843 from ABC Plumbing appears to match INV-8801 — same amount $4,200',
-    priority: 'critical',
-    status: 'open',
-    assigned_to: null,
-    created_at: '2026-02-21T08:30:00Z',
-    age_days: 1,
-  },
-  {
-    id: 3,
-    type: 'expired_coi',
-    description: 'Certificate of Insurance for Williams Electric expired 2026-02-15 — active on PRJ-038',
-    priority: 'critical',
-    status: 'assigned',
-    assigned_to: 'Sarah M.',
-    created_at: '2026-02-16T07:00:00Z',
-    age_days: 6,
-  },
-  {
-    id: 4,
-    type: 'low_confidence_ocr',
-    description: 'OCR confidence 38% on vendor invoice scan — PRJ-051 HVAC materials receipt',
-    priority: 'normal',
-    status: 'open',
-    assigned_to: null,
-    created_at: '2026-02-21T14:00:00Z',
-    age_days: 1,
-  },
-  {
-    id: 5,
-    type: 'missing_lien_waiver',
-    description: 'No lien waiver on file for Jensen Concrete — payment of $18,500 pending release',
-    priority: 'high',
-    status: 'open',
-    assigned_to: null,
-    created_at: '2026-02-19T11:00:00Z',
-    age_days: 3,
-  },
-  {
-    id: 6,
-    type: 'budget_overrun',
-    description: 'PRJ-051 framing budget exceeded by $6,200 (108% consumed) — 3 weeks remaining',
-    priority: 'critical',
-    status: 'assigned',
-    assigned_to: 'Jake R.',
-    created_at: '2026-02-18T09:00:00Z',
-    age_days: 4,
-  },
+const PURCHASE_ORDERS = [
+  { id: 'PO-089', vendor: '84 Lumber',         project: 'Riverside Custom',   desc: 'Lumber — stair stringers and 2x12',   amount: 10284, date: '2026-02-20', status: 'pending_approval', approver: 'Matt Seibert' },
+  { id: 'PO-088', vendor: 'Thompson Framing',   project: 'Elm St Multifamily', desc: 'Framing labor — level 2 complete',    amount: 42000, date: '2026-02-18', status: 'approved',          approver: 'Cole Notgrass' },
+  { id: 'PO-087', vendor: 'Miller Concrete',    project: 'Oak Creek',          desc: 'Foundation walls — east/south',       amount: 24200, date: '2026-02-15', status: 'approved',          approver: 'Connor Mitchell' },
+  { id: 'PO-086', vendor: 'Williams Electric',  project: 'Johnson Office TI',  desc: 'Electrical trim-out — final',         amount: 12400, date: '2026-02-14', status: 'approved',          approver: 'Joseph Kowalski' },
+  { id: 'PO-085', vendor: 'Clark HVAC',         project: 'Oak Creek',          desc: 'HVAC equipment deposit',              amount:  8200, date: '2026-02-12', status: 'approved',          approver: 'Connor Mitchell' },
+  { id: 'PO-084', vendor: 'Davis Plumbing',     project: 'Magnolia Spec',      desc: 'Plumbing rough-in — complete',        amount:  9800, date: '2026-02-10', status: 'approved',          approver: 'Joseph Kowalski' },
+  { id: 'PO-083', vendor: 'Anderson Paint',     project: 'Walnut Spec',        desc: 'Interior paint — labor and material', amount:  6800, date: '2026-02-08', status: 'approved',          approver: 'Connor Mitchell' },
+  { id: 'PO-082', vendor: 'Brown Roofing',      project: 'Walnut Spec',        desc: 'Roof system — shingles and labor',    amount: 18400, date: '2026-02-05', status: 'approved',          approver: 'Connor Mitchell' },
+  { id: 'PO-081', vendor: 'Martinez Drywall',   project: 'Johnson Office TI',  desc: 'Drywall — board, tape, finish',       amount:  8400, date: '2026-02-01', status: 'approved',          approver: 'Joseph Kowalski' },
+  { id: 'PO-080', vendor: 'Earthworks Inc',     project: 'Oak Creek',          desc: 'Site grading — full scope',           amount: 12000, date: '2026-01-28', status: 'approved',          approver: 'Connor Mitchell' },
+  { id: 'PO-079', vendor: 'Thompson Framing',   project: 'Riverside Custom',   desc: 'Framing labor — weeks 1-4',           amount: 38400, date: '2026-01-15', status: 'approved',          approver: 'Connor Mitchell' },
+  { id: 'PO-078', vendor: 'Miller Concrete',    project: 'Riverside Custom',   desc: 'Concrete — foundation and flatwork',  amount: 24800, date: '2026-01-10', status: 'closed',            approver: 'Connor Mitchell' },
 ];
 
-/* ── Config Maps ───────────────────────────────────────────────────────── */
-
-const TYPE_CONFIG = {
-  unmapped_cost_code:  { label: 'Unmapped Cost Code',  Icon: Hash,         color: 'var(--accent)' },
-  duplicate_invoice:   { label: 'Duplicate Invoice',   Icon: Copy,         color: 'var(--status-warning)' },
-  expired_coi:         { label: 'Expired COI',         Icon: ShieldOff,    color: 'var(--status-loss)' },
-  low_confidence_ocr:  { label: 'Low Confidence OCR',  Icon: FileQuestion, color: 'var(--text-secondary)' },
-  missing_lien_waiver: { label: 'Missing Lien Waiver', Icon: FileX,        color: 'var(--status-warning)' },
-  budget_overrun:      { label: 'Budget Overrun',      Icon: TrendingDown, color: 'var(--status-loss)' },
+const STATUS_COLOR = {
+  pending_approval: { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)', label: 'Needs Approval' },
+  approved:         { color: 'var(--status-profit)',  bg: 'rgba(52,211,153,0.12)', label: 'Approved' },
+  closed:           { color: 'var(--text-tertiary)',  bg: 'rgba(255,255,255,0.05)', label: 'Closed' },
 };
 
-const PRIORITY_CONFIG = {
-  critical: {
-    Icon: AlertOctagon,
-    color: 'var(--status-loss)',
-    bg: 'color-mix(in srgb, var(--status-loss) 12%, transparent)',
-    border: 'color-mix(in srgb, var(--status-loss) 25%, transparent)',
-    label: 'Critical',
-  },
-  high: {
-    Icon: AlertTriangle,
-    color: 'var(--status-warning)',
-    bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)',
-    border: 'color-mix(in srgb, var(--status-warning) 25%, transparent)',
-    label: 'High',
-  },
-  normal: {
-    Icon: Info,
-    color: 'var(--status-neutral)',
-    bg: 'color-mix(in srgb, var(--status-neutral) 12%, transparent)',
-    border: 'color-mix(in srgb, var(--status-neutral) 25%, transparent)',
-    label: 'Normal',
-  },
-};
-
-const STATUS_CONFIG = {
-  open: {
-    color: 'var(--text-secondary)',
-    bg: 'var(--bg-elevated)',
-    border: 'var(--border-medium)',
-    label: 'Open',
-  },
-  assigned: {
-    color: 'var(--accent)',
-    bg: 'var(--accent-bg)',
-    border: 'var(--accent-border)',
-    label: 'Assigned',
-  },
-  resolved: {
-    color: 'var(--status-profit)',
-    bg: 'color-mix(in srgb, var(--status-profit) 12%, transparent)',
-    border: 'color-mix(in srgb, var(--status-profit) 25%, transparent)',
-    label: 'Resolved',
-  },
-};
-
-const STATUS_TABS = ['all', 'open', 'assigned', 'resolved'];
-const TYPE_TABS   = ['all', ...Object.keys(TYPE_CONFIG)];
-
-function PriorityBadge({ priority }) {
-  const p = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.normal;
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold"
-      style={{ color: p.color, background: p.bg, border: `1px solid ${p.border}` }}
-    >
-      <p.Icon size={11} />
-      {p.label}
-    </span>
-  );
-}
-
-function StatusBadge({ status }) {
-  const s = STATUS_CONFIG[status] || STATUS_CONFIG.open;
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-      style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
-    >
-      {s.label}
-    </span>
-  );
-}
-
-function TypeCell({ type }) {
-  const cfg = TYPE_CONFIG[type];
-  if (!cfg) return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{type}</span>;
-  const { Icon, color, label } = cfg;
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color }}>
-      <Icon size={13} />
-      {label}
-    </span>
-  );
-}
-
-/* ── Component ─────────────────────────────────────────────────────────── */
+const STATUS_FILTERS = ['All', 'Needs Approval', 'Approved', 'Closed'];
 
 export default function Exceptions() {
-  const [items, setItems]         = useState(DEMO_DATA);
-  const [loading, setLoading]     = useState(true);
-  const [isDemo, setIsDemo]       = useState(false);
-  const [statusTab, setStatusTab] = useState('all');
-  const [typeTab, setTypeTab]     = useState('all');
-  const [resolved, setResolved]   = useState({});  // id → true
-  const [assigned, setAssigned]   = useState({});  // id → name
-  const [working, setWorking]     = useState({});
+  const navigate = useNavigate();
+  const [search, setSearch]   = useState('');
+  const [statusF, setStatusF] = useState('All');
+  const [pos, setPos]         = useState(PURCHASE_ORDERS);
 
-  useEffect(() => {
-    api.exceptions()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setItems(data);
-          setIsDemo(
-            data.length > 0 &&
-            data[0]?.created_at === DEMO_DATA[0].created_at
-          );
-        } else {
-          setIsDemo(true);
-        }
-      })
-      .catch(() => setIsDemo(true))
-      .finally(() => setLoading(false));
-  }, []);
+  const rows = useMemo(() => {
+    let list = pos;
+    if (statusF === 'Needs Approval') list = list.filter(p => p.status === 'pending_approval');
+    else if (statusF === 'Approved')  list = list.filter(p => p.status === 'approved');
+    else if (statusF === 'Closed')    list = list.filter(p => p.status === 'closed');
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(p => p.vendor.toLowerCase().includes(q) || p.project.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+    }
+    return list;
+  }, [search, statusF, pos]);
 
-  const openCount     = items.filter((i) => !resolved[i.id] && i.status !== 'resolved').length;
-  const criticalCount = items.filter((i) => i.priority === 'critical' && !resolved[i.id]).length;
-  const assignedCount = items.filter((i) => (assigned[i.id] || i.assigned_to) && !resolved[i.id]).length;
-  const resolvedToday = Object.keys(resolved).length;
-
-  const filtered = items.filter((item) => {
-    const statusMatch =
-      statusTab === 'all' ||
-      (statusTab === 'resolved' && (resolved[item.id] || item.status === 'resolved')) ||
-      (statusTab !== 'resolved' && !resolved[item.id] && item.status === statusTab);
-    const typeMatch = typeTab === 'all' || item.type === typeTab;
-    return statusMatch && typeMatch;
-  });
-
-  function effectiveStatus(item) {
-    if (resolved[item.id] || item.status === 'resolved') return 'resolved';
-    if (assigned[item.id] || item.status === 'assigned')  return 'assigned';
-    return 'open';
+  function approve(id) {
+    setPos(prev => prev.map(p => p.id === id ? { ...p, status: 'approved' } : p));
+  }
+  function reject(id) {
+    setPos(prev => prev.map(p => p.id === id ? { ...p, status: 'closed' } : p));
   }
 
-  async function handleResolve(id) {
-    setWorking((w) => ({ ...w, [id]: true }));
-    try { await api.resolveException(id); } catch (_) { /* optimistic */ }
-    setResolved((r) => ({ ...r, [id]: true }));
-    setWorking((w) => ({ ...w, [id]: false }));
-  }
-
-  async function handleAssign(id) {
-    const to = 'Me'; // In production, open a picker modal
-    setWorking((w) => ({ ...w, [id]: true }));
-    try { await api.assignException(id, to); } catch (_) { /* optimistic */ }
-    setAssigned((a) => ({ ...a, [id]: to }));
-    setWorking((w) => ({ ...w, [id]: false }));
-  }
-
-  const SkeletonRow = () => (
-    <tr>
-      {[1,2,3,4,5,6,7].map((i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 rounded animate-pulse" style={{ background: 'var(--bg-elevated)', width: i === 2 ? '85%' : '55%' }} />
-        </td>
-      ))}
-    </tr>
-  );
+  const thBase = { padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--color-brand-border)', textAlign: 'left' };
+  const totalPending = pos.filter(p => p.status === 'pending_approval').reduce((s,p)=>s+p.amount,0);
 
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          Exception Queue
-        </h1>
-        {openCount > 0 && (
-          <span
-            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-            style={{ background: 'var(--status-loss)', color: '#fff' }}
-          >
-            {openCount}
-          </span>
-        )}
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Purchase Orders</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          {pos.filter(p=>p.status==='pending_approval').length} pending approval  ·  {money(totalPending)} awaiting
+        </p>
       </div>
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Open Exceptions" value={openCount}     icon={TriangleAlert} sub="awaiting triage" />
-        <KPICard label="Critical"        value={criticalCount} icon={AlertOctagon}  sub="requires immediate action" />
-        <KPICard label="Assigned"        value={assignedCount} icon={Users}         sub="in progress" />
-        <KPICard label="Resolved Today"  value={resolvedToday} icon={CheckCircle}   sub="this session" />
-      </div>
-
-      {/* Filter Row */}
-      <div className="flex flex-wrap gap-4 items-end">
-        {/* Status tabs */}
-        <div
-          className="flex gap-1 overflow-x-auto flex-1"
-          style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1px' }}
-        >
-          {STATUS_TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setStatusTab(t)}
-              className="px-4 py-2.5 text-sm font-medium whitespace-nowrap capitalize transition-colors"
-              style={{
-                borderBottom: statusTab === t ? '2px solid var(--accent)' : '2px solid transparent',
-                color: statusTab === t ? 'var(--accent)' : 'var(--text-secondary)',
-              }}
-            >
-              {t === 'all' ? 'All Statuses' : t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
+          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search POs..." style={{ width: '100%', paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8, borderRadius: 8, border: '1px solid var(--color-brand-border)', background: 'var(--color-brand-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {STATUS_FILTERS.map(f => (
+            <button key={f} onClick={() => setStatusF(f)} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${statusF === f ? '#3b82f6' : 'var(--color-brand-border)'}`, background: statusF === f ? 'rgba(59,130,246,0.14)' : 'transparent', color: statusF === f ? '#3b82f6' : 'var(--text-secondary)', transition: 'all 0.15s' }}>{f}</button>
           ))}
         </div>
       </div>
 
-      {/* Type filter pills */}
-      <div className="flex flex-wrap gap-2">
-        {TYPE_TABS.map((t) => {
-          const cfg = TYPE_CONFIG[t];
-          const active = typeTab === t;
-          return (
-            <button
-              key={t}
-              onClick={() => setTypeTab(t)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors"
-              style={{
-                background: active ? 'var(--accent-bg)' : 'var(--bg-elevated)',
-                color: active ? 'var(--accent)' : 'var(--text-secondary)',
-                border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border-subtle)'}`,
-              }}
-            >
-              {cfg && <cfg.Icon size={11} />}
-              {t === 'all' ? 'All Types' : cfg?.label ?? t}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Table */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-      >
-        {!loading && filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <CheckCircle size={40} style={{ color: 'var(--status-profit)' }} />
-            <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-              No exceptions match the current filters
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="mc-table w-full">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Description</th>
-                  <th>Priority</th>
-                  <th>Status</th>
-                  <th>Assigned To</th>
-                  <th>Age</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading
-                  ? Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)
-                  : filtered.map((item) => {
-                      const status = effectiveStatus(item);
-                      const assignee = assigned[item.id] || item.assigned_to;
-                      const isResolved = status === 'resolved';
-                      const busy = working[item.id];
-                      return (
-                        <tr key={item.id} style={{ opacity: isResolved ? 0.55 : 1 }}>
-                          <td style={{ minWidth: 160 }}><TypeCell type={item.type} /></td>
-                          <td style={{ maxWidth: 340 }}>
-                            <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                              {item.description}
-                            </span>
-                          </td>
-                          <td><PriorityBadge priority={item.priority} /></td>
-                          <td><StatusBadge status={status} /></td>
-                          <td style={{ color: assignee ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
-                            {assignee || '—'}
-                          </td>
-                          <td>
-                            <span
-                              className="num font-medium"
-                              style={{
-                                color: (item.age_days ?? 0) >= 5
-                                  ? 'var(--status-loss)'
-                                  : (item.age_days ?? 0) >= 2
-                                    ? 'var(--status-warning)'
-                                    : 'var(--text-secondary)',
-                              }}
-                            >
-                              {item.age_days ?? 0}d
-                            </span>
-                          </td>
-                          <td>
-                            {isResolved ? (
-                              <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--status-profit)' }}>
-                                <CheckCircle size={13} /> Resolved
-                              </span>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                {!assignee && (
-                                  <button
-                                    onClick={() => handleAssign(item.id)}
-                                    disabled={busy}
-                                    className="px-3 py-1 rounded text-xs font-semibold transition-opacity disabled:opacity-50"
-                                    style={{
-                                      background: 'var(--accent-bg)',
-                                      color: 'var(--accent)',
-                                      border: '1px solid var(--accent-border)',
-                                    }}
-                                  >
-                                    Assign
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleResolve(item.id)}
-                                  disabled={busy}
-                                  className="px-3 py-1 rounded text-xs font-semibold transition-opacity disabled:opacity-50"
-                                  style={{
-                                    background: 'color-mix(in srgb, var(--status-profit) 12%, transparent)',
-                                    color: 'var(--status-profit)',
-                                    border: '1px solid color-mix(in srgb, var(--status-profit) 25%, transparent)',
-                                  }}
-                                >
-                                  Resolve
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Footer count */}
-      {!loading && filtered.length > 0 && (
-        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          <Layers size={13} />
-          <span>{filtered.length} exception{filtered.length !== 1 ? 's' : ''} shown</span>
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['PO #','Vendor','Project','Description','Amount','Date','Approver','Status','Actions'].map((h,i) => (
+                  <th key={h} style={{ ...thBase, textAlign: i === 4 ? 'right' : 'left' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(po => {
+                const sc = STATUS_COLOR[po.status];
+                return (
+                  <tr key={po.id} style={{ borderTop: '1px solid var(--color-brand-border)', transition: 'background 0.12s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <td style={{ padding: '11px 14px', fontSize: 12, fontWeight: 700, color: '#3b82f6' }}>{po.id}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-primary)' }}>{po.vendor}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => navigate('/projects')}>{po.project}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{po.desc}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'monospace', textAlign: 'right' }}>{money(po.amount)}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{po.date}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{po.approver}</td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: sc.bg, color: sc.color, whiteSpace: 'nowrap' }}>{sc.label}</span>
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      {po.status === 'pending_approval' && (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={() => approve(po.id)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 6, border: 'none', background: 'rgba(52,211,153,0.15)', color: 'var(--status-profit)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                            <CheckCircle size={11} /> Approve
+                          </button>
+                          <button onClick={() => reject(po.id)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 6, border: 'none', background: 'rgba(251,113,133,0.12)', color: 'var(--status-loss)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                            <X size={11} /> Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }
