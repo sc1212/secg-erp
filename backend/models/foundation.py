@@ -1,4 +1,4 @@
-"""Phase 0 Foundation models — Notifications, Approvals, Exceptions, Snapshots, VendorCompliance, TimeClock."""
+"""Phase 0 Foundation models — SystemEvent bus, Notifications, Approvals, Exceptions, Snapshots, VendorCompliance, TimeClock."""
 
 from datetime import date, datetime
 from sqlalchemy import (
@@ -12,6 +12,25 @@ from backend.core.database import Base
 class TimestampMixin:
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class SystemEvent(TimestampMixin, Base):
+    """Event bus — every module publishes events here; the rules engine routes them to notifications.
+
+    event_type examples:
+      "invoice.created", "invoice.approved", "coi.expiring", "daily_log.missed",
+      "weather.stop_work", "selection.overdue", "inspection.failed",
+      "profit_fade.warning", "cash_runway.low", "maintenance.due"
+    """
+    __tablename__ = "system_events"
+
+    id = Column(Integer, primary_key=True)
+    event_type = Column(String(100), nullable=False, index=True)
+    source_type = Column(String(50), nullable=False)   # invoice, vendor, project, cost_event, etc.
+    source_id = Column(Integer, nullable=False)
+    payload = Column(JSON)                              # event-specific data
+    processed = Column(Boolean, default=False, index=True)
+    processed_at = Column(DateTime)
 
 
 class NotificationRule(TimestampMixin, Base):

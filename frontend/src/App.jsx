@@ -26,6 +26,8 @@ import TimeClock from './pages/TimeClock';
 import Decisions from './pages/Decisions';
 import Exceptions from './pages/Exceptions';
 import Permits from './pages/Permits';
+import ProfitFade from './pages/ProfitFade';
+import CashFlow from './pages/CashFlow';
 
 export default function App() {
   return (
@@ -52,6 +54,8 @@ export default function App() {
           <Route path="/payments" element={<Payments />} />
           <Route path="/vendors" element={<Vendors />} />
           <Route path="/draws" element={<Draws />} />
+          <Route path="/profit-fade" element={<ProfitFade />} />
+          <Route path="/cash-flow" element={<CashFlow />} />
 
           {/* People */}
           <Route path="/team" element={<Team />} />

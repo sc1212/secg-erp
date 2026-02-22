@@ -6,6 +6,7 @@ import {
   Bell, Search, Menu, X, Sun, Moon, Crosshair,
   CalendarDays, FileText, FolderArchive, Truck, Package,
   ShieldCheck, Wrench, Sunrise, FileCheck, Clock, Building2,
+  TrendingDown, BarChart3,
 } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
 import { api } from '../lib/api';
@@ -83,10 +84,12 @@ const navSections = [
   {
     label: 'Finance',
     items: [
-      { to: '/financials', icon: DollarSign, label: 'Financials' },
-      { to: '/payments',   icon: CreditCard, label: 'Payments' },
-      { to: '/vendors',    icon: Handshake,  label: 'Vendors' },
-      { to: '/draws',      icon: Building2,  label: 'Draws' },
+      { to: '/financials',  icon: DollarSign,   label: 'Financials' },
+      { to: '/payments',    icon: CreditCard,   label: 'Payments' },
+      { to: '/vendors',     icon: Handshake,    label: 'Vendors' },
+      { to: '/draws',       icon: Building2,    label: 'Draws' },
+      { to: '/profit-fade', icon: TrendingDown, label: 'Profit Fade' },
+      { to: '/cash-flow',   icon: BarChart3,    label: 'Cash Flow' },
     ],
   },
   {

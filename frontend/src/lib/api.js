@@ -294,6 +294,20 @@ export const api = {
     return request(`/permits/inspections/upcoming${q ? '?' + q : ''}`);
   },
 
+  // Profit Fade Early Warning (Phase 4 / M-15)
+  profitFadeDashboard: () => request('/profit-fade/dashboard'),
+  projectFadeHistory: (projectId, params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/profit-fade/projects/${projectId}${q ? '?' + q : ''}`);
+  },
+  fadeDrivers: (projectId) => request(`/profit-fade/projects/${projectId}/drivers`),
+  generateFadeSnapshot: () => request('/profit-fade/generate', { method: 'POST' }),
+
+  // Cash Flow Forecasting (Phase 4 / M-16)
+  cashFlowForecast: (scenario = 'expected') => request(`/cash-flow/forecast?scenario=${scenario}`),
+  cashRunway: () => request('/cash-flow/runway'),
+  generateCashForecast: () => request('/cash-flow/generate', { method: 'POST' }),
+
   // Admin
   adminStatus: () => request('/admin/status'),
 };
