@@ -49,11 +49,12 @@ def list_debts(
 @router.get("/pl", response_model=List[PLEntryOut])
 def get_pl(
     division: Optional[str] = None,
-    year: int = Query(default=2025),
+    year: Optional[int] = Query(default=None),
     month: Optional[int] = Query(default=None, ge=1, le=12),
     db: Session = Depends(get_db),
 ):
     """P&L entries filterable by division and period."""
+    year = year or date.today().year
     q = db.query(PLEntry).filter(PLEntry.period_year == year)
     if division:
         q = q.filter(PLEntry.division == division)
@@ -66,10 +67,11 @@ def get_pl(
 @router.get("/pl/summary")
 def get_pl_summary(
     division: Optional[str] = None,
-    year: int = Query(default=2025),
+    year: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """Summarized P&L by month — revenue, expenses, and net for charting."""
+    year = year or date.today().year
     q = db.query(
         PLEntry.period_month,
         PLEntry.account_name,

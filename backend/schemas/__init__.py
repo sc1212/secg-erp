@@ -295,17 +295,15 @@ class LeadOut(OrmBase):
     project_type: Optional[str] = None
     salesperson: Optional[str] = None
     client_contact: Optional[str] = None
-    estimated_value: Optional[Decimal] = None
+    estimated_revenue: Optional[Decimal] = None
     notes: Optional[str] = None
 
 class LeadProposalOut(OrmBase):
     id: int
     proposal_title: Optional[str] = None
-    proposal_amount: Optional[Decimal] = None
+    client_price: Optional[Decimal] = None
     status: Optional[str] = None
     salesperson: Optional[str] = None
-    sent_date: Optional[date] = None
-    approved_date: Optional[date] = None
     notes: Optional[str] = None
 
 
