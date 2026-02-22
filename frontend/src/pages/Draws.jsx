@@ -1,185 +1,218 @@
 /**
- * Draws — Draw Request Builder & Tracker
- * Lists all draw requests across projects with status tracking.
+ * Draw Requests & Invoicing — Redesigned (Issue 11B)
+ * Features: pending draws with detail cards, draw history, create new draw
  */
-import { useState, useEffect } from 'react';
-import { Building2, DollarSign, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
+import { money, shortDate } from '../lib/format';
+import KPICard from '../components/KPICard';
+import DemoBanner from '../components/DemoBanner';
+import {
+  Building2, CheckCircle, Clock, AlertTriangle, FileText,
+  Download, Send, Eye, Plus, Edit3, ChevronRight,
+} from 'lucide-react';
 
-const DEMO_DRAWS = [
+const DEMO_PENDING = [
   {
-    id: 1, project_id: 1, project_code: 'PRJ-042', project_name: 'Custom Home — Brentwood',
-    draw_number: 1, amount_requested: 38500, amount_approved: 38500,
-    status: 'funded', submitted_date: '2026-01-15', funded_date: '2026-01-22', lender: 'First Bank Construction',
+    id: 3, project: 'Oak Creek', projectId: 2, drawNumber: 4, amount: 45000,
+    status: 'ready', createdDate: '2026-02-20', percentComplete: 65,
+    breakdown: 'Foundation 100%, Framing 95%, Plumbing 40%, HVAC 30%',
+    supportingDocs: '4 invoices, 3 lien waivers attached',
   },
   {
-    id: 2, project_id: 1, project_code: 'PRJ-042', project_name: 'Custom Home — Brentwood',
-    draw_number: 2, amount_requested: 42100, amount_approved: 41800,
-    status: 'funded', submitted_date: '2026-02-05', funded_date: '2026-02-12', lender: 'First Bank Construction',
-  },
-  {
-    id: 3, project_id: 1, project_code: 'PRJ-042', project_name: 'Custom Home — Brentwood',
-    draw_number: 3, amount_requested: 45200, amount_approved: null,
-    status: 'submitted', submitted_date: '2026-02-20', funded_date: null, lender: 'First Bank Construction',
-  },
-  {
-    id: 4, project_id: 2, project_code: 'PRJ-038', project_name: 'Spec Home — Franklin',
-    draw_number: 1, amount_requested: 31000, amount_approved: 31000,
-    status: 'funded', submitted_date: '2026-01-28', funded_date: '2026-02-04', lender: 'Southeast Capital',
-  },
-  {
-    id: 5, project_id: 3, project_code: 'PRJ-051', project_name: 'Remodel — Green Hills',
-    draw_number: 1, amount_requested: 18500, amount_approved: null,
-    status: 'draft', submitted_date: null, funded_date: null, lender: 'Cash / Owner-funded',
+    id: 6, project: 'Riverside Custom', projectId: 1, drawNumber: 3, amount: 62000,
+    status: 'submitted', submittedDate: '2026-02-14', expectedFunding: '2026-02-26',
+    daysUntilFunding: 4,
   },
 ];
 
-const STATUS_STYLES = {
-  draft:     { bg: 'var(--bg-elevated)', color: 'var(--text-muted)',    label: 'Draft' },
-  submitted: { bg: 'var(--status-warning-bg, var(--accent-bg))', color: 'var(--status-warning)', label: 'Submitted' },
-  funded:    { bg: 'var(--status-profit-bg, var(--accent-bg))', color: 'var(--status-profit)',  label: 'Funded' },
-  rejected:  { bg: 'var(--status-loss-bg, var(--accent-bg))',   color: 'var(--status-loss)',    label: 'Rejected' },
+const DEMO_HISTORY = [
+  { id: 5, project: 'Riverside Custom', drawNumber: 3, amount: 58000, fundedDate: '2026-02-10', status: 'funded' },
+  { id: 4, project: 'Oak Creek', drawNumber: 2, amount: 40000, fundedDate: '2026-01-28', status: 'funded' },
+  { id: 2, project: 'Riverside Custom', drawNumber: 2, amount: 52000, fundedDate: '2026-01-15', status: 'funded' },
+  { id: 1, project: 'Magnolia Spec', drawNumber: 1, amount: 35000, fundedDate: '2026-01-05', status: 'funded' },
+];
+
+const STATUS_BADGE = {
+  ready: { label: 'Ready to Send', bg: 'var(--status-info-bg)', color: 'var(--status-info)' },
+  submitted: { label: 'Submitted, Awaiting Funding', bg: 'var(--status-warning-bg)', color: 'var(--status-warning)' },
+  funded: { label: 'Funded', bg: 'var(--status-profit-bg)', color: 'var(--status-profit)' },
+  draft: { label: 'Draft', bg: 'var(--bg-elevated)', color: 'var(--text-tertiary)' },
 };
 
-function fmt(n) {
-  if (n == null) return '—';
-  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-
 export default function Draws() {
-  const [draws, setDraws] = useState(DEMO_DRAWS);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const navigate = useNavigate();
+  const { isDemo } = useApi(() => api.dashboard(), []);
+  const pending = DEMO_PENDING;
+  const history = DEMO_HISTORY;
 
-  useEffect(() => {
-    api.drawRequests()
-      .then(data => { if (data && data.length > 0) setDraws(data); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = filter === 'all' ? draws : draws.filter(d => d.status === filter);
-
-  const totalFunded   = draws.filter(d => d.status === 'funded').reduce((s, d) => s + (d.amount_approved || 0), 0);
-  const totalPending  = draws.filter(d => d.status === 'submitted').reduce((s, d) => s + (d.amount_requested || 0), 0);
-  const draftCount    = draws.filter(d => d.status === 'draft').length;
+  const totalPending = pending.reduce((s, d) => s + d.amount, 0);
+  const totalFunded = history.reduce((s, d) => s + d.amount, 0);
 
   return (
-    <div style={{ color: 'var(--text-primary)' }}>
+    <div className="space-y-6">
+      {isDemo && <DemoBanner />}
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Draws</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Draw Requests & Invoicing</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            Construction loan draw requests across all active projects
+            Construction loan draws and client invoicing
           </p>
         </div>
-        <button
-          className="px-4 py-2 rounded text-sm font-medium"
-          style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-        >
-          + New Draw Request
-        </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total Funded', value: fmt(totalFunded), icon: CheckCircle, color: 'var(--status-profit)' },
-          { label: 'Pending Review', value: fmt(totalPending), icon: Clock, color: 'var(--status-warning)' },
-          { label: 'Total Draws', value: draws.length, icon: Building2, color: 'var(--accent)' },
-          { label: 'Draft', value: draftCount, icon: AlertTriangle, color: 'var(--text-muted)' },
-        ].map(card => (
-          <div
-            key={card.label}
-            className="rounded-lg p-4"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <card.icon size={16} style={{ color: card.color }} />
-              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{card.label}</span>
-            </div>
-            <div className="text-xl font-bold num" style={{ color: card.color }}>{card.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex gap-1 mb-4">
-        {['all', 'draft', 'submitted', 'funded'].map(s => (
+        <div className="flex gap-2">
           <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className="px-3 py-1.5 rounded text-xs font-medium capitalize"
-            style={{
-              background: filter === s ? 'var(--accent)' : 'var(--bg-elevated)',
-              color: filter === s ? 'var(--text-inverse)' : 'var(--text-secondary)',
-              border: '1px solid var(--border-subtle)',
-            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold"
+            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
           >
-            {s === 'all' ? 'All' : (STATUS_STYLES[s]?.label || s)}
+            <Plus size={14} /> Create New Draw Request
           </button>
-        ))}
+          <button className="ghost-btn flex items-center gap-1.5">
+            <FileText size={13} /> Create Invoice
+          </button>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-subtle)' }}>
-        <table className="mc-table w-full">
-          <thead>
-            <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Project</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Draw #</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Lender</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Requested</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Approved</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Submitted</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Funded</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((d, i) => {
-              const st = STATUS_STYLES[d.status] || STATUS_STYLES.draft;
-              return (
-                <tr
-                  key={d.id}
-                  style={{
-                    background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-base)',
-                    borderBottom: '1px solid var(--border-subtle)',
-                  }}
-                >
-                  <td className="px-4 py-3">
-                    <div className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{d.project_code}</div>
-                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{d.project_name}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium">Draw #{d.draw_number}</td>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{d.lender || '—'}</td>
-                  <td className="px-4 py-3 text-sm num text-right font-medium">{fmt(d.amount_requested)}</td>
-                  <td className="px-4 py-3 text-sm num text-right" style={{ color: d.amount_approved ? 'var(--status-profit)' : 'var(--text-muted)' }}>
-                    {fmt(d.amount_approved)}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{d.submitted_date || '—'}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: d.funded_date ? 'var(--status-profit)' : 'var(--text-muted)' }}>
-                    {d.funded_date || '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="px-2 py-0.5 rounded text-xs font-medium"
-                      style={{ background: st.bg, color: st.color }}
-                    >
-                      {st.label}
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard label="Pending Draws" value={money(totalPending)} icon={Clock} sub={`${pending.length} active`} />
+        <KPICard label="Total Funded (YTD)" value={money(totalFunded)} icon={CheckCircle} sub={`${history.length} draws`} />
+        <KPICard label="Active Projects" value="5" icon={Building2} sub="with draw schedules" />
+        <KPICard label="Avg. Funding Time" value="7 days" icon={Clock} sub="from submission" />
+      </div>
+
+      {/* Pending Draws Section */}
+      <div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-secondary)' }}>
+          Pending Draws
+        </h2>
+        <div className="space-y-3">
+          {pending.map(draw => {
+            const badge = STATUS_BADGE[draw.status] || STATUS_BADGE.draft;
+            return (
+              <div
+                key={draw.id}
+                className="rounded-lg overflow-hidden"
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-card)' }}
+              >
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                          Draw #{draw.drawNumber} \u2014 {draw.project}
+                        </span>
+                        <span
+                          className="px-2.5 py-0.5 rounded text-xs font-semibold"
+                          style={{ background: badge.bg, color: badge.color }}
+                        >
+                          {badge.label}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xl font-bold" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                      {money(draw.amount)}
                     </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            No draws found
-          </div>
-        )}
+                  </div>
+
+                  {draw.status === 'ready' && (
+                    <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      <div>Created: {shortDate(draw.createdDate)} &middot; % Complete: {draw.percentComplete}%</div>
+                      <div>Breakdown: {draw.breakdown}</div>
+                      <div>Supporting Docs: {draw.supportingDocs}</div>
+                      {/* Progress bar */}
+                      <div className="mt-2">
+                        <div className="mc-score-track">
+                          <div
+                            className="mc-score-fill"
+                            style={{ width: `${draw.percentComplete}%`, background: 'var(--accent)' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {draw.status === 'submitted' && (
+                    <div className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      <div>Sent: {shortDate(draw.submittedDate)}</div>
+                      <div>
+                        Expected Funding: {shortDate(draw.expectedFunding)}
+                        <span style={{ color: 'var(--status-info)', fontWeight: 500 }}> ({draw.daysUntilFunding} days)</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div
+                  className="flex items-center gap-2 px-5 py-3"
+                  style={{ background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-subtle)' }}
+                >
+                  {draw.status === 'ready' && (
+                    <>
+                      <button className="px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
+                        <Send size={12} /> Review & Send
+                      </button>
+                      <button className="ghost-btn flex items-center gap-1"><Edit3 size={12} /> Edit</button>
+                      <button className="ghost-btn flex items-center gap-1"><Download size={12} /> Download PDF</button>
+                    </>
+                  )}
+                  {draw.status === 'submitted' && (
+                    <>
+                      <button className="ghost-btn flex items-center gap-1"><Eye size={12} /> View</button>
+                      <button className="ghost-btn flex items-center gap-1"><Send size={12} /> Follow Up</button>
+                      <button className="px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1" style={{ background: 'var(--status-profit)', color: '#fff' }}>
+                        <CheckCircle size={12} /> Mark as Funded
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Draw History */}
+      <div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-secondary)' }}>
+          Draw History
+        </h2>
+        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-subtle)' }}>
+          {history.map((draw, i) => (
+            <div
+              key={draw.id}
+              className="flex items-center justify-between px-5 py-3 cursor-pointer transition-colors"
+              style={{
+                borderBottom: i < history.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                background: 'var(--bg-surface)',
+              }}
+              onClick={() => navigate(`/projects/${draw.project === 'Riverside Custom' ? 1 : draw.project === 'Oak Creek' ? 2 : 3}`)}
+            >
+              <div className="flex items-center gap-3">
+                <CheckCircle size={16} style={{ color: 'var(--status-profit)' }} />
+                <div>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                    Draw #{draw.drawNumber} \u2014 {draw.project}
+                  </span>
+                  <span className="text-xs ml-3" style={{ color: 'var(--text-tertiary)' }}>
+                    Funded {shortDate(draw.fundedDate)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                  {money(draw.amount)}
+                </span>
+                <span className="mc-badge mc-badge-profit">\u2713</span>
+                <ChevronRight size={14} style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

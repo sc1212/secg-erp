@@ -44,7 +44,36 @@ const alertStyles = {
   info:     { color: 'var(--status-profit)',  bg: 'var(--status-profit-bg)' },
 };
 
+// Issue 5: Alert drill-down targets — every alert navigates to its source record
+const ALERT_DRILL_DOWN = {
+  'AR': '/financials?tab=ar',
+  'Budget': '/projects/3?tab=costs',
+  'Compliance': '/vendors?tab=compliance',
+  'Draws': '/draws',
+  'AP': '/payments',
+  'Sync': '/financials?tab=sync',
+  'Safety': '/safety',
+  'Permits': '/permits',
+  'Daily Log': '/daily-logs',
+  'Weather': '/weather',
+  'Time Clock': '/timeclock',
+  'Punch List': '/decisions',
+};
+
+// Activity feed items — each is clickable (Issue 5)
+const DEMO_ACTIVITY = [
+  { id: 1, icon: '\u{1F4E5}', text: 'New invoice synced from QuickBooks \u2014 Miller Concrete ($8,400)', link: '/payments', time: '2h ago' },
+  { id: 2, icon: '\u{1F4B3}', text: 'Vendor payment processed \u2014 84 Lumber ($12,100)', link: '/payments', time: '3h ago' },
+  { id: 3, icon: '\u{1F4DD}', text: 'Daily log submitted \u2014 Connor, Riverside Custom', link: '/daily-logs', time: '5h ago' },
+  { id: 4, icon: '\u{26A0}\uFE0F', text: 'COI expiring in 3 days \u2014 Williams Electric', link: '/vendors?tab=compliance', time: '6h ago' },
+  { id: 5, icon: '\u2705', text: 'Change order approved \u2014 Oak Creek CO-003 ($4,200)', link: '/projects/2?tab=cos', time: '8h ago' },
+  { id: 6, icon: '\u{1F4B0}', text: 'Draw request submitted \u2014 Oak Creek ($45,000)', link: '/draws', time: 'Yesterday' },
+  { id: 7, icon: '\u{23F0}', text: 'Employee clocked in \u2014 Connor M. at Riverside Custom', link: '/timeclock', time: 'Yesterday' },
+  { id: 8, icon: '\u{1F4CA}', text: 'Budget threshold exceeded \u2014 PRJ-051 at 96%', link: '/projects/3?tab=costs', time: 'Yesterday' },
+];
+
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { data, loading, error, isDemo, refetch } = useApi(() => api.dashboard());
   const tc = useThemeColors();
 
@@ -142,25 +171,61 @@ export default function Dashboard() {
       {/* Today's Field Logs */}
       <TodaysLogs />
 
-      {/* Alerts */}
-      <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
-        <div className="panel-head" style={{ marginBottom: 12 }}>
-          <h3 className="panel-title">Alerts &amp; Action Items</h3>
+      {/* Alerts + Activity Feed — side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Alerts */}
+        <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
+          <div className="panel-head" style={{ marginBottom: 12 }}>
+            <h3 className="panel-title">Alerts &amp; Action Items</h3>
+          </div>
+          <div className="space-y-2" aria-live="polite" aria-label="Financial alerts">
+            {alerts.map((a, i) => {
+              const Icon = alertIcon[a.level] || Info;
+              const style = alertStyles[a.level] || alertStyles.info;
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
+                  style={{ background: style.bg }}
+                  onClick={() => navigate(ALERT_DRILL_DOWN[a.category] || '/')}
+                >
+                  <Icon size={16} style={{ color: style.color }} />
+                  <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{a.message}</span>
+                  <span className="text-xs font-medium transition-colors" style={{ color: 'var(--accent)' }}>
+                    View &rarr;
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="space-y-2" aria-live="polite" aria-label="Financial alerts">
-          {alerts.map((a, i) => {
-            const Icon = alertIcon[a.level] || Info;
-            const style = alertStyles[a.level] || alertStyles.info;
-            return (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: style.bg }}>
-                <Icon size={16} style={{ color: style.color }} />
-                <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{a.message}</span>
-                <button className="text-xs font-medium transition-colors" style={{ color: 'var(--accent)' }}>
-                  View &rarr;
-                </button>
+
+        {/* Activity Feed — "What Changed" */}
+        <div className="rounded-lg p-5" style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}>
+          <div className="panel-head" style={{ marginBottom: 12 }}>
+            <h3 className="panel-title">What Changed</h3>
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Last 48 hours</span>
+          </div>
+          <div className="space-y-1" style={{ maxHeight: 320, overflowY: 'auto' }}>
+            {DEMO_ACTIVITY.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
+                style={{ background: 'transparent' }}
+                onClick={() => navigate(item.link)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <span className="text-base flex-shrink-0">{item.icon}</span>
+                <span className="text-sm flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>
+                  {item.text}
+                </span>
+                <span className="text-[10px] flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
+                  {item.time}
+                </span>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
     </div>
