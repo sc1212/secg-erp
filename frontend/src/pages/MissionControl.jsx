@@ -11,13 +11,15 @@
  *   '/crm'                  → CRM pipeline
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Crosshair, TrendingUp, Zap, GitMerge,
   ArrowRight, CheckCircle2, Circle,
   Activity, Target, Radio, Clock, ChevronRight,
+  ListTodo, AlertOctagon, CheckCheck,
 } from 'lucide-react';
+import { api } from '../lib/api';
 import {
   missionCards,
   commandNarratives,
@@ -359,6 +361,78 @@ function CadenceTable() {
   );
 }
 
+// ── Action Required strip ─────────────────────────────────────────────────────
+function ActionRequired() {
+  const navigate = useNavigate();
+  const [decisions, setDecisions] = useState(4); // demo: 4 pending approvals
+  const [exceptions, setExceptions] = useState(3); // demo: 3 open exceptions
+
+  useEffect(() => {
+    api.approvalQueue()
+      .then(data => setDecisions(Array.isArray(data) ? data.length : 0))
+      .catch(() => {});
+    api.exceptionsOpenCount()
+      .then(r => setExceptions(r.count ?? 0))
+      .catch(() => {});
+  }, []);
+
+  const allClear = decisions === 0 && exceptions === 0;
+
+  if (allClear) {
+    return (
+      <div
+        className="flex items-center gap-3 rounded-lg px-4 py-3 mb-5"
+        style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}
+      >
+        <CheckCheck size={16} style={{ color: 'var(--status-profit)', flexShrink: 0 }} />
+        <span className="text-sm font-medium" style={{ color: 'var(--status-profit)' }}>
+          Decision Queue clear — no pending approvals or open exceptions
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-3 rounded-lg px-4 py-3 mb-5"
+      style={{
+        background: 'var(--status-loss-bg, var(--accent-bg))',
+        border: '1px solid var(--status-loss)',
+      }}
+    >
+      <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--status-loss)' }}>
+        Action Required
+      </span>
+
+      {decisions > 0 && (
+        <button
+          onClick={() => navigate('/decisions')}
+          className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-opacity hover:opacity-80"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+        >
+          <ListTodo size={13} style={{ color: 'var(--status-warning)' }} />
+          <span className="font-bold" style={{ color: 'var(--status-warning)' }}>{decisions}</span>
+          pending approval{decisions > 1 ? 's' : ''}
+          <ChevronRight size={11} style={{ opacity: 0.5 }} />
+        </button>
+      )}
+
+      {exceptions > 0 && (
+        <button
+          onClick={() => navigate('/exceptions')}
+          className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-opacity hover:opacity-80"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
+        >
+          <AlertOctagon size={13} style={{ color: 'var(--status-loss)' }} />
+          <span className="font-bold" style={{ color: 'var(--status-loss)' }}>{exceptions}</span>
+          open exception{exceptions > 1 ? 's' : ''}
+          <ChevronRight size={11} style={{ opacity: 0.5 }} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function MissionControl() {
   const navigate = useNavigate();
@@ -416,6 +490,9 @@ export default function MissionControl() {
           </div>
         </div>
       </div>
+
+      {/* Action Required — Decision Queue + Exception Queue summary */}
+      <ActionRequired />
 
       {/* Mission Cards row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 14 }}>
