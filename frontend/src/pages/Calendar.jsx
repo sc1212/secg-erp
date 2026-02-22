@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import { CalendarDays, Plus, ChevronLeft, ChevronRight, Clock, MapPin, Users, X, Download, Edit3, Trash2, ExternalLink } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, Download, Edit, Edit3, ExternalLink, Home, MapPin, Plus, Trash2, Users } from 'lucide-react';
 
 const EVENT_COLORS = {
   inspection: 'var(--chart-primary)',

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { List } from 'lucide-react';
 
 function formatTimeAgo(ts) {
   if (!ts) return '';

@@ -9,10 +9,7 @@ import { api } from '../lib/api';
 import { money, shortDate } from '../lib/format';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
-import {
-  Building2, CheckCircle, Clock, AlertTriangle, FileText,
-  Download, Send, Eye, Plus, Edit3, ChevronRight,
-} from 'lucide-react';
+import { AlertTriangle, Building2, CheckCircle, ChevronRight, Clock, Construction, Download, Edit, Edit3, Eye, FileText, Plus, Send } from 'lucide-react';
 
 const DEMO_PENDING = [
   {

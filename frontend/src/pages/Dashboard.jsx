@@ -8,12 +8,7 @@ import KPICard from '../components/KPICard';
 import ChartTooltip from '../components/ChartTooltip';
 import DemoBanner from '../components/DemoBanner';
 import { PageLoading, ErrorState } from '../components/LoadingState';
-import {
-  Banknote, FileText, Receipt, FolderKanban,
-  TrendingUp, Building2, CalendarDays, CreditCard,
-  AlertTriangle, AlertCircle, Info, CheckCircle, Camera, Clock,
-  Cloud, CloudRain, Sun,
-} from 'lucide-react';
+import { Activity, AlertCircle, AlertTriangle, Banknote, Building2, CalendarDays, Camera, CheckCircle, Clock, Cloud, CloudRain, CreditCard, FileText, FolderKanban, Home, Info, Key, List, Receipt, Snowflake, Sun, Table, TrendingUp } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   AreaChart, Area, CartesianGrid,
@@ -337,7 +332,7 @@ function TodaysLogs() {
   );
 }
 
-const WEATHER_ICONS = { 'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud, 'Rain': CloudRain, 'Snow': Cloud };
+const WEATHER_ICONS = { 'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud, 'Rain': CloudRain, 'Snowflake': Cloud };
 
 function WeatherBar() {
   const navigate = useNavigate();

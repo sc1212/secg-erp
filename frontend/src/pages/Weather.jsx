@@ -7,14 +7,11 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import DemoBanner from '../components/DemoBanner';
-import {
-  Cloud, CloudRain, Sun, Wind, Droplets, Thermometer,
-  AlertOctagon, AlertTriangle, MapPin, ChevronRight,
-} from 'lucide-react';
+import { AlertOctagon, AlertTriangle, ChevronRight, Cloud, CloudRain, Construction, Droplets, Home, MapPin, Snowflake, Sun, Thermometer, Wind } from 'lucide-react';
 
 const CONDITION_ICONS = {
   'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud,
-  'Rain': CloudRain, 'Thunderstorm': CloudRain, 'Snow': Cloud, 'Drizzle': CloudRain,
+  'Rain': CloudRain, 'Thunderstorm': CloudRain, 'Snowflake': Cloud, 'Drizzle': CloudRain,
 };
 
 // Demo weather data — always shows even without API

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { moneyExact, shortDate, statusBadge } from '../../lib/format';
-import { ChevronDown, ChevronRight, FileText, ShoppingCart } from 'lucide-react';
+import { ChevronDown, ChevronRight, Code, FileText, Filter, ShoppingCart } from 'lucide-react';
 
 const typeIcon = { subcontract: FileText, purchase_order: ShoppingCart };
 const typeLabel = { subcontract: 'Subcontract', purchase_order: 'Purchase Order' };

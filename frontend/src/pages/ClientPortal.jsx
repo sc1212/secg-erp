@@ -4,10 +4,7 @@ import { api } from '../lib/api';
 import { shortDate, money } from '../lib/format';
 import { PageLoading, ErrorState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import {
-  Users, Eye, EyeOff, Camera, FileText, MessageSquare,
-  CheckCircle, Clock, ListChecks, AlertTriangle,
-} from 'lucide-react';
+import { AlertTriangle, Camera, CheckCircle, Clock, Eye, EyeOff, FileText, Grid, Home, ListChecks, MessageSquare, Users } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

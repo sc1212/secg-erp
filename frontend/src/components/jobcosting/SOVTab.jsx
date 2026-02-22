@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { moneyExact, pct } from '../../lib/format';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Table } from 'lucide-react';
 
 export default function SOVTab({ project }) {
   const [expandedLine, setExpandedLine] = useState(null);

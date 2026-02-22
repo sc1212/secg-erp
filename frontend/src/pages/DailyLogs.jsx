@@ -1,15 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { shortDate } from '../lib/format';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
 import DemoBanner from '../components/DemoBanner';
-import {
-  FileText, Camera, CheckCircle, AlertTriangle, Clock,
-  Plus, X, Upload, Image, CloudSun, Users, ChevronDown,
-  GripVertical,
-} from 'lucide-react';
+import { AlertTriangle, Camera, Check, CheckCircle, ChevronDown, Clock, CloudSun, Construction, FileText, GripVertical, Home, Image, Plus, Snowflake, Upload, Users } from 'lucide-react';
 
 /* ── Phase Photo Prompts (Issue 7) ─────────────────────────────────────── */
 
@@ -35,7 +31,7 @@ const demoProjects = [
   { id: 5, code: 'PRJ-027', name: 'Commercial -- Berry Hill' },
 ];
 
-const WEATHER_OPTIONS = ['Sunny', 'Partly Cloudy', 'Overcast', 'Rain', 'Snow', 'Windy', 'Fog', 'Storms'];
+const WEATHER_OPTIONS = ['Sunny', 'Partly Cloudy', 'Overcast', 'Rain', 'Snowflake', 'Windy', 'Fog', 'Storms'];
 
 const demoFeed = [
   { id: 1, project_id: 1, project_code: 'PRJ-042', project_name: 'Custom Home — Brentwood', log_date: todayISO(), author_id: 2, author_name: 'Connor M.', work_performed: 'Completed rough plumbing inspection. Passed all points. Started electrical rough-in on 2nd floor.', status: 'submitted', submitted_at: todayAt(16, 32), photo_count: 4 },

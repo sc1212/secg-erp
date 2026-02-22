@@ -3,11 +3,7 @@ import { api } from '../lib/api';
 import { money, shortDate } from '../lib/format';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
-import {
-  FileCheck, Clock, CalendarDays, AlertTriangle,
-  Building2, Zap, Droplets, Flame, HardHat, Shovel,
-  CheckCircle, XCircle, HelpCircle,
-} from 'lucide-react';
+import { AlertTriangle, Building, Building2, CalendarDays, CheckCircle, Clock, Droplets, FileCheck, Flame, HardHat, HelpCircle, Shovel, Table, XCircle, Zap } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

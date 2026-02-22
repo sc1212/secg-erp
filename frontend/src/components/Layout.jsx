@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import {
-  Bell, Search, Menu, X, Sun, Moon, ChevronDown, ChevronRight,
-  User, Settings, Palette, Link2, Upload, HelpCircle, LogOut,
-} from 'lucide-react';
+import { Bell, Calendar, ChevronDown, ChevronRight, Clock, Code, HelpCircle, Home, Link2, List, LogOut, Menu, Moon, Navigation, Palette, Search, Settings, Sun, Upload, User } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
 import GlobalSearch from './GlobalSearch';
 import NotificationPanel from './NotificationPanel';
@@ -502,7 +499,7 @@ export default function Layout() {
       .then(data => { if (data?.length) setNotifications(data); else setNotifications(demoNotifs); })
       .catch(() => setNotifications(demoNotifs));
     api.unreadCount()
-      .then(r => setUnreadCount(r.count))
+      .then(r => setUnreadCount(r?.count ?? 0))
       .catch(() => setUnreadCount(3));
   }, []);
 

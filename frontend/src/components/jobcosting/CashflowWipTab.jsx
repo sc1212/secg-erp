@@ -1,5 +1,6 @@
 import { moneyExact, pct } from '../../lib/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Percent } from 'lucide-react';
 
 export default function CashflowWipTab({ project }) {
   const cf = project.cashflow || {};

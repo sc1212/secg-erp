@@ -37,7 +37,7 @@ class Settings:
             "CORS_ORIGINS",
             "http://localhost:3000,http://localhost:5173,"
             "https://secg-erp.onrender.com,https://secg-erp-pj9h.onrender.com,"
-            "https://secg-erp-api.onrender.com"
+            "https://secg-finance-backend.onrender.com"
         ).split(",")
     ])
 

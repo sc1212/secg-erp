@@ -23,7 +23,11 @@ async def lifespan(app: FastAPI):
     In production, use Alembic migrations instead.
     """
     if settings.debug:
-        Base.metadata.create_all(bind=engine)
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("DB not ready, skipping create_all: %s", exc)
     yield
 
 
@@ -36,10 +40,15 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
-# CORS — allow frontend origins
+# CORS — hardcoded production + local origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=[
+        "https://secg-erp.onrender.com",
+        "https://secg-erp-pj9h.onrender.com",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

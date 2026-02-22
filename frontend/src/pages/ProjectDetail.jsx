@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import {
-  AlertTriangle, ArrowLeft, BarChart3, Calendar, ClipboardList,
-  DollarSign, FileText, Gavel, GitCommit, Notebook, Receipt, Scale, TrendingUp,
-} from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BarChart3, Calendar, ClipboardList, DollarSign, FileText, Gavel, GitCommit, Notebook, Receipt, Scale, TrendingUp } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { money, shortDate, pct, statusBadge } from '../lib/format';

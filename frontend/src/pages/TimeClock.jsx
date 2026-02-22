@@ -3,7 +3,7 @@
  * Shows time entries, active crew on the clock, and weekly hour summaries.
  */
 import { useState, useEffect } from 'react';
-import { Clock, MapPin, CheckCircle, AlertCircle, Users } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, MapPin, Table, Users } from 'lucide-react';
 import { api } from '../lib/api';
 
 const DEMO_ENTRIES = [

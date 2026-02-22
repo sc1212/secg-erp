@@ -3,11 +3,7 @@ import { api } from '../lib/api';
 import { shortDate } from '../lib/format';
 import KPICard from '../components/KPICard';
 import DemoBanner from '../components/DemoBanner';
-import {
-  AlertOctagon, AlertTriangle, Info,
-  Hash, Copy, ShieldOff, FileQuestion, FileX, TrendingDown,
-  Users, CheckCircle, TriangleAlert, Layers,
-} from 'lucide-react';
+import { AlertOctagon, AlertTriangle, CheckCircle, Code, Copy, FileQuestion, FileX, Filter, Hash, Info, Layers, ShieldOff, Table, TrendingDown, TriangleAlert, Users } from 'lucide-react';
 
 /* ── Demo Data ─────────────────────────────────────────────────────────── */
 

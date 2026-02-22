@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
 import { money, pct, shortDate, statusBadge } from '../lib/format';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
-import { Search, Filter, ChevronRight } from 'lucide-react';
+import { ChevronRight, Filter, Home, List, Search } from 'lucide-react';
 
 const statuses = ['all', 'active', 'pre_construction', 'on_hold', 'completed'];
 

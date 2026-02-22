@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowDownRight, ArrowUpRight, Banknote, Building2, Calendar, CheckCircle, Clock, CreditCard, DollarSign, FileText, Receipt, RefreshCw, Send, TrendingUp } from 'lucide-react';
+import { Activity, AlertCircle, ArrowDownRight, ArrowUpRight, Banknote, Building2, Calendar, CheckCircle, Clock, CreditCard, DollarSign, FileText, Filter, Navigation, Receipt, RefreshCw, Send, Table, TrendingUp } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
@@ -13,6 +13,24 @@ import KPICard from '../components/KPICard';
 import ChartTooltip from '../components/ChartTooltip';
 
 const tabs = ['overview', 'ar', 'ap', 'pl', 'sync', 'snapshots'];
+
+const tabLabels = {
+  overview: 'Overview',
+  ar: 'Receivables',
+  ap: 'Payables',
+  pl: 'P&L',
+  sync: 'QB Sync',
+  snapshots: 'Snapshots',
+};
+
+const tabIcons = {
+  overview: DollarSign,
+  ar: Receipt,
+  ap: CreditCard,
+  pl: TrendingUp,
+  sync: RefreshCw,
+  snapshots: Table,
+};
 
 export default function Financials() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -98,19 +116,6 @@ export default function Financials() {
             </button>
           );
         })}
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              tab === t ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-muted lg:hover:text-brand-text'
-            }`}
-            className="mc-tab"
-            style={tab === t ? { color: 'var(--accent)', borderBottomColor: 'var(--accent)' } : undefined}
-          >
-            {tabLabels[t]}
-          </button>
-        ))}
       </div>
 
       {/* ── OVERVIEW TAB ────────────────────────────────────────────── */}

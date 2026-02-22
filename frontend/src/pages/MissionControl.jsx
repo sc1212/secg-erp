@@ -1,9 +1,5 @@
-import {
-  Crosshair, TrendingUp, Zap, GitMerge,
-  ArrowRight, CheckCircle2, Circle,
-  Activity, Target, Radio, Clock, ChevronRight,
-  ListTodo, AlertOctagon, CheckCheck,
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Activity, AlertOctagon, ArrowRight, CheckCheck, CheckCircle2, ChevronRight, Circle, Clock, Crosshair, GitMerge, ListTodo, Radio, Table, Target, TrendingUp, Zap } from 'lucide-react';
 import { api } from '../lib/api';
 import {
   missionCards,
