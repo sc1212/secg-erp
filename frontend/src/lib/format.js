@@ -1,18 +1,75 @@
+/**
+ * Formatting utilities — CFO-grade financial rendering
+ *
+ * Rules:
+ *   - Negatives ALWAYS use accounting parentheses: ($12,400)
+ *   - Negatives ALWAYS get the `.num.negative` class for red color
+ *   - Compact values ($1.2M) always carry a title tooltip with the full value
+ *   - All numeric cells should use the `.num` CSS class for tabular alignment
+ */
+
+const usdFull = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+const usdExact = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * Format money with accounting-style parenthetical negatives.
+ * @param {number|null|undefined} value
+ * @param {boolean} compact  If true, abbreviates ≥1M as $1.2M, ≥1K as $45K
+ * @returns {string}
+ */
 export function money(value, compact = false) {
-  if (value == null) return '$0';
+  if (value == null || Number.isNaN(Number(value))) return '—';
   const num = Number(value);
-  if (compact && Math.abs(num) >= 1_000_000) {
-    return '$' + (num / 1_000_000).toFixed(1) + 'M';
+  const abs = Math.abs(num);
+
+  let out;
+  if (compact && abs >= 1_000_000) {
+    out = '$' + (abs / 1_000_000).toFixed(1) + 'M';
+  } else if (compact && abs >= 1_000) {
+    out = '$' + (abs / 1_000).toFixed(0) + 'K';
+  } else {
+    out = usdFull.format(abs);
   }
-  if (compact && Math.abs(num) >= 1_000) {
-    return '$' + (num / 1_000).toFixed(0) + 'K';
-  }
-  return num.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  return num < 0 ? `(${out})` : out;
 }
 
+/**
+ * Full-precision money (2 decimal places) with parenthetical negatives.
+ */
 export function moneyExact(value) {
-  if (value == null) return '$0.00';
-  return Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  const num = Number(value);
+  const formatted = usdExact.format(Math.abs(num));
+  return num < 0 ? `(${formatted})` : formatted;
+}
+
+/**
+ * Returns the full un-abbreviated money string for use as a tooltip title
+ * when compact formatting is displayed.
+ */
+export function moneyFull(value) {
+  if (value == null || Number.isNaN(Number(value))) return '';
+  return money(value, false);
+}
+
+/**
+ * CSS class for a numeric cell — applies .num always, adds .negative for < 0.
+ */
+export function moneyClass(value) {
+  if (value != null && Number(value) < 0) return 'num negative';
+  return 'num';
 }
 
 export function pct(value) {

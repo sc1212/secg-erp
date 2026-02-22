@@ -169,7 +169,7 @@ export default function Layout() {
 
             {/* Search */}
             <div
-              className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm w-64 rounded"
+              className="search-wrap hidden sm:flex items-center gap-2 px-3 py-2 text-sm rounded"
               style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-medium)',
@@ -181,7 +181,7 @@ export default function Layout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="topbar-right flex items-center gap-3">
             {/* Notification bell */}
             <button
               className="relative transition-colors"
@@ -199,14 +199,15 @@ export default function Layout() {
               </span>
             </button>
 
-            {/* Theme toggle */}
+            {/* Theme toggle — icon shows current state: Moon = dark, Sun = light */}
             <button
               className="theme-toggle"
               onClick={toggleTheme}
               aria-label={theme === 'midnight' ? 'Switch to Arctic Command (light mode)' : 'Switch to Midnight Studio (dark mode)'}
+              aria-pressed={theme === 'arctic'}
               title={theme === 'midnight' ? 'Arctic Command' : 'Midnight Studio'}
             >
-              {theme === 'midnight' ? <Sun size={15} /> : <Moon size={15} />}
+              {theme === 'midnight' ? <Moon size={15} /> : <Sun size={15} />}
             </button>
 
             {/* User avatar */}

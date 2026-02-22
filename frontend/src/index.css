@@ -57,7 +57,7 @@
   --chart-primary:   #38bdf8;
   --chart-secondary: #818cf8;
   --chart-tertiary:  #34d399;
-  /* ── Tailwind brand-color bridge — makes all existing pages theme-aware ── */
+  /* Tailwind brand-color bridge */
   --color-brand-gold:       #38bdf8;
   --color-brand-gold-light: #62cbfa;
   --color-brand-gold-dark:  #0c8fd4;
@@ -113,7 +113,7 @@
   --chart-primary:   #1e3a5f;
   --chart-secondary: #1e6ab0;
   --chart-tertiary:  #16803c;
-  /* ── Tailwind brand-color bridge — makes all existing pages theme-aware ── */
+  /* Tailwind brand-color bridge */
   --color-brand-gold:       #1e3a5f;
   --color-brand-gold-light: #2a4f7c;
   --color-brand-gold-dark:  #15304d;
@@ -149,7 +149,29 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--color-brand-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-brand-muted); }
 
-/* ── Sidebar Nav Links — always dark, theme-responsive via CSS vars ─────────── */
+/* ── Keyboard Focus ────────────────────────────────────────────────────────── */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-border);
+  border-color: var(--accent);
+}
+
+/* ── Finance Numeric Cells ─────────────────────────────────────────────────── */
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.num.negative {
+  color: var(--status-loss);
+}
+
+/* ── Sidebar Nav Links ─────────────────────────────────────────────────────── */
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -163,10 +185,6 @@ body {
   border-left: 2px solid transparent;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.sidebar-link:hover {
-  background: var(--sidebar-active-bg);
-  color: var(--sidebar-text-active);
-}
 .sidebar-link.active {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-text-active);
@@ -175,6 +193,10 @@ body {
 .sidebar-link.collapsed {
   justify-content: center;
   padding: 8px;
+}
+.sidebar-link.collapsed.active {
+  border-left-color: var(--accent);
+  background: var(--sidebar-active-bg);
 }
 
 /* ── Theme Toggle Button ────────────────────────────────────────────────────── */
@@ -191,10 +213,15 @@ body {
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.theme-toggle:hover {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
-  color: var(--accent);
+
+/* ── Search Wrap ────────────────────────────────────────────────────────────── */
+.search-wrap {
+  flex: 1 1 320px;
+  min-width: 180px;
+  max-width: 420px;
+}
+.topbar-right {
+  flex: 0 0 auto;
 }
 
 /* ── Mission Control — surface primitives ─────────────────────────────────── */
@@ -211,15 +238,8 @@ body {
   box-shadow: var(--shadow-card);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.25s ease;
 }
-.mc-card:hover {
-  border-color: var(--border-medium);
-  box-shadow: var(--shadow-hover);
-}
 .mc-card-clickable {
   cursor: pointer;
-}
-.mc-card-clickable:hover {
-  border-color: var(--accent-border);
 }
 .mc-elevated {
   background: var(--bg-elevated);
@@ -270,14 +290,13 @@ body {
   opacity: 0.5;
   transition: opacity 0.15s ease;
 }
-.mc-card:hover .mc-accent-bar {
-  opacity: 1;
-}
 .mc-profit  { color: var(--status-profit); }
 .mc-warning { color: var(--status-warning); }
 .mc-loss    { color: var(--status-loss); }
 .mc-info    { color: var(--status-info); }
 .mc-purple  { color: var(--status-purple); }
+
+/* Badges */
 .mc-badge {
   display: inline-flex;
   align-items: center;
@@ -337,13 +356,6 @@ body {
 .mc-flow-step[data-clickable="true"] {
   cursor: pointer;
 }
-.mc-flow-step[data-clickable="true"]:hover {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-}
-.mc-flow-step[data-clickable="true"]:hover .mc-flow-view-hint {
-  opacity: 1;
-}
 .mc-flow-view-hint {
   font-size: 10px;
   font-weight: 600;
@@ -363,11 +375,8 @@ body {
   border-radius: 4px;
   transition: background-color 0.15s ease;
 }
-.mc-objective-row:hover {
-  background: var(--accent-bg);
-}
 
-/* Tab underline style (within Mission Control) */
+/* Tab underline style */
 .mc-tab {
   font-size: 11px;
   font-weight: 600;
@@ -383,7 +392,6 @@ body {
   border-right: none;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
-.mc-tab:hover { color: var(--text-secondary); }
 .mc-tab.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
@@ -396,7 +404,7 @@ body {
   margin: 0;
 }
 
-/* Table overrides for MC */
+/* Table */
 .mc-table {
   width: 100%;
   border-collapse: collapse;
@@ -424,6 +432,205 @@ body {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.mc-table tr:hover td {
-  background: var(--accent-bg);
+
+/* ── Reusable Panel Head (chart cards) ─────────────────────────────────────── */
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-brand-text));
+  margin: 0;
+  line-height: 1.3;
+}
+.panel-sub {
+  font-size: 12px;
+  color: var(--text-secondary, var(--color-brand-muted));
+  margin-top: 2px;
+}
+.ghost-btn {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary, var(--color-brand-muted));
+  background: none;
+  border: 1px solid var(--border-medium, var(--color-brand-border));
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+/* ── Responsive Grids ──────────────────────────────────────────────────────── */
+.grid-7 {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.grid-3-2 {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 14px;
+}
+
+@media (max-width: 1280px) {
+  .grid-7 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .grid-7 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-3-2 { grid-template-columns: 1fr; }
+  .search-wrap { min-width: 140px; max-width: 240px; }
+  .mc-flow-step { padding: 10px 12px; }
+}
+@media (max-width: 640px) {
+  .grid-7 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr; }
+  .search-wrap { display: none; }
+}
+
+/* ── Section Stagger Animation ─────────────────────────────────────────────── */
+@keyframes stagger-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-in {
+  animation: stagger-fade 0.3s ease both;
+}
+.stagger-in:nth-child(1) { animation-delay: 0ms; }
+.stagger-in:nth-child(2) { animation-delay: 30ms; }
+.stagger-in:nth-child(3) { animation-delay: 60ms; }
+.stagger-in:nth-child(4) { animation-delay: 90ms; }
+.stagger-in:nth-child(5) { animation-delay: 120ms; }
+.stagger-in:nth-child(6) { animation-delay: 150ms; }
+.stagger-in:nth-child(7) { animation-delay: 180ms; }
+.stagger-in:nth-child(8) { animation-delay: 210ms; }
+
+/* ── Desktop-only Hover Effects ────────────────────────────────────────────── */
+@media (hover: hover) {
+  .sidebar-link:hover {
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-text-active);
+  }
+  .theme-toggle:hover {
+    background: var(--accent-bg);
+    border-color: var(--accent-border);
+    color: var(--accent);
+  }
+  .ghost-btn:hover {
+    color: var(--accent, var(--color-brand-gold));
+    border-color: var(--accent-border, var(--color-brand-gold));
+    background: var(--accent-bg, rgba(30, 58, 95, 0.04));
+  }
+  .mc-card:hover {
+    border-color: var(--border-medium);
+    box-shadow: var(--shadow-hover);
+  }
+  .mc-card-clickable:hover {
+    border-color: var(--accent-border);
+  }
+  .mc-card:hover .mc-accent-bar {
+    opacity: 1;
+  }
+  .mc-flow-step[data-clickable="true"]:hover {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+  }
+  .mc-flow-step[data-clickable="true"]:hover .mc-flow-view-hint {
+    opacity: 1;
+  }
+  .mc-objective-row:hover {
+    background: var(--accent-bg);
+  }
+  .mc-tab:hover {
+    color: var(--text-secondary);
+  }
+  .mc-table tr:hover td {
+    background: var(--accent-bg);
+  }
+}
+
+/* ── Print Stylesheet — forces Arctic for lender packets / meetings ────────── */
+@media print {
+  html {
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --bg-deepest:  #ffffff;
+    --bg-base:     #ffffff;
+    --bg-surface:  #ffffff;
+    --bg-elevated: #f8f9fb;
+    --bg-hover:    #eef0f4;
+    --text-primary:   #1a1a2e;
+    --text-secondary: #5a6378;
+    --text-tertiary:  #8a94a6;
+    --accent:        #1e3a5f;
+    --accent-bg:     transparent;
+    --accent-border: rgba(30, 58, 95, 0.20);
+    --status-profit:     #16803c;
+    --status-warning:    #d48c20;
+    --status-loss:       #c62828;
+    --status-info:       #1e6ab0;
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-medium: rgba(0, 0, 0, 0.12);
+    --shadow-card:  none;
+    --shadow-hover: none;
+    /* Tailwind bridge for print */
+    --color-brand-bg:     #ffffff;
+    --color-brand-card:   #ffffff;
+    --color-brand-text:   #1a1a2e;
+    --color-brand-muted:  #5a6378;
+    --color-brand-border: rgba(0, 0, 0, 0.12);
+    --color-ok:           #16803c;
+    --color-danger:       #c62828;
+    --color-warn:         #d48c20;
+  }
+
+  /* Hide chrome — sidebar, topbar, scrollbars */
+  aside,
+  header,
+  .sidebar-link,
+  .theme-toggle,
+  .ghost-btn,
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  body {
+    background: #ffffff;
+    color: #1a1a2e;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  main {
+    max-width: none;
+    padding: 12px;
+    overflow: visible;
+  }
+
+  .mc-card,
+  .mc-elevated {
+    box-shadow: none;
+    break-inside: avoid;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  .mc-flow-step {
+    break-inside: avoid;
+  }
 }
