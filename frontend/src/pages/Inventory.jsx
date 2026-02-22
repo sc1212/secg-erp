@@ -1,578 +1,166 @@
 import { useState } from 'react';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
+import { PROJECTS } from '../lib/demoData';
 import { money } from '../lib/format';
-import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
-import DemoBanner from '../components/DemoBanner';
-import { AlertTriangle, Clock, Filter, MapPin, Package, Plus, Search, Table, Warehouse } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
-/* ── Demo Data ─────────────────────────────────────────────────────────── */
-
-const demoMaterials = [
-  {
-    id: 1, name: '2x4x8 SPF Stud', sku: 'LBR-2408', category: 'Lumber',
-    unit: 'each', default_unit_cost: 3.89, min_stock_alert: 200,
-    total_qty: 847, locations: 3, value: 3294.83,
-    location_details: [
-      { location_name: 'Riverside — Jobsite', quantity: 420 },
-      { location_name: 'Maple Ridge — Jobsite', quantity: 312 },
-      { location_name: 'Main Warehouse', quantity: 115 },
-    ],
-    last_txn_days: 2, status: 'OK',
-  },
-  {
-    id: 2, name: '1/2" Drywall 4x8', sku: 'DRY-1248', category: 'Hardware',
-    unit: 'each', default_unit_cost: 12.48, min_stock_alert: 100,
-    total_qty: 42, locations: 1, value: 524.16,
-    location_details: [
-      { location_name: 'Main Warehouse', quantity: 42 },
-    ],
-    last_txn_days: 8, status: 'LOW',
-  },
-  {
-    id: 3, name: 'Romex 12/2 250ft', sku: 'ELC-1225', category: 'Electrical',
-    unit: 'each', default_unit_cost: 89.99, min_stock_alert: 15,
-    total_qty: 8, locations: 2, value: 719.92,
-    location_details: [
-      { location_name: 'Main Warehouse', quantity: 5 },
-      { location_name: 'Van #3 — Vehicle', quantity: 3 },
-    ],
-    last_txn_days: 14, status: 'LOW',
-  },
-  {
-    id: 4, name: 'PEX 3/4" 100ft', sku: 'PLB-0734', category: 'Plumbing',
-    unit: 'each', default_unit_cost: 54.50, min_stock_alert: 10,
-    total_qty: 2, locations: 1, value: 109.00,
-    location_details: [
-      { location_name: 'Van #1 — Vehicle', quantity: 2 },
-    ],
-    last_txn_days: 5, status: 'CRITICAL',
-  },
-  {
-    id: 5, name: '3" PVC DWV 10ft', sku: 'PLB-0310', category: 'Plumbing',
-    unit: 'each', default_unit_cost: 8.75, min_stock_alert: 20,
-    total_qty: 48, locations: 1, value: 420.00,
-    location_details: [
-      { location_name: 'Main Warehouse', quantity: 48 },
-    ],
-    last_txn_days: 94, status: 'IDLE',
-  },
+const ITEMS = [
+  { id: 1,  name: 'Dimensional Lumber 2x6x16',      category: 'Framing',     unit: 'bd ft',  qty: 840,  minQty: 200,  location: 'Yard A',    project: 1, cost: 1.20,  supplier: 'Nashville Lumber Co.',  sku: 'LUM-2616',  lastOrder: '2026-02-10' },
+  { id: 2,  name: 'OSB Sheathing 7/16 4x8',          category: 'Framing',     unit: 'sheet',  qty: 120,  minQty: 30,   location: 'Yard A',    project: 2, cost: 18.50, supplier: 'Nashville Lumber Co.',  sku: 'OSB-716',   lastOrder: '2026-02-08' },
+  { id: 3,  name: 'Schedule 40 PVC 3" x 10\'',       category: 'Plumbing',    unit: 'stick',  qty: 24,   minQty: 10,   location: 'Trailer 1', project: 1, cost: 14.75, supplier: 'Able Plumbing Supply', sku: 'PVC-340-3',  lastOrder: '2026-01-28' },
+  { id: 4,  name: 'ROMEX 12/2 Wire',                 category: 'Electrical',  unit: 'ft',     qty: 1200, minQty: 500,  location: 'Trailer 2', project: 3, cost: 0.62,  supplier: 'Middle TN Electric',   sku: 'ROM-122',    lastOrder: '2026-02-05' },
+  { id: 5,  name: 'Anchor Bolt 1/2" x 12"',          category: 'Foundation',  unit: 'ea',     qty: 340,  minQty: 100,  location: 'Yard B',    project: 2, cost: 1.85,  supplier: 'Nashville Lumber Co.',  sku: 'ANCH-5012', lastOrder: '2026-01-20' },
+  { id: 6,  name: 'Blown Insulation R-38',            category: 'Insulation',  unit: 'bag',    qty: 18,   minQty: 20,   location: 'Yard A',    project: 1, cost: 22.00, supplier: 'Insulate Pro',          sku: 'INS-R38',    lastOrder: '2026-02-12' },
+  { id: 7,  name: 'LP SmartSide Panel 4x8',           category: 'Siding',      unit: 'sheet',  qty: 0,    minQty: 15,   location: '—',         project: 5, cost: 54.00, supplier: 'Southeast Building',   sku: 'LP-SP48',    lastOrder: '2026-01-15' },
+  { id: 8,  name: 'Hardie Lap Siding 8.25" x 12\'',  category: 'Siding',      unit: 'pc',     qty: 88,   minQty: 40,   location: 'Yard B',    project: 6, cost: 9.40,  supplier: 'Southeast Building',   sku: 'HDL-825',    lastOrder: '2026-02-01' },
+  { id: 9,  name: 'Concrete Form Tube 12"',           category: 'Foundation',  unit: 'ea',     qty: 8,    minQty: 5,    location: 'Yard B',    project: 3, cost: 16.20, supplier: 'Able Plumbing Supply', sku: 'CFT-12',     lastOrder: '2025-12-18' },
+  { id: 10, name: 'Fiberglass Batt R-15 3.5"',        category: 'Insulation',  unit: 'bag',    qty: 6,    minQty: 15,   location: 'Trailer 1', project: 4, cost: 38.00, supplier: 'Insulate Pro',          sku: 'FBR-R15',    lastOrder: '2026-01-30' },
+  { id: 11, name: 'Galvanized Joist Hanger 2x10',     category: 'Hardware',    unit: 'box',    qty: 14,   minQty: 5,    location: 'Trailer 2', project: 2, cost: 28.50, supplier: 'Nashville Lumber Co.',  sku: 'JH-210',     lastOrder: '2026-02-14' },
+  { id: 12, name: 'Roofing Nail 1.75" Coil',          category: 'Hardware',    unit: 'box',    qty: 32,   minQty: 10,   location: 'Yard A',    project: 1, cost: 44.00, supplier: 'Southeast Building',   sku: 'RN-175',     lastOrder: '2026-02-03' },
+  { id: 13, name: 'PEX-A Tubing 1/2" x 100\'',       category: 'Plumbing',    unit: 'roll',   qty: 9,    minQty: 4,    location: 'Trailer 1', project: 3, cost: 74.00, supplier: 'Able Plumbing Supply', sku: 'PEX-5100',   lastOrder: '2026-01-25' },
+  { id: 14, name: 'LVL Beam 3.5x9.5x20\'',           category: 'Framing',     unit: 'ea',     qty: 4,    minQty: 2,    location: 'Yard A',    project: 5, cost: 218.00,supplier: 'Nashville Lumber Co.',  sku: 'LVL-3520',   lastOrder: '2026-02-10' },
+  { id: 15, name: 'GFCI Outlet 20A Tamper-Resist',    category: 'Electrical',  unit: 'ea',     qty: 28,   minQty: 12,   location: 'Trailer 2', project: 4, cost: 12.40, supplier: 'Middle TN Electric',   sku: 'GFCI-20A',   lastOrder: '2026-01-18' },
+  { id: 16, name: 'House Wrap Tyvek 9x100\'',         category: 'Siding',      unit: 'roll',   qty: 2,    minQty: 4,    location: 'Yard B',    project: 6, cost: 128.00,supplier: 'Southeast Building',   sku: 'TYVK-9100',  lastOrder: '2026-01-12' },
+  { id: 17, name: 'Concrete Backer Board 3x5',        category: 'Tile',        unit: 'sheet',  qty: 22,   minQty: 10,   location: 'Trailer 1', project: 1, cost: 11.80, supplier: 'Southeast Building',   sku: 'CBB-35',     lastOrder: '2026-02-07' },
+  { id: 18, name: 'Self-Tapping Screws 3" #10',       category: 'Hardware',    unit: 'box',    qty: 7,    minQty: 6,    location: 'Trailer 2', project: 3, cost: 16.50, supplier: 'Nashville Lumber Co.',  sku: 'STS-310',    lastOrder: '2026-01-22' },
 ];
 
-const demoAlerts = {
-  low_stock: [
-    { material_id: 2, name: '1/2" Drywall 4x8', sku: 'DRY-1248', category: 'Hardware', total_quantity: 42, min_stock_alert: 100, deficit: 58, alert_type: 'low' },
-    { material_id: 3, name: 'Romex 12/2 250ft', sku: 'ELC-1225', category: 'Electrical', total_quantity: 8, min_stock_alert: 15, deficit: 7, alert_type: 'low' },
-    { material_id: 4, name: 'PEX 3/4" 100ft', sku: 'PLB-0734', category: 'Plumbing', total_quantity: 2, min_stock_alert: 10, deficit: 8, alert_type: 'critical' },
-  ],
-  idle_materials: [
-    { material_id: 5, name: '3" PVC DWV 10ft', sku: 'PLB-0310', category: 'Plumbing', last_transaction_date: '2025-11-20', days_idle: 94, alert_type: 'idle' },
-  ],
-  total_alerts: 4,
+const CATEGORIES = ['All', 'Framing', 'Plumbing', 'Electrical', 'Foundation', 'Insulation', 'Siding', 'Hardware', 'Tile'];
+
+const CAT_COLOR = {
+  'Framing':     { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'Plumbing':    { color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
+  'Electrical':  { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  'Foundation':  { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'Insulation':  { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  'Siding':      { color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
+  'Hardware':    { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.07)' },
+  'Tile':        { color: '#e879f9', bg: 'rgba(232,121,249,0.12)' },
 };
 
-const demoLocations = [
-  { name: 'Main Warehouse', type: 'warehouse', materials_count: 4, total_value: 2178.08 },
-  { name: 'Riverside — Jobsite', type: 'jobsite', materials_count: 1, total_value: 1633.80 },
-  { name: 'Maple Ridge — Jobsite', type: 'jobsite', materials_count: 1, total_value: 1213.68 },
-  { name: 'Van #1 — Vehicle', type: 'vehicle', materials_count: 1, total_value: 109.00 },
-  { name: 'Van #3 — Vehicle', type: 'vehicle', materials_count: 1, total_value: 269.97 },
-];
-
-const CATEGORIES = ['Lumber', 'Plumbing', 'Electrical', 'Hardware', 'Concrete'];
-
-/* ── Status Badge ──────────────────────────────────────────────────────── */
-
-function StatusBadge({ status }) {
-  const config = {
-    OK:       { bg: 'var(--status-profit-bg)', color: 'var(--status-profit)', label: 'OK' },
-    LOW:      { bg: 'var(--status-warning-bg)', color: 'var(--status-warning)', label: 'LOW' },
-    CRITICAL: { bg: 'color-mix(in srgb, var(--status-loss) 15%, transparent)', color: 'var(--status-loss)', label: 'CRITICAL' },
-    IDLE:     { bg: 'var(--bg-elevated)', color: 'var(--text-tertiary)', label: 'IDLE 90+ DAYS' },
-  };
-  const c = config[status] || config.OK;
-  return (
-    <span
-      className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
-      style={{ background: c.bg, color: c.color }}
-    >
-      {c.label}
-    </span>
-  );
+function stockStatus(item) {
+  if (item.qty === 0) return { label: 'Out of Stock', color: 'var(--status-loss)', bg: 'rgba(251,113,133,0.12)' };
+  if (item.qty <= item.minQty) return { label: 'Low Stock', color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)' };
+  return { label: 'In Stock', color: 'var(--status-profit)', bg: 'rgba(34,197,94,0.10)' };
 }
 
-/* ── Tabs ───────────────────────────────────────────────────────────────── */
-
-const TABS = [
-  { key: 'materials', label: 'All Materials', icon: Package },
-  { key: 'locations', label: 'By Location', icon: Warehouse },
-  { key: 'alerts',    label: 'Alerts',       icon: AlertTriangle },
-];
-
-/* ── Main Component ─────────────────────────────────────────────────────── */
-
 export default function Inventory() {
-  const [activeTab, setActiveTab] = useState('materials');
+  const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [stockFilter, setStockFilter] = useState('All');
 
-  // API calls
-  const { data: materialsData, loading, error, isDemo } = useApi(
-    () => api.inventoryMaterials({ ...(search && { search }), ...(categoryFilter && { category: categoryFilter }) }),
-    [search, categoryFilter]
-  );
-  const { data: alertsData } = useApi(() => api.inventoryAlerts(), []);
-
-  const materials = materialsData || (loading ? [] : demoMaterials);
-  const alerts = alertsData || demoAlerts;
-
-  if (loading) return <PageLoading />;
-  if (error && !materials.length) return <ErrorState message={error} />;
-
-  // Compute summaries from demo data
-  const totalItems = materials.length;
-  const totalOnHand = materials.reduce((s, m) => s + (m.total_qty || 0), 0);
-  const totalValue = materials.reduce((s, m) => s + (m.value || 0), 0);
-  const alertCount = (alerts.low_stock?.length || 0) + (alerts.idle_materials?.length || 0);
-
-  // Filter materials for display
-  const filtered = materials.filter((m) => {
-    if (search && !m.name.toLowerCase().includes(search.toLowerCase()) && !(m.sku || '').toLowerCase().includes(search.toLowerCase())) return false;
-    if (categoryFilter && m.category !== categoryFilter) return false;
+  const filtered = ITEMS.filter(item => {
+    if (category !== 'All' && item.category !== category) return false;
+    if (stockFilter === 'Low / Out' && item.qty > item.minQty) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!item.name.toLowerCase().includes(q) && !item.sku.toLowerCase().includes(q) && !item.supplier.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
+  const totalValue = ITEMS.reduce((s, i) => s + i.qty * i.cost, 0);
+  const lowStock = ITEMS.filter(i => i.qty > 0 && i.qty <= i.minQty).length;
+  const outOfStock = ITEMS.filter(i => i.qty === 0).length;
+
+  const thBase = { padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--color-brand-border)', textAlign: 'left', whiteSpace: 'nowrap' };
+
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Inventory</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{ITEMS.length} items tracked &middot; {lowStock + outOfStock} need attention</p>
+      </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Materials & Inventory
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            {totalItems} materials tracked across {demoLocations.length} locations
-          </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {[
+          ['Total Items', ITEMS.length, 'var(--text-primary)'],
+          ['Inventory Value', money(totalValue, true), 'var(--status-profit)'],
+          ['Low Stock', lowStock, lowStock > 0 ? 'var(--status-warning)' : 'var(--status-profit)'],
+          ['Out of Stock', outOfStock, outOfStock > 0 ? 'var(--status-loss)' : 'var(--status-profit)'],
+        ].map(([label, val, color]) => (
+          <div key={label} style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 8, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color }}>{val}</div>
+          </div>
+        ))}
+      </div>
+
+      {(lowStock > 0 || outOfStock > 0) && (
+        <div style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.22)', borderRadius: 8, padding: '11px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <AlertTriangle size={14} style={{ color: 'var(--status-warning)', flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            <strong style={{ color: 'var(--status-warning)' }}>{outOfStock} item{outOfStock !== 1 ? 's' : ''} out of stock</strong> and <strong style={{ color: 'var(--status-warning)' }}>{lowStock} item{lowStock !== 1 ? 's' : ''} below minimum</strong> — review and reorder.
+          </span>
         </div>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium"
-          style={{ background: 'var(--accent)', color: '#fff' }}
-        >
-          <Plus size={14} /> Add Material
-        </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Package} label="Catalog Items" value={totalItems} />
-        <KpiCard icon={Warehouse} label="Total On Hand" value={totalOnHand.toLocaleString()} />
-        <KpiCard icon={Package} label="Inventory Value" value={money(totalValue)} />
-        <KpiCard
-          icon={AlertTriangle}
-          label="Active Alerts"
-          value={alertCount}
-          accent={alertCount > 0}
-        />
-      </div>
-
-      {/* Tab Bar */}
-      <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-elevated)' }}>
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-              style={{
-                background: isActive ? 'var(--color-brand-card)' : 'transparent',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                border: isActive ? '1px solid var(--color-brand-border)' : '1px solid transparent',
-              }}
-            >
-              <Icon size={14} />
-              {tab.label}
-              {tab.key === 'alerts' && alertCount > 0 && (
-                <span
-                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'var(--status-loss)', color: '#fff', lineHeight: 1 }}
-                >
-                  {alertCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'materials' && (
-        <MaterialsTab
-          materials={filtered}
-          search={search}
-          setSearch={setSearch}
-          categoryFilter={categoryFilter}
-          setCategoryFilter={setCategoryFilter}
-        />
       )}
-      {activeTab === 'locations' && <LocationsTab locations={demoLocations} materials={materials} />}
-      {activeTab === 'alerts' && <AlertsTab alerts={alerts} />}
-    </div>
-  );
-}
 
-/* ── KPI Card ───────────────────────────────────────────────────────────── */
-
-function KpiCard({ icon: Icon, label, value, accent }) {
-  return (
-    <div
-      className="rounded-lg p-4"
-      style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={14} style={{ color: accent ? 'var(--status-loss)' : 'var(--accent)' }} />
-        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-          {label}
-        </span>
-      </div>
-      <div className="text-xl font-bold" style={{ color: accent ? 'var(--status-loss)' : 'var(--text-primary)' }}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-/* ── Materials Tab ──────────────────────────────────────────────────────── */
-
-function MaterialsTab({ materials, search, setSearch, categoryFilter, setCategoryFilter }) {
-  return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded text-sm"
-          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)' }}
-        >
-          <Search size={14} style={{ color: 'var(--text-tertiary)' }} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search materials..."
-            className="bg-transparent outline-none text-sm"
-            style={{ color: 'var(--text-primary)', width: 200 }}
-          />
-        </div>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3 py-1.5 rounded text-xs"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-medium)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <option value="">All Categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search name, SKU, supplier..."
+          style={{ flex: '1 1 200px', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--color-brand-border)', background: 'var(--color-brand-card)', color: 'var(--text-primary)', fontSize: 12, outline: 'none' }}
+        />
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['All', 'Low / Out'].map(s => (
+            <button key={s} onClick={() => setStockFilter(s)} style={{
+              padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+              border: `1px solid ${stockFilter === s ? '#3b82f6' : 'var(--color-brand-border)'}`,
+              background: stockFilter === s ? 'rgba(59,130,246,0.14)' : 'transparent',
+              color: stockFilter === s ? '#3b82f6' : 'var(--text-secondary)',
+            }}>{s}</button>
           ))}
-        </select>
+        </div>
       </div>
 
-      {/* Table */}
-      {materials.length === 0 ? (
-        <EmptyState title="No materials found" message="Adjust your search or add a new material" />
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="mc-table">
-            <thead>
-              <tr>
-                <th>Material</th>
-                <th>Category</th>
-                <th>On Hand</th>
-                <th>Locations</th>
-                <th>Value</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {materials.map((m) => (
-                <tr key={m.id}>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <Package size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                          {m.name}
-                        </div>
-                        <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                          {m.sku} &middot; {m.unit}
-                        </div>
-                      </div>
-                    </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {CATEGORIES.map(c => (
+          <button key={c} onClick={() => setCategory(c)} style={{
+            padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+            border: `1px solid ${category === c ? '#3b82f6' : 'var(--color-brand-border)'}`,
+            background: category === c ? 'rgba(59,130,246,0.14)' : 'transparent',
+            color: category === c ? '#3b82f6' : 'var(--text-secondary)',
+          }}>{c}</button>
+        ))}
+      </div>
+
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>
+            {['SKU', 'Item', 'Category', 'Qty', 'Min', 'Unit', 'Unit Cost', 'Total Value', 'Location', 'Project', 'Status'].map((h, i) => (
+              <th key={h} style={{ ...thBase, textAlign: [6, 7].includes(i) ? 'right' : 'left' }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {filtered.map(item => {
+              const ss = stockStatus(item);
+              const cat = CAT_COLOR[item.category] || CAT_COLOR['Hardware'];
+              const proj = PROJECTS.find(p => p.id === item.project);
+              return (
+                <tr key={item.id} style={{ borderTop: '1px solid var(--color-brand-border)' }}>
+                  <td style={{ padding: '10px 14px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{item.sku}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', maxWidth: 200 }}>{item.name}</td>
+                  <td style={{ padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: cat.bg, color: cat.color }}>{item.category}</span>
                   </td>
-                  <td>
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {m.category}
-                    </span>
-                  </td>
-                  <td className="num">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {(m.total_qty || 0).toLocaleString()}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-1">
-                      <MapPin size={12} style={{ color: 'var(--text-tertiary)' }} />
-                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                        {m.locations}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="num">
-                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                      {money(m.value)}
-                    </span>
-                  </td>
-                  <td>
-                    <StatusBadge status={m.status} />
+                  <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: item.qty === 0 ? 'var(--status-loss)' : item.qty <= item.minQty ? 'var(--status-warning)' : 'var(--text-primary)' }}>{item.qty}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{item.minQty}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{item.unit}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{money(item.cost)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', color: 'var(--status-profit)' }}>{money(item.qty * item.cost)}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{item.location}</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{proj ? proj.name.split(' ').slice(0, 2).join(' ') : '—'}</td>
+                  <td style={{ padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: ss.bg, color: ss.color }}>{ss.label}</span>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Locations Tab ──────────────────────────────────────────────────────── */
-
-function LocationsTab({ locations, materials }) {
-  const [selectedLocation, setSelectedLocation] = useState(null);
-
-  const locationTypeIcon = (type) => {
-    if (type === 'warehouse') return Warehouse;
-    if (type === 'vehicle') return Package;
-    return MapPin;
-  };
-
-  const materialsAtLocation = selectedLocation
-    ? materials.filter((m) =>
-        (m.location_details || []).some((ld) => ld.location_name === selectedLocation)
-      ).map((m) => {
-        const ld = (m.location_details || []).find((l) => l.location_name === selectedLocation);
-        return { ...m, location_qty: ld ? ld.quantity : 0 };
-      })
-    : [];
-
-  return (
-    <div className="space-y-4">
-      {!selectedLocation ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {locations.map((loc) => {
-            const Icon = locationTypeIcon(loc.type);
-            return (
-              <div
-                key={loc.name}
-                className="rounded-lg p-4 cursor-pointer transition-colors"
-                style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-                onClick={() => setSelectedLocation(loc.name)}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon size={16} style={{ color: 'var(--accent)' }} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {loc.name}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                    {loc.type}
-                  </span>
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {loc.materials_count} item{loc.materials_count !== 1 ? 's' : ''} &middot; {money(loc.total_value)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <button
-            onClick={() => setSelectedLocation(null)}
-            className="flex items-center gap-1 text-sm"
-            style={{ color: 'var(--accent)' }}
-          >
-            &larr; Back to locations
-          </button>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-            {selectedLocation}
-          </h2>
-          {materialsAtLocation.length === 0 ? (
-            <EmptyState title="No materials" message="No materials at this location" />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="mc-table">
-                <thead>
-                  <tr>
-                    <th>Material</th>
-                    <th>SKU</th>
-                    <th>Qty at Location</th>
-                    <th>Unit Cost</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {materialsAtLocation.map((m) => (
-                    <tr key={m.id}>
-                      <td>
-                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {m.name}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                          {m.sku}
-                        </span>
-                      </td>
-                      <td className="num">
-                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {(m.location_qty || 0).toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="num">
-                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                          {money(m.default_unit_cost)}
-                        </span>
-                      </td>
-                      <td className="num">
-                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                          {money((m.location_qty || 0) * (m.default_unit_cost || 0))}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Alerts Tab ─────────────────────────────────────────────────────────── */
-
-function AlertsTab({ alerts }) {
-  const lowStock = alerts.low_stock || [];
-  const idle = alerts.idle_materials || [];
-
-  return (
-    <div className="space-y-6">
-      {/* Low Stock Alerts */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <AlertTriangle size={16} style={{ color: 'var(--status-loss)' }} />
-          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
-            Low Stock ({lowStock.length})
-          </h3>
-        </div>
-        {lowStock.length === 0 ? (
-          <EmptyState title="All stocked" message="No materials below minimum stock levels" />
-        ) : (
-          <div className="space-y-2">
-            {lowStock.map((item) => (
-              <div
-                key={item.material_id}
-                className="rounded-lg p-3 flex items-center justify-between gap-4"
-                style={{
-                  background: item.alert_type === 'critical'
-                    ? 'color-mix(in srgb, var(--status-loss) 10%, transparent)'
-                    : 'var(--status-warning-bg)',
-                  border: `1px solid color-mix(in srgb, ${item.alert_type === 'critical' ? 'var(--status-loss)' : 'var(--status-warning)'} 30%, transparent)`,
-                }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <AlertTriangle
-                    size={16}
-                    style={{ color: item.alert_type === 'critical' ? 'var(--status-loss)' : 'var(--status-warning)', flexShrink: 0 }}
-                  />
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                      {item.name}
-                    </div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                      {item.sku} &middot; {item.category}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-sm font-bold" style={{ color: item.alert_type === 'critical' ? 'var(--status-loss)' : 'var(--status-warning)' }}>
-                    {item.total_quantity} on hand
-                  </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                    min: {item.min_stock_alert} &middot; need {item.deficit} more
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Idle Materials */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Clock size={16} style={{ color: 'var(--text-tertiary)' }} />
-          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
-            Idle Materials ({idle.length})
-          </h3>
-        </div>
-        {idle.length === 0 ? (
-          <EmptyState title="No idle materials" message="All materials have recent activity" />
-        ) : (
-          <div className="space-y-2">
-            {idle.map((item) => (
-              <div
-                key={item.material_id}
-                className="rounded-lg p-3 flex items-center justify-between gap-4"
-                style={{
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-medium)',
-                }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Clock
-                    size={16}
-                    style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}
-                  />
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                      {item.name}
-                    </div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                      {item.sku} &middot; {item.category}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                    {item.days_idle ? `${item.days_idle} days idle` : 'No transactions'}
-                  </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {item.last_transaction_date ? `Last: ${item.last_transaction_date}` : 'Never used'}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={11} style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>No items match.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

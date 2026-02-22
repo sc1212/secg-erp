@@ -1,321 +1,127 @@
-import { useState, useEffect } from 'react';
-import { api } from '../lib/api';
-import { money, shortDate } from '../lib/format';
-import KPICard from '../components/KPICard';
-import DemoBanner from '../components/DemoBanner';
-import { AlertTriangle, CheckCircle, CheckSquare, Clock, DollarSign, Filter, ListChecks, Table, XCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 
-/* ── Demo Data ─────────────────────────────────────────────────────────── */
-
-const DEMO_DATA = [
-  {
-    id: 1,
-    type: 'PO',
-    ref: 'PO-0047',
-    description: 'Framing lumber — PRJ-042 Phase 2',
-    entity: 'PRJ-042',
-    amount: 12500,
-    requested_by: 'Jake R.',
-    submitted: '2026-02-20',
-    created_at: '2026-02-20T08:00:00Z',
-    status: 'pending',
-  },
-  {
-    id: 2,
-    type: 'CO',
-    ref: 'CO-023',
-    description: 'Foundation waterproofing scope addition — PRJ-038',
-    entity: 'PRJ-038',
-    amount: 8750,
-    requested_by: 'Sarah M.',
-    submitted: '2026-02-19',
-    created_at: '2026-02-19T14:30:00Z',
-    status: 'pending',
-  },
-  {
-    id: 3,
-    type: 'DR',
-    ref: 'Draw #3',
-    description: 'Progress draw — PRJ-042 50% complete',
-    entity: 'PRJ-042',
-    amount: 45200,
-    requested_by: 'Mike S.',
-    submitted: '2026-02-17',
-    created_at: '2026-02-17T09:15:00Z',
-    status: 'pending',
-  },
-  {
-    id: 4,
-    type: 'PO',
-    ref: 'PO-0046',
-    description: 'HVAC rough-in equipment — PRJ-051',
-    entity: 'PRJ-051',
-    amount: 3200,
-    requested_by: 'Zach P.',
-    submitted: '2026-02-21',
-    created_at: '2026-02-21T11:00:00Z',
-    status: 'pending',
-  },
+const PUNCH_ITEMS = [
+  { id:  1, item: 'Touch-up paint — master bedroom ceiling',  project: 'Magnolia Spec',      location: 'Master Bedroom',  assigned: 'Anderson Paint',    priority: 'low',    status: 'open' },
+  { id:  2, item: 'Adjust cabinet doors — kitchen',           project: 'Magnolia Spec',      location: 'Kitchen',         assigned: 'Joseph Kowalski',   priority: 'medium', status: 'open' },
+  { id:  3, item: 'Caulk gaps — master bath tile',            project: 'Magnolia Spec',      location: 'Master Bath',     assigned: 'Davis Plumbing',    priority: 'medium', status: 'in_progress' },
+  { id:  4, item: 'Replace broken outlet cover — office',     project: 'Magnolia Spec',      location: 'Office',          assigned: 'Williams Electric', priority: 'low',    status: 'open' },
+  { id:  5, item: 'Fix HVAC damper — bedroom 2',              project: 'Magnolia Spec',      location: 'Bedroom 2',       assigned: 'Clark HVAC',        priority: 'high',   status: 'open' },
+  { id:  6, item: 'Garage door adjustment — binding',         project: 'Johnson Office TI',  location: 'Garage',          assigned: 'Joseph Kowalski',   priority: 'medium', status: 'in_progress' },
+  { id:  7, item: 'Millwork installation — reception',        project: 'Johnson Office TI',  location: 'Reception',       assigned: 'TBD',               priority: 'high',   status: 'open' },
+  { id:  8, item: 'Rebalance HVAC — conference room',         project: 'Johnson Office TI',  location: 'Conference Rm',   assigned: 'Clark HVAC',        priority: 'medium', status: 'open' },
+  { id:  9, item: 'Floor transition strip — lobby to office', project: 'Johnson Office TI',  location: 'Lobby',           assigned: 'Martinez Drywall',  priority: 'low',    status: 'open' },
+  { id: 10, item: 'Electrical panel label final',             project: 'Johnson Office TI',  location: 'Electrical Rm',   assigned: 'Williams Electric', priority: 'high',   status: 'complete' },
+  { id: 11, item: 'Siding dent repair — south elevation',     project: 'Riverside Custom',   location: 'Exterior',        assigned: 'Connor Mitchell',   priority: 'medium', status: 'open' },
+  { id: 12, item: 'Railing install — rear deck',              project: 'Riverside Custom',   location: 'Rear Deck',       assigned: 'TBD',               priority: 'low',    status: 'open' },
+  { id: 13, item: 'Foundation crack seal — NE corner',        project: 'Oak Creek',          location: 'Foundation',      assigned: 'Miller Concrete',   priority: 'high',   status: 'open' },
+  { id: 14, item: 'Compaction test recheck — garage area',    project: 'Oak Creek',          location: 'Garage Pad',      assigned: 'Connor Mitchell',   priority: 'medium', status: 'open' },
+  { id: 15, item: 'Grout reseal — master shower',             project: 'Walnut Spec',        location: 'Master Bath',     assigned: 'Davis Plumbing',    priority: 'low',    status: 'open' },
+  { id: 16, item: 'Light fixture swap — dining',              project: 'Walnut Spec',        location: 'Dining Room',     assigned: 'Williams Electric', priority: 'low',    status: 'in_progress' },
+  { id: 17, item: 'Concrete pressure test — boiler room',     project: 'Zion Mechanical',    location: 'Boiler Room',     assigned: 'Zach Hollis',       priority: 'high',   status: 'complete' },
+  { id: 18, date: '2026-02-20', item: 'Plumbing chase patch — level 2', project: 'Elm St Multifamily', location: 'Level 2', assigned: 'Davis Plumbing', priority: 'medium', status: 'open' },
+  { id: 19, item: 'Stair baluster spacing check',             project: 'Elm St Multifamily', location: 'Stairwell',       assigned: 'Thompson Framing',  priority: 'high',   status: 'open' },
+  { id: 20, item: 'Window flashing inspection — west side',   project: 'Elm St Multifamily', location: 'Exterior',        assigned: 'Cole Notgrass',     priority: 'high',   status: 'open' },
 ];
 
-const TYPE_STYLES = {
-  PO: { label: 'Purchase Order', color: 'var(--accent)', bg: 'var(--accent-bg)', border: 'var(--accent-border)' },
-  CO: { label: 'Change Order',   color: 'var(--status-warning)', bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)', border: 'color-mix(in srgb, var(--status-warning) 25%, transparent)' },
-  DR: { label: 'Draw Request',   color: 'var(--status-profit)',  bg: 'color-mix(in srgb, var(--status-profit) 12%, transparent)',  border: 'color-mix(in srgb, var(--status-profit) 25%, transparent)' },
+const PRIORITY_COLOR = {
+  high:   { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'High' },
+  medium: { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)', label: 'Medium' },
+  low:    { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)', label: 'Low' },
+};
+const STATUS_COLOR = {
+  open:        { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'Open' },
+  in_progress: { color: '#3b82f6',               bg: 'rgba(59,130,246,0.12)', label: 'In Progress' },
+  complete:    { color: 'var(--status-profit)',  bg: 'rgba(52,211,153,0.12)', label: 'Complete' },
 };
 
-const FILTER_TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'PO',  label: 'Purchase Orders' },
-  { key: 'CO',  label: 'Change Orders' },
-  { key: 'DR',  label: 'Draw Requests' },
-];
-
-function ageColor(days) {
-  if (days >= 5) return 'var(--status-loss)';
-  if (days >= 2) return 'var(--status-warning)';
-  return 'var(--text-secondary)';
-}
-
-function daysSince(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  return Math.floor(diff / 86_400_000);
-}
-
-function TypeBadge({ type }) {
-  const s = TYPE_STYLES[type] || TYPE_STYLES.PO;
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold"
-      style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
-    >
-      {type}
-    </span>
-  );
-}
-
-/* ── Component ─────────────────────────────────────────────────────────── */
+const STATUS_FILTERS = ['All', 'Open', 'In Progress', 'Complete'];
+const PROJECTS_LIST  = ['All', ...Array.from(new Set(PUNCH_ITEMS.map(p => p.project)))];
 
 export default function Decisions() {
-  const [queue, setQueue]         = useState(DEMO_DATA);
-  const [loading, setLoading]     = useState(true);
-  const [isDemo, setIsDemo]       = useState(false);
-  const [activeFilter, setFilter] = useState('all');
-  const [decisions, setDecisions] = useState({}); // id → 'approved' | 'rejected'
-  const [working, setWorking]     = useState({}); // id → true while in-flight
+  const navigate = useNavigate();
+  const [search, setSearch]     = useState('');
+  const [projectF, setProjectF] = useState('All');
+  const [statusF, setStatusF]   = useState('All');
 
-  useEffect(() => {
-    api.approvalQueue()
-      .then((data) => {
-        setQueue(Array.isArray(data) ? data : DEMO_DATA);
-        const demo =
-          Array.isArray(data) &&
-          data.length > 0 &&
-          typeof data[0]?.created_at === 'string' &&
-          data[0].created_at === DEMO_DATA[0].created_at;
-        setIsDemo(demo);
-      })
-      .catch(() => setIsDemo(true))
-      .finally(() => setLoading(false));
-  }, []);
+  const rows = useMemo(() => {
+    let list = PUNCH_ITEMS;
+    if (projectF !== 'All') list = list.filter(p => p.project === projectF);
+    if (statusF  !== 'All') {
+      const s = statusF.toLowerCase().replace(' ', '_');
+      list = list.filter(p => p.status === s);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(p => p.item.toLowerCase().includes(q) || p.project.toLowerCase().includes(q) || p.assigned.toLowerCase().includes(q));
+    }
+    return list;
+  }, [search, projectF, statusF]);
 
-  const pending = queue.filter((r) => !decisions[r.id]);
-  const approvedToday = Object.values(decisions).filter((d) => d === 'approved').length;
-  const totalPending  = pending.reduce((s, r) => s + (r.amount || 0), 0);
-  const oldestAge     = pending.length
-    ? Math.max(...pending.map((r) => daysSince(r.submitted || r.created_at)))
-    : 0;
+  const thBase = { padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--color-brand-border)', textAlign: 'left' };
 
-  const filtered = queue.filter((r) => activeFilter === 'all' || r.type === activeFilter);
-
-  async function handleApprove(id) {
-    setWorking((w) => ({ ...w, [id]: true }));
-    try { await api.approveRequest(id); } catch (_) { /* optimistic */ }
-    setDecisions((d) => ({ ...d, [id]: 'approved' }));
-    setWorking((w) => ({ ...w, [id]: false }));
-  }
-
-  async function handleReject(id) {
-    setWorking((w) => ({ ...w, [id]: true }));
-    try { await api.rejectRequest(id); } catch (_) { /* optimistic */ }
-    setDecisions((d) => ({ ...d, [id]: 'rejected' }));
-    setWorking((w) => ({ ...w, [id]: false }));
-  }
-
-  /* skeleton row */
-  const SkeletonRow = () => (
-    <tr>
-      {[1,2,3,4,5,6,7].map((i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 rounded animate-pulse" style={{ background: 'var(--bg-elevated)', width: i === 3 ? '80%' : '60%' }} />
-        </td>
-      ))}
-    </tr>
-  );
+  const openCount  = PUNCH_ITEMS.filter(p => p.status === 'open').length;
+  const inProgCount = PUNCH_ITEMS.filter(p => p.status === 'in_progress').length;
 
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          Decision Queue
-        </h1>
-        {pending.length > 0 && (
-          <span
-            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-            style={{ background: 'var(--status-warning)', color: '#fff' }}
-          >
-            {pending.length}
-          </span>
-        )}
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Punch List</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{openCount} open  ·  {inProgCount} in progress  ·  {PUNCH_ITEMS.filter(p=>p.status==='complete').length} complete</p>
       </div>
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Pending Approvals" value={pending.length}      icon={Clock}       sub="awaiting decision" />
-        <KPICard label="Total $ Pending"   value={money(totalPending)} icon={DollarSign}  sub="across all types" />
-        <KPICard label="Oldest Item"       value={`${oldestAge}d`}     icon={AlertTriangle} sub={oldestAge >= 5 ? 'needs attention' : 'age in days'} />
-        <KPICard label="Approved Today"    value={approvedToday}        icon={CheckSquare} sub="this session" />
-      </div>
-
-      {/* Filter Tabs */}
-      <div
-        className="flex gap-1 overflow-x-auto"
-        style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1px' }}
-      >
-        {FILTER_TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setFilter(t.key)}
-            className="px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors"
-            style={{
-              borderBottom: activeFilter === t.key ? '2px solid var(--accent)' : '2px solid transparent',
-              color: activeFilter === t.key ? 'var(--accent)' : 'var(--text-secondary)',
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-      >
-        {!loading && filtered.length === 0 && pending.length === 0 ? (
-          /* Empty state */
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <CheckCircle size={40} style={{ color: 'var(--status-profit)' }} />
-            <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-              All clear — no pending approvals
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="mc-table w-full">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Ref / Description</th>
-                  <th>Entity</th>
-                  <th className="text-right">Amount</th>
-                  <th>Requested By</th>
-                  <th>Submitted</th>
-                  <th>Age</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading
-                  ? Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)
-                  : filtered.map((row) => {
-                      const decision = decisions[row.id];
-                      const age = daysSince(row.submitted || row.created_at);
-                      const busy = working[row.id];
-                      return (
-                        <tr key={row.id} style={{ opacity: decision ? 0.6 : 1 }}>
-                          <td><TypeBadge type={row.type} /></td>
-                          <td>
-                            <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                              {row.ref}
-                            </div>
-                            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                              {row.description}
-                            </div>
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{row.entity}</td>
-                          <td className="num text-right font-bold" style={{ color: 'var(--text-primary)' }}>
-                            {money(row.amount)}
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{row.requested_by}</td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{shortDate(row.submitted)}</td>
-                          <td>
-                            <span className="num font-medium" style={{ color: ageColor(age) }}>
-                              {age}d
-                            </span>
-                          </td>
-                          <td>
-                            {decision === 'approved' && (
-                              <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--status-profit)' }}>
-                                <CheckCircle size={14} /> Approved
-                              </span>
-                            )}
-                            {decision === 'rejected' && (
-                              <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--status-loss)' }}>
-                                <XCircle size={14} /> Rejected
-                              </span>
-                            )}
-                            {!decision && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleApprove(row.id)}
-                                  disabled={busy}
-                                  className="px-3 py-1 rounded text-xs font-semibold transition-opacity disabled:opacity-50"
-                                  style={{
-                                    background: 'color-mix(in srgb, var(--status-profit) 15%, transparent)',
-                                    color: 'var(--status-profit)',
-                                    border: '1px solid color-mix(in srgb, var(--status-profit) 30%, transparent)',
-                                  }}
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleReject(row.id)}
-                                  disabled={busy}
-                                  className="px-3 py-1 rounded text-xs font-semibold transition-opacity disabled:opacity-50"
-                                  style={{
-                                    background: 'color-mix(in srgb, var(--status-loss) 12%, transparent)',
-                                    color: 'var(--status-loss)',
-                                    border: '1px solid color-mix(in srgb, var(--status-loss) 25%, transparent)',
-                                  }}
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Summary footer */}
-      {!loading && filtered.length > 0 && (
-        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          <ListChecks size={13} />
-          <span>
-            {filtered.length} item{filtered.length !== 1 ? 's' : ''} shown
-            {activeFilter !== 'all' ? ` · filtered by ${TYPE_STYLES[activeFilter]?.label ?? activeFilter}` : ''}
-          </span>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 280 }}>
+          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search items..." style={{ width: '100%', paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8, borderRadius: 8, border: '1px solid var(--color-brand-border)', background: 'var(--color-brand-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
         </div>
-      )}
+        <select value={projectF} onChange={e => setProjectF(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-brand-border)', background: 'var(--color-brand-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', cursor: 'pointer' }}>
+          {PROJECTS_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {STATUS_FILTERS.map(f => (
+            <button key={f} onClick={() => setStatusF(f)} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${statusF === f ? '#3b82f6' : 'var(--color-brand-border)'}`, background: statusF === f ? 'rgba(59,130,246,0.14)' : 'transparent', color: statusF === f ? '#3b82f6' : 'var(--text-secondary)', transition: 'all 0.15s' }}>{f}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Item','Project','Location','Assigned To','Priority','Status'].map(h => <th key={h} style={thBase}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={6} style={{ padding: 32, textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>No items match.</td></tr>
+            )}
+            {rows.map(p => {
+              const pc = PRIORITY_COLOR[p.priority];
+              const sc = STATUS_COLOR[p.status];
+              return (
+                <tr key={p.id} style={{ borderTop: '1px solid var(--color-brand-border)', cursor: 'pointer', transition: 'background 0.12s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  onClick={() => navigate(`/projects/${[1,2,3,4,5,6,7,8][p.id % 8]}`)}
+                >
+                  <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{p.item}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{p.project}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{p.location}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{p.assigned}</td>
+                  <td style={{ padding: '11px 14px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: pc.bg, color: pc.color }}>{pc.label}</span>
+                  </td>
+                  <td style={{ padding: '11px 14px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: sc.bg, color: sc.color }}>{sc.label}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

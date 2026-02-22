@@ -1,441 +1,191 @@
-import { useState, useEffect } from 'react';
-import { api } from '../lib/api';
-import { money, shortDate } from '../lib/format';
-import KPICard from '../components/KPICard';
-import DemoBanner from '../components/DemoBanner';
-import { AlertTriangle, Building, Building2, CalendarDays, CheckCircle, Clock, Droplets, FileCheck, Flame, HardHat, HelpCircle, Shovel, Table, XCircle, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { PROJECTS } from '../lib/demoData';
 
-/* ── Demo Data ─────────────────────────────────────────────────────────── */
-
-const DEMO_PERMITS = [
-  {
-    id: 1,
-    project: 'PRJ-042',
-    permit_number: 'BP-2025-0441',
-    type: 'building',
-    description: 'New residential construction — 3,200 sf single-family',
-    authority: 'City of Charlotte',
-    status: 'active',
-    applied: '2025-09-15',
-    issued: '2025-10-08',
-    expires: '2026-10-08',
-    fee: 4850,
-  },
-  {
-    id: 2,
-    project: 'PRJ-042',
-    permit_number: 'EP-2025-0882',
-    type: 'electrical',
-    description: '200A service upgrade and rough-in wiring',
-    authority: 'City of Charlotte',
-    status: 'active',
-    applied: '2025-10-01',
-    issued: '2025-10-22',
-    expires: '2026-10-22',
-    fee: 1200,
-  },
-  {
-    id: 3,
-    project: 'PRJ-038',
-    permit_number: 'PP-2025-0374',
-    type: 'plumbing',
-    description: 'Full plumbing rough-in and fixture installation',
-    authority: 'Mecklenburg County',
-    status: 'issued',
-    applied: '2025-11-10',
-    issued: '2025-12-01',
-    expires: '2026-12-01',
-    fee: 950,
-  },
-  {
-    id: 4,
-    project: 'PRJ-DEMO',
-    permit_number: 'DP-2026-0021',
-    type: 'demo',
-    description: 'Interior demolition — commercial renovation',
-    authority: 'City of Charlotte',
-    status: 'pending',
-    applied: '2026-01-28',
-    issued: null,
-    expires: null,
-    fee: 750,
-  },
-  {
-    id: 5,
-    project: 'PRJ-051',
-    permit_number: 'GP-2025-0198',
-    type: 'grading',
-    description: 'Site grading and erosion control — 1.4 acres',
-    authority: 'NCDEQ',
-    status: 'active',
-    applied: '2025-08-20',
-    issued: '2025-09-05',
-    expires: '2026-03-10',
-    fee: 2100,
-  },
+const PERMITS = [
+  { id:  1, project: 1, number: 'BP-2025-0441', type: 'Building',    desc: 'New residential construction — 3,400 sf single-family', authority: 'Rutherford Co. Bldg Dept', status: 'active',   applied: '2025-08-10', issued: '2025-09-02', expires: '2026-09-02', fee: 5200 },
+  { id:  2, project: 1, number: 'EP-2025-0882', type: 'Electrical',  desc: '200A service upgrade and rough-in wiring',              authority: 'Rutherford Co. Bldg Dept', status: 'active',   applied: '2025-09-01', issued: '2025-09-20', expires: '2026-09-20', fee: 1400 },
+  { id:  3, project: 1, number: 'PP-2025-0374', type: 'Plumbing',    desc: 'Full plumbing rough-in and fixture installation',        authority: 'Rutherford Co. Bldg Dept', status: 'active',   applied: '2025-09-01', issued: '2025-09-20', expires: '2026-09-20', fee: 980 },
+  { id:  4, project: 2, number: 'BP-2025-0512', type: 'Building',    desc: 'Spec home — 2,800 sf single-family residential',        authority: 'City of Franklin',        status: 'active',   applied: '2025-10-15', issued: '2025-11-01', expires: '2026-11-01', fee: 4800 },
+  { id:  5, project: 3, number: 'BP-2026-0023', type: 'Building',    desc: 'Spec home — 2,600 sf single-family residential',        authority: 'Rutherford Co. Bldg Dept', status: 'active',   applied: '2025-12-01', issued: '2025-12-20', expires: '2026-12-20', fee: 4400 },
+  { id:  6, project: 4, number: 'EP-2026-0041', type: 'Electrical',  desc: '400A commercial service, panel upgrade, ADA conduit',   authority: 'City of Murfreesboro',    status: 'active',   applied: '2026-01-05', issued: '2026-01-18', expires: '2027-01-18', fee: 2200 },
+  { id:  7, project: 4, number: 'MP-2026-0039', type: 'Mechanical',  desc: 'HVAC system replacement — commercial office TI',        authority: 'City of Murfreesboro',    status: 'pending',  applied: '2026-01-20', issued: null,         expires: null,         fee: 1600 },
+  { id:  8, project: 5, number: 'BP-2025-0601', type: 'Building',    desc: '24-unit multifamily — Phase 1 foundation and framing',  authority: 'Rutherford Co. Bldg Dept', status: 'active',   applied: '2025-07-01', issued: '2025-07-28', expires: '2026-07-28', fee: 18400 },
+  { id:  9, project: 5, number: 'FP-2025-0122', type: 'Fire',        desc: 'Fire suppression system — multifamily sprinklers',      authority: 'Rutherford Co. Fire Marshal', status: 'active', applied: '2025-07-15', issued: '2025-08-05', expires: '2026-08-05', fee: 3200 },
+  { id: 10, project: 6, number: 'BP-2025-0588', type: 'Building',    desc: '16-unit multifamily — new construction residential',    authority: 'City of Smyrna',          status: 'active',   applied: '2025-06-15', issued: '2025-07-10', expires: '2026-07-10', fee: 14800 },
+  { id: 11, project: 7, number: 'BP-2026-0071', type: 'Building',    desc: '24-unit multifamily — Phase 2 site permit',             authority: 'Rutherford Co. Bldg Dept', status: 'pending',  applied: '2026-02-01', issued: null,         expires: null,         fee: 19200 },
+  { id: 12, project: 8, number: 'RP-2025-0447', type: 'Remodel',     desc: 'Kitchen and bath remodel — residential addition',       authority: 'City of Murfreesboro',    status: 'active',   applied: '2025-11-10', issued: '2025-12-02', expires: '2026-12-02', fee: 1800 },
 ];
 
-const DEMO_INSPECTIONS = [
-  {
-    id: 1,
-    project: 'PRJ-042',
-    type: 'Framing',
-    permit_number: 'BP-2025-0441',
-    scheduled: '2026-02-25',
-    status: 'pending',
-    inspector: 'Dept. of Inspections',
-  },
-  {
-    id: 2,
-    project: 'PRJ-042',
-    type: 'Electrical Rough-In',
-    permit_number: 'EP-2025-0882',
-    scheduled: '2026-02-27',
-    status: 'pending',
-    inspector: 'Dept. of Inspections',
-  },
-  {
-    id: 3,
-    project: 'PRJ-038',
-    type: 'Plumbing Final',
-    permit_number: 'PP-2025-0374',
-    scheduled: '2026-02-24',
-    status: 'conditional',
-    inspector: 'Mecklenburg County',
-  },
-  {
-    id: 4,
-    project: 'PRJ-051',
-    type: 'Grading & Erosion',
-    permit_number: 'GP-2025-0198',
-    scheduled: '2026-03-03',
-    status: 'pending',
-    inspector: 'NCDEQ Field Office',
-  },
+const INSPECTIONS = [
+  { id: 1, project: 1, type: 'Framing',           permit: 'BP-2025-0441', date: '2026-02-26', inspector: 'Rutherford Co. Inspections', status: 'pending' },
+  { id: 2, project: 1, type: 'Electrical Rough-In', permit: 'EP-2025-0882', date: '2026-02-28', inspector: 'Rutherford Co. Inspections', status: 'pending' },
+  { id: 3, project: 2, type: 'Plumbing Final',    permit: 'BP-2025-0512', date: '2026-02-25', inspector: 'City of Franklin Inspections', status: 'passed' },
+  { id: 4, project: 4, type: 'Electrical Service', permit: 'EP-2026-0041', date: '2026-02-24', inspector: 'City of Murfreesboro',        status: 'passed' },
+  { id: 5, project: 4, type: 'Mechanical Rough',  permit: 'MP-2026-0039', date: '2026-03-05', inspector: 'City of Murfreesboro',        status: 'pending' },
+  { id: 6, project: 5, type: 'Foundation',        permit: 'BP-2025-0601', date: '2026-02-27', inspector: 'Rutherford Co. Inspections',  status: 'passed' },
+  { id: 7, project: 5, type: 'Fire Suppression',  permit: 'FP-2025-0122', date: '2026-03-08', inspector: 'Rutherford Co. Fire Marshal', status: 'pending' },
+  { id: 8, project: 6, type: 'Framing',           permit: 'BP-2025-0588', date: '2026-02-20', inspector: 'City of Smyrna',              status: 'failed' },
+  { id: 9, project: 8, type: 'Rough-In',          permit: 'RP-2025-0447', date: '2026-03-10', inspector: 'City of Murfreesboro',        status: 'pending' },
 ];
 
-/* ── Config Maps ───────────────────────────────────────────────────────── */
-
-const PERMIT_STATUS = {
-  active:  { color: 'var(--status-profit)',  bg: 'color-mix(in srgb, var(--status-profit) 12%, transparent)',  border: 'color-mix(in srgb, var(--status-profit) 25%, transparent)',  label: 'Active' },
-  issued:  { color: 'var(--accent)',          bg: 'var(--accent-bg)',                                            border: 'var(--accent-border)',                                         label: 'Issued' },
-  pending: { color: 'var(--status-warning)', bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)', border: 'color-mix(in srgb, var(--status-warning) 25%, transparent)', label: 'Pending' },
-  expired: { color: 'var(--status-loss)',    bg: 'color-mix(in srgb, var(--status-loss) 12%, transparent)',    border: 'color-mix(in srgb, var(--status-loss) 25%, transparent)',    label: 'Expired' },
-  closed:  { color: 'var(--status-neutral)', bg: 'color-mix(in srgb, var(--status-neutral) 12%, transparent)', border: 'color-mix(in srgb, var(--status-neutral) 25%, transparent)', label: 'Closed' },
+const STATUS_COLOR = {
+  active:  { color: 'var(--status-profit)',  bg: 'rgba(34,197,94,0.12)',   label: 'Active' },
+  pending: { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)', label: 'Pending' },
+  expired: { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'Expired' },
+  closed:  { color: 'var(--text-tertiary)',  bg: 'rgba(255,255,255,0.06)', label: 'Closed' },
 };
 
-const PERMIT_TYPE = {
-  building:   { Icon: Building2, color: 'var(--accent)',          label: 'Building' },
-  electrical: { Icon: Zap,       color: 'var(--status-warning)',  label: 'Electrical' },
-  plumbing:   { Icon: Droplets,  color: 'var(--accent)',          label: 'Plumbing' },
-  mechanical: { Icon: Flame,     color: 'var(--status-loss)',     label: 'Mechanical' },
-  demo:       { Icon: HardHat,   color: 'var(--text-secondary)',  label: 'Demo' },
-  grading:    { Icon: Shovel,    color: 'var(--status-profit)',   label: 'Grading' },
+const INSP_COLOR = {
+  pending: { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)',  label: 'Pending' },
+  passed:  { color: 'var(--status-profit)',  bg: 'rgba(34,197,94,0.12)',   label: 'Passed' },
+  failed:  { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'Failed' },
 };
-
-const INSP_STATUS = {
-  pending:     { color: 'var(--status-warning)', bg: 'color-mix(in srgb, var(--status-warning) 12%, transparent)', border: 'color-mix(in srgb, var(--status-warning) 25%, transparent)', Icon: Clock,        label: 'Pending' },
-  pass:        { color: 'var(--status-profit)',  bg: 'color-mix(in srgb, var(--status-profit) 12%, transparent)',  border: 'color-mix(in srgb, var(--status-profit) 25%, transparent)',  Icon: CheckCircle,  label: 'Passed' },
-  fail:        { color: 'var(--status-loss)',    bg: 'color-mix(in srgb, var(--status-loss) 12%, transparent)',    border: 'color-mix(in srgb, var(--status-loss) 25%, transparent)',    Icon: XCircle,      label: 'Failed' },
-  conditional: { color: 'var(--accent)',          bg: 'var(--accent-bg)',                                            border: 'var(--accent-border)',                                         Icon: HelpCircle,   label: 'Conditional' },
-};
-
-function PermitStatusBadge({ status }) {
-  const s = PERMIT_STATUS[status] || PERMIT_STATUS.pending;
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold"
-      style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
-    >
-      {s.label}
-    </span>
-  );
-}
-
-function PermitTypeBadge({ type }) {
-  const t = PERMIT_TYPE[type];
-  if (!t) return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{type}</span>;
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: t.color }}>
-      <t.Icon size={12} />
-      {t.label}
-    </span>
-  );
-}
-
-function InspStatusBadge({ status }) {
-  const s = INSP_STATUS[status] || INSP_STATUS.pending;
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold"
-      style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}
-    >
-      <s.Icon size={11} />
-      {s.label}
-    </span>
-  );
-}
 
 function daysUntil(dateStr) {
   if (!dateStr) return null;
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
+  return Math.ceil((new Date(dateStr) - new Date()) / 86400000);
 }
 
-/* ── Component ─────────────────────────────────────────────────────────── */
-
 export default function Permits() {
-  const [permits, setPermits]         = useState(DEMO_PERMITS);
-  const [inspections, setInspections] = useState(DEMO_INSPECTIONS);
-  const [loading, setLoading]         = useState(true);
-  const [isDemo, setIsDemo]           = useState(false);
-  const [activeTab, setTab]           = useState('permits');
+  const [tab, setTab] = useState('permits');
+  const [projectFilter, setProjectFilter] = useState('All');
 
-  useEffect(() => {
-    let permitsLoaded = false;
-    let inspLoaded    = false;
+  const projectNames = ['All', ...PROJECTS.map(p => p.name)];
+  const projectIdMap = Object.fromEntries(PROJECTS.map(p => [p.name, p.id]));
 
-    function checkDone() {
-      if (permitsLoaded && inspLoaded) setLoading(false);
-    }
+  const filteredPermits = projectFilter === 'All' ? PERMITS
+    : PERMITS.filter(p => p.project === projectIdMap[projectFilter]);
+  const filteredInspections = projectFilter === 'All' ? INSPECTIONS
+    : INSPECTIONS.filter(i => i.project === projectIdMap[projectFilter]);
 
-    api.permits()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setPermits(data);
-          if (data.length > 0 && data[0]?.issued === DEMO_PERMITS[0].issued) setIsDemo(true);
-        } else {
-          setIsDemo(true);
-        }
-      })
-      .catch(() => setIsDemo(true))
-      .finally(() => { permitsLoaded = true; checkDone(); });
+  const thBase = { padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--color-brand-border)', textAlign: 'left' };
 
-    api.upcomingInspections()
-      .then((data) => { if (Array.isArray(data)) setInspections(data); })
-      .catch(() => {})
-      .finally(() => { inspLoaded = true; checkDone(); });
-  }, []);
-
-  const activePermits    = permits.filter((p) => p.status === 'active' || p.status === 'issued').length;
-  const pendingApps      = permits.filter((p) => p.status === 'pending').length;
-  const upcomingCount    = inspections.filter((i) => i.status === 'pending').length;
-  const expiringSoon     = permits.filter((p) => {
-    const d = daysUntil(p.expires);
-    return d !== null && d >= 0 && d <= 30;
-  }).length;
-
-  const SkeletonRow = ({ cols }) => (
-    <tr>
-      {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 rounded animate-pulse" style={{ background: 'var(--bg-elevated)', width: i === 2 ? '80%' : '55%' }} />
-        </td>
-      ))}
-    </tr>
-  );
+  const pendingInspections = INSPECTIONS.filter(i => i.status === 'pending').length;
+  const failedInspections  = INSPECTIONS.filter(i => i.status === 'failed').length;
+  const pendingPermits     = PERMITS.filter(p => p.status === 'pending').length;
+  const activePermits      = PERMITS.filter(p => p.status === 'active').length;
 
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
-
-      {/* Header */}
-      <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-        Permits &amp; Inspections
-      </h1>
-
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Active Permits"       value={activePermits} icon={FileCheck}     sub="issued & active" />
-        <KPICard label="Pending Applications" value={pendingApps}   icon={Clock}         sub="awaiting approval" />
-        <KPICard label="Upcoming Inspections" value={upcomingCount} icon={CalendarDays}  sub="scheduled" />
-        <KPICard label="Expiring Soon"        value={expiringSoon}  icon={AlertTriangle} sub="within 30 days" />
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Permits &amp; Inspections</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{PERMITS.length} permits tracked &middot; {INSPECTIONS.length} inspections</p>
       </div>
 
-      {/* Section Tabs */}
-      <div
-        className="flex gap-1"
-        style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1px' }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         {[
-          { key: 'permits',     label: 'Permits' },
-          { key: 'inspections', label: 'Inspections Schedule' },
-        ].map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className="px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors"
-            style={{
-              borderBottom: activeTab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
-              color: activeTab === t.key ? 'var(--accent)' : 'var(--text-secondary)',
-            }}
-          >
-            {t.label}
-          </button>
+          ['Active Permits', activePermits, 'var(--status-profit)'],
+          ['Pending Applications', pendingPermits, 'var(--status-warning)'],
+          ['Upcoming Inspections', pendingInspections, '#3b82f6'],
+          ['Failed Inspections', failedInspections, failedInspections > 0 ? 'var(--status-loss)' : 'var(--status-profit)'],
+        ].map(([label, val, color]) => (
+          <div key={label} style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 8, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color }}>{val}</div>
+          </div>
         ))}
       </div>
 
-      {/* Permits Table */}
-      {activeTab === 'permits' && (
-        <div
-          className="rounded-lg overflow-hidden"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-        >
-          <div className="overflow-x-auto">
-            <table className="mc-table w-full">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Permit #</th>
-                  <th>Type</th>
-                  <th>Description</th>
-                  <th>Authority</th>
-                  <th>Status</th>
-                  <th>Applied</th>
-                  <th>Issued</th>
-                  <th>Expires</th>
-                  <th className="text-right">Fee</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading
-                  ? Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={10} />)
-                  : permits.map((p) => {
-                      const days = daysUntil(p.expires);
-                      const expiryWarning = days !== null && days >= 0 && days <= 30;
-                      return (
-                        <tr key={p.id}>
-                          <td>
-                            <span className="font-mono text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                              {p.project}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
-                              {p.permit_number}
-                            </span>
-                          </td>
-                          <td><PermitTypeBadge type={p.type} /></td>
-                          <td style={{ maxWidth: 260 }}>
-                            <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                              {p.description}
-                            </span>
-                          </td>
-                          <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{p.authority}</td>
-                          <td><PermitStatusBadge status={p.status} /></td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{shortDate(p.applied)}</td>
-                          <td style={{ color: 'var(--text-secondary)' }}>{p.issued ? shortDate(p.issued) : '—'}</td>
-                          <td>
-                            <span style={{ color: expiryWarning ? 'var(--status-warning)' : 'var(--text-secondary)' }}>
-                              {p.expires ? shortDate(p.expires) : '—'}
-                              {expiryWarning && (
-                                <span className="ml-1 text-xs" style={{ color: 'var(--status-warning)' }}>
-                                  ({days}d)
-                                </span>
-                              )}
-                            </span>
-                          </td>
-                          <td className="num text-right" style={{ color: 'var(--text-primary)' }}>
-                            {money(p.fee)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-              </tbody>
-            </table>
+      {failedInspections > 0 && (
+        <div style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <AlertTriangle size={15} style={{ color: 'var(--status-loss)', flexShrink: 0 }} />
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            <strong style={{ color: 'var(--status-loss)' }}>{failedInspections} failed inspection{failedInspections > 1 ? 's' : ''}</strong> — re-inspection required before work can continue.
+            {INSPECTIONS.filter(i => i.status === 'failed').map(i => (
+              <span key={i.id} style={{ display: 'block', marginTop: 2 }}>{PROJECTS.find(p => p.id === i.project)?.name} &mdash; {i.type}</span>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Inspections Table */}
-      {activeTab === 'inspections' && (
-        <div
-          className="rounded-lg overflow-hidden"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-        >
-          <div className="overflow-x-auto">
-            <table className="mc-table w-full">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Inspection Type</th>
-                  <th>Permit #</th>
-                  <th>Scheduled Date</th>
-                  <th>Days Away</th>
-                  <th>Inspector / Authority</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading
-                  ? Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={7} />)
-                  : inspections.length === 0
-                    ? (
-                      <tr>
-                        <td colSpan={7}>
-                          <div className="flex flex-col items-center justify-center py-12 gap-3">
-                            <CheckCircle size={36} style={{ color: 'var(--status-profit)' }} />
-                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                              No upcoming inspections scheduled
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                    : inspections.map((insp) => {
-                        const days = daysUntil(insp.scheduled);
-                        return (
-                          <tr key={insp.id}>
-                            <td>
-                              <span className="font-mono text-xs font-semibold" style={{ color: 'var(--accent)' }}>
-                                {insp.project}
-                              </span>
-                            </td>
-                            <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                              {insp.type}
-                            </td>
-                            <td>
-                              <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                {insp.permit_number}
-                              </span>
-                            </td>
-                            <td style={{ color: 'var(--text-secondary)' }}>{shortDate(insp.scheduled)}</td>
-                            <td>
-                              {days !== null ? (
-                                <span
-                                  className="num font-medium"
-                                  style={{
-                                    color: days <= 2
-                                      ? 'var(--status-warning)'
-                                      : 'var(--text-secondary)',
-                                  }}
-                                >
-                                  {days === 0 ? 'Today' : days < 0 ? `${Math.abs(days)}d ago` : `${days}d`}
-                                </span>
-                              ) : '—'}
-                            </td>
-                            <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-                              {insp.inspector || '—'}
-                            </td>
-                            <td><InspStatusBadge status={insp.status} /></td>
-                          </tr>
-                        );
-                      })}
-              </tbody>
-            </table>
-          </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--color-brand-border)' }}>
+          {['permits', 'inspections'].map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              padding: '10px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'none',
+              textTransform: 'capitalize', color: tab === t ? '#3b82f6' : 'var(--text-secondary)',
+              borderBottom: `2px solid ${tab === t ? '#3b82f6' : 'transparent'}`,
+            }}>{t}</button>
+          ))}
+        </div>
+        <select value={projectFilter} onChange={e => setProjectFilter(e.target.value)} style={{
+          padding: '7px 12px', borderRadius: 7, fontSize: 12, cursor: 'pointer', border: '1px solid var(--color-brand-border)',
+          background: 'var(--color-brand-card)', color: 'var(--text-primary)', outline: 'none',
+        }}>
+          {projectNames.map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+      </div>
+
+      {tab === 'permits' && (
+        <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              {['Project','Permit #','Type','Description','Authority','Applied','Issued','Expires','Status'].map((h, i) => (
+                <th key={h} style={{ ...thBase, textAlign: 'left' }}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {filteredPermits.map(p => {
+                const proj = PROJECTS.find(pr => pr.id === p.project);
+                const sc = STATUS_COLOR[p.status] || STATUS_COLOR.active;
+                const days = daysUntil(p.expires);
+                const expiryWarn = days !== null && days >= 0 && days <= 60;
+                return (
+                  <tr key={p.id} style={{ borderTop: '1px solid var(--color-brand-border)' }}>
+                    <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{proj?.name?.split(' ').slice(0, 2).join(' ') || '—'}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{p.number}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{p.type}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)', maxWidth: 220 }}>{p.desc}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{p.authority}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{p.applied}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{p.issued || '—'}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, fontFamily: 'monospace', color: expiryWarn ? 'var(--status-warning)' : 'var(--text-tertiary)' }}>
+                      {p.expires || '—'}
+                      {expiryWarn && <span style={{ display: 'block', fontSize: 10 }}>{days}d left</span>}
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: sc.bg, color: sc.color }}>{sc.label}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* Permit totals footer */}
-      {activeTab === 'permits' && !loading && permits.length > 0 && (
-        <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
-          <span>{permits.length} permit{permits.length !== 1 ? 's' : ''} on record</span>
-          <span>
-            Total fees:{' '}
-            <span className="num font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              {money(permits.reduce((s, p) => s + (p.fee || 0), 0))}
-            </span>
-          </span>
+      {tab === 'inspections' && (
+        <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              {['Project','Inspection Type','Permit #','Scheduled','Days Away','Inspector','Result'].map(h => (
+                <th key={h} style={thBase}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {filteredInspections.map(i => {
+                const proj = PROJECTS.find(p => p.id === i.project);
+                const ic = INSP_COLOR[i.status] || INSP_COLOR.pending;
+                const days = daysUntil(i.date);
+                return (
+                  <tr key={i.id} style={{ borderTop: '1px solid var(--color-brand-border)' }}>
+                    <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{proj?.name?.split(' ').slice(0, 2).join(' ')}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-primary)' }}>{i.type}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{i.permit}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{i.date}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 600, fontFamily: 'monospace', color: days !== null && days <= 2 ? 'var(--status-warning)' : 'var(--text-secondary)' }}>
+                      {days === null ? '—' : days === 0 ? 'Today' : days < 0 ? `${Math.abs(days)}d ago` : `${days}d`}
+                    </td>
+                    <td style={{ padding: '10px 14px', fontSize: 11, color: 'var(--text-tertiary)' }}>{i.inspector}</td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: ic.bg, color: ic.color }}>{ic.label}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

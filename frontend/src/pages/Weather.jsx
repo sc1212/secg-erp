@@ -1,230 +1,178 @@
-/**
- * Weather Intelligence — Auto-populates with zero user input (Issue 9)
- * Shows weather per jobsite with construction-specific alerts.
- */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
-import DemoBanner from '../components/DemoBanner';
-import { AlertOctagon, AlertTriangle, ChevronRight, Cloud, CloudRain, Construction, Droplets, Home, MapPin, Snowflake, Sun, Thermometer, Wind } from 'lucide-react';
-
-const CONDITION_ICONS = {
-  'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud,
-  'Rain': CloudRain, 'Thunderstorm': CloudRain, 'Snowflake': Cloud, 'Drizzle': CloudRain,
-};
-
-// Demo weather data — always shows even without API
-const DEMO_WEATHER = {
-  location: 'Murfreesboro, TN',
-  current: {
-    temp: 48, conditions: 'Partly Cloudy', high: 55, low: 38,
-    wind_speed: 8, wind_dir: 'NW', humidity: 42, precipitation: 0,
-  },
-  forecast: [
-    { date: todayPlus(0), day: 'Today', high: 55, low: 38, conditions: 'Partly Cloudy', precip: 0 },
-    { date: todayPlus(1), day: 'Mon', high: 52, low: 35, conditions: 'Sunny', precip: 0 },
-    { date: todayPlus(2), day: 'Tue', high: 58, low: 40, conditions: 'Sunny', precip: 5 },
-    { date: todayPlus(3), day: 'Wed', high: 45, low: 32, conditions: 'Rain', precip: 70 },
-    { date: todayPlus(4), day: 'Thu', high: 42, low: 30, conditions: 'Rain', precip: 60 },
-    { date: todayPlus(5), day: 'Fri', high: 50, low: 34, conditions: 'Partly Cloudy', precip: 10 },
-    { date: todayPlus(6), day: 'Sat', high: 54, low: 36, conditions: 'Sunny', precip: 0 },
-  ],
-  alerts: [
-    { type: 'freeze', message: 'Freeze warning Tuesday night \u2014 protect exposed concrete/pipes', severity: 'warning' },
-    { type: 'rain', message: 'Rain Wed-Thu \u2014 potential delays, cover exposed materials', severity: 'warning' },
-  ],
-  projects: [
-    { id: 1, name: 'Riverside Custom Home', address: '123 River Rd', temp: 48, conditions: 'Partly Cloudy', impacted: false },
-    { id: 2, name: 'Oak Creek Spec Home', address: '456 Oak Dr, Franklin', temp: 47, conditions: 'Partly Cloudy', impacted: false },
-    { id: 3, name: 'Magnolia Spec Home', address: '789 Magnolia Ln', temp: 49, conditions: 'Cloudy', impacted: true, impact: 'Rain expected Wed-Thu' },
-    { id: 4, name: 'Johnson Insurance Rehab', address: '321 Johnson Ave', temp: 48, conditions: 'Partly Cloudy', impacted: false },
-  ],
-};
+import { AlertTriangle, Cloud, CloudRain, MapPin, Sun, Thermometer, Wind } from 'lucide-react';
 
 function todayPlus(days) {
-  const d = new Date();
+  const d = new Date('2026-02-22');
   d.setDate(d.getDate() + days);
   return d.toISOString().split('T')[0];
 }
 
-function ConstructionAlerts({ temp, precip, wind }) {
-  const alerts = [];
-  if (temp < 32) alerts.push({ icon: Thermometer, text: 'Freeze warning \u2014 protect exposed concrete/pipes', color: 'var(--status-loss)' });
-  if (precip > 50) alerts.push({ icon: CloudRain, text: 'Rain likely \u2014 cover exposed materials', color: 'var(--status-warning)' });
-  if (wind > 25) alerts.push({ icon: Wind, text: 'High wind \u2014 suspend crane operations', color: 'var(--status-loss)' });
-  if (temp > 95) alerts.push({ icon: Thermometer, text: 'Heat advisory \u2014 enforce hydration breaks', color: 'var(--status-warning)' });
-  return alerts.length > 0 ? (
-    <div className="space-y-1 mt-2">
-      {alerts.map((a, i) => (
-        <div key={i} className="flex items-center gap-2 text-xs px-3 py-2 rounded" style={{ background: 'var(--status-warning-bg)', color: a.color }}>
-          <a.icon size={13} /> {a.text}
-        </div>
-      ))}
-    </div>
-  ) : null;
-}
+const CONDITION_ICONS = {
+  'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud,
+  'Rain': CloudRain, 'Thunderstorm': CloudRain, 'Drizzle': CloudRain,
+};
+
+const WEATHER = {
+  location: 'Murfreesboro, TN',
+  current: { temp: 48, conditions: 'Partly Cloudy', high: 55, low: 38, wind_speed: 8, wind_dir: 'NW', humidity: 42, precipitation: 10 },
+  forecast: [
+    { date: todayPlus(0), day: 'Today', high: 55, low: 38, conditions: 'Partly Cloudy', precip: 10 },
+    { date: todayPlus(1), day: 'Mon',   high: 52, low: 35, conditions: 'Sunny',         precip: 0  },
+    { date: todayPlus(2), day: 'Tue',   high: 58, low: 40, conditions: 'Sunny',         precip: 5  },
+    { date: todayPlus(3), day: 'Wed',   high: 45, low: 32, conditions: 'Rain',          precip: 70 },
+    { date: todayPlus(4), day: 'Thu',   high: 42, low: 30, conditions: 'Rain',          precip: 60 },
+    { date: todayPlus(5), day: 'Fri',   high: 50, low: 34, conditions: 'Partly Cloudy', precip: 10 },
+    { date: todayPlus(6), day: 'Sat',   high: 54, low: 36, conditions: 'Sunny',         precip: 0  },
+  ],
+  alerts: [
+    { message: 'Freeze warning Tuesday night — protect exposed concrete and pipes', severity: 'warning' },
+    { message: 'Rain Wed-Thu — potential delays, cover exposed materials', severity: 'warning' },
+  ],
+  jobsites: [
+    { id: 1, name: 'Riverside Custom Home',    address: '1204 River Bend Rd, Murfreesboro', temp: 48, conditions: 'Partly Cloudy', impacted: false, impact: null },
+    { id: 2, name: 'Oak Creek Spec Home',       address: '874 Oak Creek Dr, Franklin',       temp: 47, conditions: 'Partly Cloudy', impacted: false, impact: null },
+    { id: 3, name: 'Magnolia Spec Home',        address: '332 Magnolia Ln, Brentwood',       temp: 49, conditions: 'Cloudy',        impacted: true,  impact: 'Rain expected Wed-Thu' },
+    { id: 4, name: 'Johnson Insurance Rehab',   address: '109 Johnson Ave, Murfreesboro',    temp: 48, conditions: 'Partly Cloudy', impacted: false, impact: null },
+    { id: 5, name: 'Highland Terrace Spec',     address: '540 Highland Terrace, Nashville',  temp: 46, conditions: 'Cloudy',        impacted: true,  impact: 'Freeze risk Tue night' },
+    { id: 6, name: 'Summit Ridge Custom',       address: '28 Summit Ridge Rd, Nolensville',  temp: 44, conditions: 'Cloudy',        impacted: true,  impact: 'Rain Wed, freeze risk' },
+  ],
+};
+
+const RULES = [
+  { icon: Thermometer, color: 'var(--status-loss)',    text: 'Temp < 32°F — freeze warning, protect concrete and pipes' },
+  { icon: CloudRain,   color: 'var(--status-warning)', text: 'Precip > 50% — rain likely, cover exposed materials' },
+  { icon: Wind,        color: 'var(--status-loss)',    text: 'Wind > 25 mph — suspend crane operations' },
+  { icon: Thermometer, color: 'var(--status-warning)', text: 'Temp > 95°F — heat advisory, enforce hydration breaks' },
+];
 
 export default function Weather() {
   const navigate = useNavigate();
-  const { data, isDemo } = useApi(() => api.weatherWeekly(), []);
-  const weather = data || DEMO_WEATHER;
-
-  const WeatherIcon = CONDITION_ICONS[weather.current.conditions] || Cloud;
+  const [expandedId, setExpandedId] = useState(null);
+  const WeatherIcon = CONDITION_ICONS[WEATHER.current.conditions] || Cloud;
+  const impacted = WEATHER.jobsites.filter(j => j.impacted).length;
 
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
-
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Weather Intelligence</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-          Auto-updated daily \u2014 {weather.location}
-        </p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Weather Intelligence</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>Auto-updated daily &middot; {WEATHER.location} &middot; {impacted} jobsite{impacted !== 1 ? 's' : ''} impacted this week</p>
       </div>
 
+      {/* Alert Banner */}
+      {WEATHER.alerts.length > 0 && (
+        <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {WEATHER.alerts.map((a, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <AlertTriangle size={14} style={{ color: 'var(--status-warning)', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{a.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Current Conditions */}
-      <div className="rounded-lg p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-card)' }}>
-        <div className="flex items-center gap-6 flex-wrap">
-          <div className="flex items-center gap-4">
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: '20px 24px' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 14 }}>Current Conditions</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <WeatherIcon size={48} style={{ color: 'var(--text-secondary)' }} />
             <div>
-              <div className="text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>{weather.current.temp}\u00B0F</div>
-              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{weather.current.conditions}</div>
+              <div style={{ fontSize: 40, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)', lineHeight: 1 }}>{WEATHER.current.temp}°F</div>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{WEATHER.current.conditions}</div>
             </div>
           </div>
-          <div className="flex gap-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>High / Low</div>
-              <div style={{ color: 'var(--text-primary)' }}>{weather.current.high}\u00B0 / {weather.current.low}\u00B0</div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Wind</div>
-              <div style={{ color: 'var(--text-primary)' }}>{weather.current.wind_speed}mph {weather.current.wind_dir}</div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Humidity</div>
-              <div style={{ color: 'var(--text-primary)' }}>{weather.current.humidity}%</div>
-            </div>
-            <div>
-              <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Precipitation</div>
-              <div style={{ color: 'var(--text-primary)' }}>{weather.current.precipitation}% {'\u{1F327}\uFE0F'}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Alerts */}
-        {weather.alerts.length > 0 && (
-          <div className="mt-4 space-y-2">
-            {weather.alerts.map((alert, i) => (
-              <div key={i} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm" style={{ background: 'var(--status-warning-bg)', color: 'var(--status-warning)' }}>
-                <AlertTriangle size={14} />
-                {alert.message}
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            {[
+              ['High / Low', `${WEATHER.current.high}° / ${WEATHER.current.low}°`],
+              ['Wind', `${WEATHER.current.wind_speed} mph ${WEATHER.current.wind_dir}`],
+              ['Humidity', `${WEATHER.current.humidity}%`],
+              ['Precip Chance', `${WEATHER.current.precipitation}%`],
+            ].map(([label, val]) => (
+              <div key={label}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{val}</div>
               </div>
             ))}
           </div>
-        )}
+        </div>
       </div>
 
       {/* 7-Day Forecast */}
-      <div className="rounded-lg p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-        <h3 className="panel-title mb-4">7-Day Forecast</h3>
-        <div className="grid grid-cols-7 gap-2">
-          {weather.forecast.map((day, i) => {
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: '18px 20px' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14 }}>7-Day Forecast</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
+          {WEATHER.forecast.map((day, i) => {
             const Icon = CONDITION_ICONS[day.conditions] || Cloud;
-            const hasRain = day.precip > 40;
+            const rainRisk = day.precip > 40;
+            const isToday = i === 0;
             return (
-              <div key={day.date} className="text-center py-3 px-2 rounded-lg" style={{ background: i === 0 ? 'var(--accent-bg)' : 'transparent' }}>
-                <div className="text-[10px] font-semibold" style={{ color: i === 0 ? 'var(--accent)' : 'var(--text-tertiary)' }}>
-                  {i === 0 ? 'TODAY' : day.day.toUpperCase()}
+              <div key={day.date} style={{ textAlign: 'center', padding: '12px 6px', borderRadius: 8, background: isToday ? 'rgba(59,130,246,0.10)' : 'rgba(255,255,255,0.02)', border: isToday ? '1px solid rgba(59,130,246,0.20)' : '1px solid transparent' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: isToday ? '#3b82f6' : 'var(--text-tertiary)', marginBottom: 8 }}>{isToday ? 'Today' : day.day}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                  <Icon size={22} style={{ color: rainRisk ? 'var(--status-warning)' : 'var(--text-secondary)' }} />
                 </div>
-                <div className="my-2 flex justify-center" style={{ color: hasRain ? 'var(--status-warning)' : 'var(--text-secondary)' }}>
-                  <Icon size={24} />
-                </div>
-                <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {day.high}\u00B0
-                  <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>/{day.low}\u00B0</span>
-                </div>
-                <div className="text-[11px] mt-1" style={{ color: day.precip > 40 ? 'var(--status-warning)' : 'var(--text-tertiary)' }}>
-                  {day.precip}% {'\u{1F327}\uFE0F'}
-                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{day.high}°</div>
+                <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{day.low}°</div>
+                {day.precip > 0 && (
+                  <div style={{ fontSize: 10, marginTop: 4, color: rainRisk ? 'var(--status-warning)' : 'var(--text-tertiary)' }}>{day.precip}%</div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Per-Project Weather */}
-      <div className="rounded-lg p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-        <h3 className="panel-title mb-4">Jobsite Conditions</h3>
-        <div className="space-y-2">
-          {weather.projects.map(proj => {
-            const Icon = CONDITION_ICONS[proj.conditions] || Cloud;
+      {/* Jobsite Conditions */}
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-brand-border)' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Jobsite Conditions</div>
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>Click a site to open project details</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {WEATHER.jobsites.map((site, i) => {
+            const Icon = CONDITION_ICONS[site.conditions] || Cloud;
             return (
               <div
-                key={proj.id}
-                className="flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-colors"
-                style={{ background: proj.impacted ? 'var(--status-warning-bg)' : 'var(--bg-elevated)' }}
-                onClick={() => navigate(`/projects/${proj.id}`)}
+                key={site.id}
+                onClick={() => navigate(`/projects/${site.id}`)}
+                style={{ padding: '13px 18px', display: 'flex', alignItems: 'center', gap: 14, borderTop: i === 0 ? 'none' : '1px solid var(--color-brand-border)', cursor: 'pointer', background: site.impacted ? 'rgba(251,191,36,0.04)' : 'transparent' }}
               >
-                <div className="flex items-center gap-3">
-                  <Icon size={20} style={{ color: proj.impacted ? 'var(--status-warning)' : 'var(--text-secondary)' }} />
-                  <div>
-                    <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{proj.name}</div>
-                    <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      <MapPin size={10} /> {proj.address}
-                    </div>
+                <Icon size={20} style={{ color: site.impacted ? 'var(--status-warning)' : 'var(--text-tertiary)', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{site.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    <MapPin size={10} /> {site.address}
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{proj.temp}\u00B0F</div>
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{proj.conditions}</div>
-                  </div>
-                  {proj.impacted && (
-                    <span className="mc-badge mc-badge-warning">{proj.impact}</span>
-                  )}
-                  <ChevronRight size={14} style={{ color: 'var(--text-tertiary)' }} />
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{site.temp}°F</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{site.conditions}</div>
                 </div>
+                {site.impacted && (
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.14)', color: 'var(--status-warning)', whiteSpace: 'nowrap', marginLeft: 4 }}>{site.impact}</span>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Construction-Specific Alerts */}
-      <div className="rounded-lg p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-        <h3 className="panel-title mb-3">Construction Weather Rules</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{ background: 'var(--bg-elevated)' }}>
-            <Thermometer size={16} style={{ color: 'var(--status-loss)' }} />
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <strong>Temp &lt; 32\u00B0F:</strong> Freeze warning \u2014 protect concrete/pipes
+      {/* Construction Rules */}
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: '18px 20px' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14 }}>Construction Weather Rules</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          {RULES.map((r, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-brand-border)' }}>
+              <r.icon size={16} style={{ color: r.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{r.text}</span>
             </div>
-          </div>
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{ background: 'var(--bg-elevated)' }}>
-            <CloudRain size={16} style={{ color: 'var(--status-warning)' }} />
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <strong>Precip &gt; 50%:</strong> Rain likely \u2014 cover materials
-            </div>
-          </div>
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{ background: 'var(--bg-elevated)' }}>
-            <Wind size={16} style={{ color: 'var(--status-loss)' }} />
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <strong>Wind &gt; 25mph:</strong> High wind \u2014 suspend crane ops
-            </div>
-          </div>
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{ background: 'var(--bg-elevated)' }}>
-            <Thermometer size={16} style={{ color: 'var(--status-warning)' }} />
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <strong>Temp &gt; 95\u00B0F:</strong> Heat advisory \u2014 hydration breaks
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
-        Weather data auto-syncs daily at 5:00 AM \u2014 {weather.location}
+      <div style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-tertiary)' }}>
+        Weather data auto-syncs daily at 5:00 AM &middot; {WEATHER.location}
       </div>
     </div>
   );

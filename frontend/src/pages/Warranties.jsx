@@ -1,248 +1,120 @@
 import { useState } from 'react';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
-import { shortDate, money } from '../lib/format';
-import { PageLoading, ErrorState } from '../components/LoadingState';
-import KPICard from '../components/KPICard';
-import DemoBanner from '../components/DemoBanner';
-import { AlertTriangle, ClipboardList, DollarSign, Filter, Home, ShieldCheck, Table } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+import { PROJECTS } from '../lib/demoData';
+import { money } from '../lib/format';
 
-/* ── Demo data ────────────────────────────────────────────────────────── */
-
-const demoWarranties = [
-  { id: 1, project_id: 1, project_name: 'Custom Home — Brentwood', reported_by: 'Homeowner', reported_date: '2026-01-15', category: 'Plumbing', description: 'Slow drain in master bath', severity: 'normal', status: 'scheduled', assigned_to: 'Jake R.', scheduled_date: '2026-02-28', completed_date: null, cost_to_resolve: 180, charged_to: 'warranty_reserve' },
-  { id: 2, project_id: 1, project_name: 'Custom Home — Brentwood', reported_by: 'Homeowner', reported_date: '2026-02-01', category: 'HVAC', description: 'Thermostat not reaching set temp in upstairs bedroom', severity: 'urgent', status: 'in_progress', assigned_to: 'Zach P.', scheduled_date: '2026-02-22', completed_date: null, cost_to_resolve: 450, charged_to: 'subcontractor' },
-  { id: 3, project_id: 2, project_name: 'Spec Home — Franklin', reported_by: 'Buyer', reported_date: '2026-02-10', category: 'Drywall', description: 'Nail pops in living room ceiling', severity: 'cosmetic', status: 'reported', assigned_to: null, scheduled_date: null, completed_date: null, cost_to_resolve: null, charged_to: null },
-  { id: 4, project_id: 1, project_name: 'Custom Home — Brentwood', reported_by: 'Homeowner', reported_date: '2025-11-20', category: 'Exterior', description: 'Gutter pulling away from fascia at rear corner', severity: 'normal', status: 'completed', assigned_to: 'Derek H.', scheduled_date: null, completed_date: '2025-12-05', cost_to_resolve: 275, charged_to: 'warranty_reserve' },
-  { id: 5, project_id: 3, project_name: 'Remodel — Green Hills', reported_by: 'Client', reported_date: '2026-02-18', category: 'Electrical', description: 'Kitchen island outlet not working', severity: 'urgent', status: 'assessed', assigned_to: null, scheduled_date: null, completed_date: null, cost_to_resolve: null, charged_to: null },
+const WARRANTIES = [
+  { id: 1, project: 1, date: '2026-01-15', category: 'Plumbing',    desc: 'Slow drain in master bath — partial clog', severity: 'normal', status: 'scheduled',   assigned: 'Zach Monroe',   scheduledDate: '2026-02-28', cost: 180,  chargedTo: 'Warranty Reserve' },
+  { id: 2, project: 1, date: '2026-02-01', category: 'HVAC',         desc: 'Thermostat not reaching set temp in upstairs bedroom', severity: 'urgent', status: 'in_progress', assigned: 'Zach Monroe', scheduledDate: '2026-02-22', cost: 450, chargedTo: 'Subcontractor' },
+  { id: 3, project: 2, date: '2026-02-10', category: 'Drywall',      desc: 'Nail pops in living room ceiling — cosmetic', severity: 'cosmetic', status: 'reported', assigned: null, scheduledDate: null, cost: null, chargedTo: null },
+  { id: 4, project: 1, date: '2025-11-20', category: 'Exterior',     desc: 'Gutter pulling away from fascia at rear corner', severity: 'normal', status: 'completed', assigned: 'Connor Webb',  scheduledDate: null, cost: 275,  chargedTo: 'Warranty Reserve' },
+  { id: 5, project: 3, date: '2026-02-18', category: 'Electrical',   desc: 'Kitchen island outlet not working — GFI trip', severity: 'urgent', status: 'assessed', assigned: null, scheduledDate: null, cost: null, chargedTo: null },
+  { id: 6, project: 4, date: '2026-02-05', category: 'Millwork',     desc: 'Cabinet doors not aligning after humidity shift', severity: 'cosmetic', status: 'scheduled', assigned: 'Joseph Hall', scheduledDate: '2026-03-05', cost: 320, chargedTo: 'Owner' },
+  { id: 7, project: 2, date: '2025-12-10', category: 'Foundation',   desc: 'Hairline crack in foundation wall — monitoring', severity: 'normal', status: 'completed', assigned: 'Connor Webb', scheduledDate: null, cost: 0, chargedTo: 'Warranty Reserve' },
 ];
 
-const demoSummary = {
-  open_items: 4,
-  urgent_items: 2,
-  total_resolution_cost: 905,
+const STATUS_COLOR = {
+  reported:    { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)',  label: 'Reported' },
+  assessed:    { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)',  label: 'Assessed' },
+  scheduled:   { color: '#3b82f6',               bg: 'rgba(59,130,246,0.12)',  label: 'Scheduled' },
+  in_progress: { color: 'var(--status-profit)',  bg: 'rgba(34,197,94,0.12)',   label: 'In Progress' },
+  completed:   { color: 'var(--text-tertiary)',  bg: 'rgba(255,255,255,0.06)', label: 'Completed' },
 };
 
-/* ── Helpers ──────────────────────────────────────────────────────────── */
-
-const SEVERITY_STYLES = {
-  urgent:   { bg: 'var(--status-loss-bg)',    color: 'var(--status-loss)' },
-  normal:   { bg: 'var(--bg-elevated)',       color: 'var(--text-secondary)' },
-  cosmetic: { bg: 'var(--bg-elevated)',       color: 'var(--text-tertiary)' },
+const SEVERITY_COLOR = {
+  urgent:   { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)' },
+  normal:   { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.06)' },
+  cosmetic: { color: 'var(--text-tertiary)',  bg: 'rgba(255,255,255,0.04)' },
 };
-
-const STATUS_STYLES = {
-  reported:    { bg: 'var(--status-warning-bg)', color: 'var(--status-warning)' },
-  assessed:    { bg: 'var(--status-warning-bg)', color: 'var(--status-warning)' },
-  scheduled:   { bg: 'var(--status-profit-bg)',  color: 'var(--status-profit)' },
-  in_progress: { bg: 'var(--status-profit-bg)',  color: 'var(--status-profit)' },
-  completed:   { bg: 'var(--bg-elevated)',       color: 'var(--text-tertiary)' },
-  denied:      { bg: 'var(--status-loss-bg)',    color: 'var(--status-loss)' },
-};
-
-const STATUS_LABELS = {
-  reported: 'Reported',
-  assessed: 'Assessed',
-  scheduled: 'Scheduled',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  denied: 'Denied',
-};
-
-const SEVERITY_LABELS = {
-  urgent: 'Urgent',
-  normal: 'Normal',
-  cosmetic: 'Cosmetic',
-};
-
-function formatChargedTo(value) {
-  if (!value) return '--';
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-/* ── Component ────────────────────────────────────────────────────────── */
 
 export default function Warranties() {
-  const [statusFilter, setStatusFilter] = useState('');
-  const [severityFilter, setSeverityFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
-  const { data: warrantiesData, loading, error, isDemo } = useApi(
-    () => api.warranties({
-      ...(statusFilter && { status: statusFilter }),
-      ...(severityFilter && { severity: severityFilter }),
-    }),
-    [statusFilter, severityFilter]
-  );
+  const statuses = ['All', 'Open', 'Completed'];
+  const filtered = WARRANTIES.filter(w => {
+    if (statusFilter === 'Open') return w.status !== 'completed';
+    if (statusFilter === 'Completed') return w.status === 'completed';
+    return true;
+  });
 
-  const { data: summaryData } = useApi(() => api.warrantySummary(), []);
+  const open = WARRANTIES.filter(w => w.status !== 'completed').length;
+  const urgent = WARRANTIES.filter(w => w.severity === 'urgent' && w.status !== 'completed').length;
+  const totalCost = WARRANTIES.filter(w => w.cost != null).reduce((s, w) => s + w.cost, 0);
 
-  const warranties = warrantiesData || (loading ? [] : demoWarranties);
-  const summary = summaryData || demoSummary;
-
-  if (loading) return <PageLoading />;
-  if (error && !warranties.length) return <ErrorState message={error} />;
-
-  // Filter demo data client-side when backend unavailable
-  const filtered = isDemo
-    ? warranties.filter((w) => {
-        if (statusFilter && w.status !== statusFilter) return false;
-        if (severityFilter && w.severity !== severityFilter) return false;
-        return true;
-      })
-    : warranties;
-
-  // Compute KPIs from demo data when in demo mode
-  const openItems = isDemo
-    ? demoWarranties.filter((w) => w.status !== 'completed' && w.status !== 'denied').length
-    : summary.open_items;
-  const urgentItems = isDemo
-    ? demoWarranties.filter((w) => w.severity === 'urgent' && w.status !== 'completed' && w.status !== 'denied').length
-    : summary.urgent_items;
-  const totalCost = isDemo
-    ? demoWarranties.reduce((sum, w) => sum + (w.cost_to_resolve || 0), 0)
-    : summary.total_resolution_cost;
+  const thBase = { padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--color-brand-border)', textAlign: 'left' };
 
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Warranty &amp; Callbacks</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{WARRANTIES.length} items tracked &middot; {open} open</p>
+      </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Warranty & Callbacks</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            {filtered.length} item{filtered.length !== 1 ? 's' : ''} tracked
-          </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        {[
+          ['Open Items', open, open > 0 ? 'var(--status-warning)' : 'var(--status-profit)'],
+          ['Urgent Items', urgent, urgent > 0 ? 'var(--status-loss)' : 'var(--status-profit)'],
+          ['Total Resolution Cost', money(totalCost, true), 'var(--text-primary)'],
+        ].map(([label, val, color]) => (
+          <div key={label} style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 8, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color }}>{val}</div>
+          </div>
+        ))}
+      </div>
+
+      {urgent > 0 && (
+        <div style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <AlertTriangle size={15} style={{ color: 'var(--status-loss)', flexShrink: 0 }} />
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            <strong style={{ color: 'var(--status-loss)' }}>{urgent} urgent item{urgent > 1 ? 's' : ''}</strong> — requires immediate scheduling and response to owner.
+          </div>
         </div>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-          style={{ background: 'var(--accent)', color: '#fff' }}
-        >
-          <ClipboardList size={14} /> Log Callback
-        </button>
+      )}
+
+      <div style={{ display: 'flex', gap: 6 }}>
+        {statuses.map(s => (
+          <button key={s} onClick={() => setStatusFilter(s)} style={{
+            padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+            border: `1px solid ${statusFilter === s ? '#3b82f6' : 'var(--color-brand-border)'}`,
+            background: statusFilter === s ? 'rgba(59,130,246,0.14)' : 'transparent',
+            color: statusFilter === s ? '#3b82f6' : 'var(--text-secondary)',
+          }}>{s}</button>
+        ))}
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <KPICard label="Open Items" value={openItems} sub="active callbacks" icon={ShieldCheck} />
-        <KPICard label="Urgent Items" value={urgentItems} sub={urgentItems > 0 ? 'needs attention' : 'none'} icon={AlertTriangle} />
-        <KPICard label="Total Resolution Cost" value={money(totalCost)} sub="all items" icon={DollarSign} />
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-sm outline-none"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-medium)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <option value="">All Statuses</option>
-          <option value="reported">Reported</option>
-          <option value="assessed">Assessed</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="denied">Denied</option>
-        </select>
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-sm outline-none"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-medium)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <option value="">All Severities</option>
-          <option value="urgent">Urgent</option>
-          <option value="normal">Normal</option>
-          <option value="cosmetic">Cosmetic</option>
-        </select>
-      </div>
-
-      {/* Warranty Table */}
-      <div className="overflow-x-auto">
-        <table className="mc-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Project</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Severity</th>
-              <th>Status</th>
-              <th>Assigned</th>
-              <th>Cost</th>
-              <th>Charged To</th>
-            </tr>
-          </thead>
+      <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>
+            {['Date','Project','Category','Description','Severity','Status','Assigned','Cost','Charged To'].map((h, i) => (
+              <th key={h} style={{ ...thBase, textAlign: i === 7 ? 'right' : 'left' }}>{h}</th>
+            ))}
+          </tr></thead>
           <tbody>
-            {filtered.map((w) => {
-              const sevStyle = SEVERITY_STYLES[w.severity] || SEVERITY_STYLES.normal;
-              const stsStyle = STATUS_STYLES[w.status] || STATUS_STYLES.reported;
+            {filtered.map(w => {
+              const sc = STATUS_COLOR[w.status] || STATUS_COLOR.reported;
+              const sev = SEVERITY_COLOR[w.severity] || SEVERITY_COLOR.normal;
+              const proj = PROJECTS.find(p => p.id === w.project);
               return (
-                <tr key={w.id}>
-                  <td className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {shortDate(w.reported_date)}
+                <tr key={w.id} style={{ borderTop: '1px solid var(--color-brand-border)' }}>
+                  <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{w.date}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{proj?.name?.split(' ').slice(0, 2).join(' ')}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{w.category}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)', maxWidth: 240 }}>{w.desc}</td>
+                  <td style={{ padding: '11px 14px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: sev.bg, color: sev.color, textTransform: 'capitalize' }}>{w.severity}</span>
                   </td>
-                  <td>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                        {w.project_name}
-                      </div>
-                      <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                        {w.reported_by}
-                      </div>
-                    </div>
+                  <td style={{ padding: '11px 14px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: sc.bg, color: sc.color }}>{sc.label}</span>
                   </td>
-                  <td className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {w.category}
-                  </td>
-                  <td>
-                    <span className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                      {w.description}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
-                      style={{ background: sevStyle.bg, color: sevStyle.color }}
-                    >
-                      {SEVERITY_LABELS[w.severity] || w.severity}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
-                      style={{ background: stsStyle.bg, color: stsStyle.color }}
-                    >
-                      {STATUS_LABELS[w.status] || w.status}
-                    </span>
-                  </td>
-                  <td className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {w.assigned_to || '--'}
-                  </td>
-                  <td className="num text-sm" style={{ color: 'var(--text-primary)' }}>
-                    {w.cost_to_resolve != null ? money(w.cost_to_resolve) : '--'}
-                  </td>
-                  <td className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {formatChargedTo(w.charged_to)}
-                  </td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{w.assigned || '—'}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{w.cost != null ? money(w.cost) : '—'}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 11, color: 'var(--text-tertiary)' }}>{w.chargedTo || '—'}</td>
                 </tr>
               );
             })}
             {filtered.length === 0 && (
-              <tr>
-                <td colSpan={9} className="text-center text-sm py-8" style={{ color: 'var(--text-tertiary)' }}>
-                  No warranty items match your filters
-                </td>
-              </tr>
+              <tr><td colSpan={9} style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>No items match.</td></tr>
             )}
           </tbody>
         </table>

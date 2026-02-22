@@ -1,736 +1,210 @@
 import { useState } from 'react';
-import { useApi } from '../hooks/useApi';
-import { api } from '../lib/api';
-import { shortDate, money } from '../lib/format';
-import { PageLoading, ErrorState } from '../components/LoadingState';
-import DemoBanner from '../components/DemoBanner';
-import { AlertTriangle, Award, Ban, CheckCircle, Clock, Construction, FileText, Flame, HardHat, Lock, Search, ShieldCheck, Table, Tag, Users, Wind, Zap } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Shield, Users, Award, FileText } from 'lucide-react';
+import { PROJECTS } from '../lib/demoData';
 
-/* ── Demo Data ─────────────────────────────────────────────────────────── */
-
-const demoDashboard = {
-  days_since_incident: 47,
-  open_incidents: 2,
-  total_incidents_ytd: 8,
-  toolbox_talks_this_month: 6,
-  expiring_certifications: 3,
-};
-
-const demoIncidents = [
-  {
-    id: 1,
-    project_id: 1,
-    reported_by: 'Mike Sullivan',
-    incident_date: '2026-01-06',
-    incident_type: 'near_miss',
-    severity: 'low',
-    description: 'Unsecured ladder slid on wet concrete near south foundation wall. No injuries.',
-    root_cause: 'Ladder feet not cleaned; no spotter assigned.',
-    corrective_action: 'Mandatory ladder inspection before each use. Spotter required on wet surfaces.',
-    status: 'closed',
-    osha_recordable: false,
-    days_lost: 0,
-    photos: 2,
-  },
-  {
-    id: 2,
-    project_id: 2,
-    reported_by: 'Jake Torres',
-    incident_date: '2026-01-22',
-    incident_type: 'first_aid',
-    severity: 'medium',
-    description: 'Carpenter received minor laceration on left hand from circular saw kickback during rip cut.',
-    root_cause: 'Dull blade not replaced per schedule; improper material support.',
-    corrective_action: 'Blade replacement log enforced. Material support jig required for rip cuts > 4 ft.',
-    status: 'closed',
-    osha_recordable: false,
-    days_lost: 0,
-    photos: 3,
-  },
-  {
-    id: 3,
-    project_id: 1,
-    reported_by: 'Derek Hall',
-    incident_date: '2026-02-03',
-    incident_type: 'recordable',
-    severity: 'high',
-    description: 'Electrician stepped on exposed nail penetrating boot sole. Tetanus shot administered at urgent care.',
-    root_cause: 'Debris not cleared from work area; steel-toe boots did not have puncture-resistant soles.',
-    corrective_action: 'Puncture-resistant insoles mandatory. End-of-day debris sweep added to daily log checklist.',
-    status: 'corrective_action',
-    osha_recordable: true,
-    days_lost: 1,
-    photos: 5,
-  },
-  {
-    id: 4,
-    project_id: 3,
-    reported_by: 'Chris Taylor',
-    incident_date: '2026-02-10',
-    incident_type: 'property_damage',
-    severity: 'medium',
-    description: 'Skid steer bucket struck underground water line during grading. Line repaired same day.',
-    root_cause: 'Utility locate markings faded after rain; operator did not request re-mark.',
-    corrective_action: 'Re-locate required after any precipitation > 0.5 in. Operator pre-dig checklist updated.',
-    status: 'investigating',
-    osha_recordable: false,
-    days_lost: 0,
-    photos: 8,
-  },
-  {
-    id: 5,
-    project_id: 2,
-    reported_by: 'Mike Sullivan',
-    incident_date: '2026-02-18',
-    incident_type: 'near_miss',
-    severity: 'low',
-    description: 'Unsecured sheet of plywood blown off 2nd-floor deck by wind gust. Landed in fenced exclusion zone.',
-    root_cause: 'Materials not weighted or tied down during high-wind advisory.',
-    corrective_action: 'Wind speed protocol: all loose materials secured when gusts exceed 25 mph.',
-    status: 'open',
-    osha_recordable: false,
-    days_lost: 0,
-    photos: 1,
-  },
+const INCIDENTS = [
+  { id: 1, project: 1, date: '2026-01-06', type: 'Near Miss',        severity: 'low',    reporter: 'Connor Webb',   desc: 'Unsecured ladder slid on wet concrete near south foundation wall. No injuries.', root: 'Ladder feet not cleaned; no spotter assigned.', action: 'Mandatory ladder inspection before each use. Spotter required on wet surfaces.', status: 'closed', osha: false },
+  { id: 2, project: 2, date: '2026-01-22', type: 'First Aid',        severity: 'medium', reporter: 'Joseph Hall',   desc: 'Worker received minor laceration on left hand from circular saw kickback.', root: 'Dull blade not replaced per schedule; improper material support.', action: 'Blade replacement log enforced. Material support jig required for rip cuts over 4 ft.', status: 'closed', osha: false },
+  { id: 3, project: 1, date: '2026-02-03', type: 'Recordable',       severity: 'high',   reporter: 'Connor Webb',   desc: 'Electrician stepped on exposed nail penetrating boot sole. Tetanus shot administered.', root: 'Debris not cleared from work area; boots lacked puncture-resistant soles.', action: 'Puncture-resistant insoles mandatory. End-of-day debris sweep added to daily log.', status: 'corrective_action', osha: true },
+  { id: 4, project: 3, date: '2026-02-10', type: 'Property Damage',  severity: 'medium', reporter: 'Joseph Hall',   desc: 'Skid steer bucket struck underground water line during grading. Line repaired same day.', root: 'Utility locate markings faded after rain; operator did not request re-mark.', action: 'Re-locate required after any precipitation over 0.5 inches. Pre-dig checklist updated.', status: 'investigating', osha: false },
+  { id: 5, project: 2, date: '2026-02-18', type: 'Near Miss',        severity: 'low',    reporter: 'Joseph Hall',   desc: 'Unsecured sheet of plywood blown off 2nd-floor deck by wind gust. Landed in exclusion zone.', root: 'Materials not weighted or tied down during high-wind advisory.', action: 'Wind speed protocol: all loose materials secured when gusts exceed 25 mph.', status: 'open', osha: false },
 ];
 
-const demoToolboxTalks = [
-  {
-    id: 1,
-    project_id: 1,
-    conducted_by: 'Mike Sullivan',
-    conducted_date: '2026-02-03',
-    topic: 'Fall Protection & Harness Inspection',
-    attendees: 12,
-    duration_minutes: 25,
-    notes: 'Reviewed proper harness fit, lanyard inspection points, and anchor requirements for roof work beginning next week.',
-  },
-  {
-    id: 2,
-    project_id: 2,
-    conducted_by: 'Jake Torres',
-    conducted_date: '2026-02-05',
-    topic: 'Trenching & Excavation Safety',
-    attendees: 8,
-    duration_minutes: 20,
-    notes: 'Covered soil classification, sloping requirements, and protective systems. Reminded crew of cave-in hazard protocols.',
-  },
-  {
-    id: 3,
-    project_id: 1,
-    conducted_by: 'Derek Hall',
-    conducted_date: '2026-02-10',
-    topic: 'Electrical Safety — Lock Out / Tag Out',
-    attendees: 10,
-    duration_minutes: 30,
-    notes: 'Demonstrated LOTO procedures for panel work. Each crew member practiced applying locks and tags.',
-  },
-  {
-    id: 4,
-    project_id: 3,
-    conducted_by: 'Chris Taylor',
-    conducted_date: '2026-02-12',
-    topic: 'Heat Illness Prevention',
-    attendees: 15,
-    duration_minutes: 15,
-    notes: 'Early season reminder on hydration, shade breaks, and recognizing heat exhaustion symptoms.',
-  },
-  {
-    id: 5,
-    project_id: 2,
-    conducted_by: 'Mike Sullivan',
-    conducted_date: '2026-02-17',
-    topic: 'Scaffold Erection & Inspection',
-    attendees: 9,
-    duration_minutes: 35,
-    notes: 'Walked through competent person checklist, base plate leveling, and daily inspection tags.',
-  },
-  {
-    id: 6,
-    project_id: 1,
-    conducted_by: 'Jake Torres',
-    conducted_date: '2026-02-19',
-    topic: 'PPE Compliance & Housekeeping',
-    attendees: 14,
-    duration_minutes: 20,
-    notes: 'Reinforced hard hat, safety glasses, and high-vis vest requirements. Reviewed clean work area expectations.',
-  },
+const TOOLBOX_TALKS = [
+  { id: 1, project: 1, date: '2026-02-03', topic: 'Fall Protection & Harness Inspection',  conductor: 'Cole Notgrass',  attendees: 12, mins: 25, notes: 'Reviewed proper harness fit, lanyard inspection, and anchor requirements for upcoming roof work.' },
+  { id: 2, project: 2, date: '2026-02-05', topic: 'Trenching & Excavation Safety',          conductor: 'Joseph Hall',    attendees: 8,  mins: 20, notes: 'Covered soil classification, sloping requirements, and cave-in hazard protocols.' },
+  { id: 3, project: 1, date: '2026-02-10', topic: 'Electrical Safety — Lock Out / Tag Out', conductor: 'Connor Webb',    attendees: 10, mins: 30, notes: 'Demonstrated LOTO procedures for panel work. Each crew member practiced applying locks and tags.' },
+  { id: 4, project: 3, date: '2026-02-12', topic: 'Heat Illness Prevention',                conductor: 'Zach Monroe',    attendees: 15, mins: 15, notes: 'Hydration, shade breaks, and recognizing heat exhaustion symptoms before summer season.' },
+  { id: 5, project: 2, date: '2026-02-17', topic: 'Scaffold Erection & Inspection',         conductor: 'Joseph Hall',    attendees: 9,  mins: 35, notes: 'Competent person checklist, base plate leveling, and daily inspection tag procedures.' },
+  { id: 6, project: 1, date: '2026-02-19', topic: 'PPE Compliance & Housekeeping',          conductor: 'Connor Webb',    attendees: 14, mins: 20, notes: 'Hard hat, safety glasses, and high-vis vest requirements. Clean work area expectations reviewed.' },
 ];
 
-const demoCertifications = [
-  {
-    id: 1,
-    employee_id: 1,
-    employee_name: 'Mike Sullivan',
-    cert_type: 'OSHA 30-Hour Construction',
-    cert_number: 'OSHA-30-88421',
-    issued_date: '2024-03-15',
-    expiry_date: '2029-03-15',
-    status: 'active',
-  },
-  {
-    id: 2,
-    employee_id: 2,
-    employee_name: 'Jake Torres',
-    cert_type: 'OSHA 10-Hour Construction',
-    cert_number: 'OSHA-10-77205',
-    issued_date: '2023-06-01',
-    expiry_date: '2028-06-01',
-    status: 'active',
-  },
-  {
-    id: 3,
-    employee_id: 3,
-    employee_name: 'Derek Hall',
-    cert_type: 'Certified Rigger — NCCCO',
-    cert_number: 'NCCCO-R-41982',
-    issued_date: '2021-09-20',
-    expiry_date: '2026-09-20',
-    status: 'active',
-  },
-  {
-    id: 4,
-    employee_id: 4,
-    employee_name: 'Chris Taylor',
-    cert_type: 'First Aid / CPR / AED',
-    cert_number: 'ARC-FA-20458',
-    issued_date: '2024-04-10',
-    expiry_date: '2026-04-10',
-    status: 'pending_renewal',
-  },
-  {
-    id: 5,
-    employee_id: 5,
-    employee_name: 'Ryan Mitchell',
-    cert_type: 'Confined Space Entry',
-    cert_number: 'CSE-TN-30891',
-    issued_date: '2023-01-12',
-    expiry_date: '2026-01-12',
-    status: 'expired',
-  },
-  {
-    id: 6,
-    employee_id: 1,
-    employee_name: 'Mike Sullivan',
-    cert_type: 'Competent Person — Excavation',
-    cert_number: 'CPE-TN-12044',
-    issued_date: '2022-11-05',
-    expiry_date: '2026-03-05',
-    status: 'pending_renewal',
-  },
-  {
-    id: 7,
-    employee_id: 6,
-    employee_name: 'Brandon Lewis',
-    cert_type: 'Forklift Operator',
-    cert_number: 'FORK-TN-66230',
-    issued_date: '2023-08-18',
-    expiry_date: '2026-08-18',
-    status: 'active',
-  },
+const CERTS = [
+  { id: 1, name: 'Cole Notgrass',  cert: 'OSHA 30-Hour Construction',        num: 'OSHA-30-88421',  issued: '2024-03-15', expires: '2029-03-15', status: 'active' },
+  { id: 2, name: 'Connor Webb',    cert: 'OSHA 10-Hour Construction',        num: 'OSHA-10-77205',  issued: '2023-06-01', expires: '2028-06-01', status: 'active' },
+  { id: 3, name: 'Zach Monroe',    cert: 'OSHA 10-Hour Construction',        num: 'OSHA-10-66382',  issued: '2022-11-15', expires: '2027-11-15', status: 'active' },
+  { id: 4, name: 'Joseph Hall',    cert: 'First Aid / CPR / AED',            num: 'ARC-FA-20458',   issued: '2024-04-10', expires: '2026-04-10', status: 'pending_renewal' },
+  { id: 5, name: 'Abi Darnell',    cert: 'First Aid / CPR / AED',            num: 'ARC-FA-31022',   issued: '2024-05-01', expires: '2026-05-01', status: 'active' },
+  { id: 6, name: 'Zach Monroe',    cert: 'Confined Space Entry',              num: 'CSE-TN-30891',   issued: '2023-01-12', expires: '2026-01-12', status: 'expired' },
+  { id: 7, name: 'Alex Torres',    cert: 'Competent Person — Excavation',    num: 'CPE-TN-12044',   issued: '2022-11-05', expires: '2026-03-05', status: 'pending_renewal' },
+  { id: 8, name: 'Connor Webb',    cert: 'Forklift Operator',                 num: 'FORK-TN-66230',  issued: '2023-08-18', expires: '2026-08-18', status: 'active' },
 ];
 
-/* ── Helpers ──────────────────────────────────────────────────────────── */
-
-const INCIDENT_STATUS_STYLES = {
-  open:              { bg: 'var(--status-loss-bg)',    color: 'var(--status-loss)' },
-  investigating:     { bg: 'var(--status-warning-bg)', color: 'var(--status-warning)' },
-  corrective_action: { bg: 'var(--accent-bg)',         color: 'var(--accent)' },
-  closed:            { bg: 'var(--status-profit-bg)',  color: 'var(--status-profit)' },
+const INCIDENT_STATUS = {
+  open:              { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'Open' },
+  investigating:     { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)', label: 'Investigating' },
+  corrective_action: { color: '#3b82f6',               bg: 'rgba(59,130,246,0.12)', label: 'Corrective Action' },
+  closed:            { color: 'var(--status-profit)',  bg: 'rgba(34,197,94,0.12)',  label: 'Closed' },
 };
 
-const INCIDENT_TYPE_LABELS = {
-  near_miss:        'Near Miss',
-  first_aid:        'First Aid',
-  recordable:       'Recordable',
-  lost_time:        'Lost Time',
-  property_damage:  'Property Damage',
+const SEVERITY_COLOR = {
+  low:    { color: 'var(--status-profit)',  bg: 'rgba(34,197,94,0.12)' },
+  medium: { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)' },
+  high:   { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)' },
 };
 
-const INCIDENT_TYPE_ICONS = {
-  near_miss:        AlertTriangle,
-  first_aid:        ShieldCheck,
-  recordable:       Flame,
-  lost_time:        Ban,
-  property_damage:  Zap,
+const CERT_STATUS = {
+  active:          { color: 'var(--status-profit)',  bg: 'rgba(34,197,94,0.12)',   label: 'Active' },
+  pending_renewal: { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)', label: 'Pending Renewal' },
+  expired:         { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'Expired' },
 };
 
-const SEVERITY_STYLES = {
-  low:    { bg: 'var(--status-profit-bg)',  color: 'var(--status-profit)' },
-  medium: { bg: 'var(--status-warning-bg)', color: 'var(--status-warning)' },
-  high:   { bg: 'var(--status-loss-bg)',    color: 'var(--status-loss)' },
-  critical: { bg: 'color-mix(in srgb, var(--status-loss) 15%, transparent)', color: 'var(--status-loss)' },
-};
-
-const CERT_STATUS_STYLES = {
-  active:          { bg: 'var(--status-profit-bg)',  color: 'var(--status-profit)' },
-  expired:         { bg: 'var(--status-loss-bg)',    color: 'var(--status-loss)' },
-  pending_renewal: { bg: 'var(--status-warning-bg)', color: 'var(--status-warning)' },
-};
-
-const CERT_STATUS_LABELS = {
-  active:          'Active',
-  expired:         'Expired',
-  pending_renewal: 'Pending Renewal',
-};
-
-function daysUntil(dateStr) {
-  if (!dateStr) return null;
-  const now = new Date();
-  const target = new Date(dateStr);
-  return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+function daysUntil(d) {
+  return Math.ceil((new Date(d) - new Date()) / 86400000);
 }
-
-/* ── Tabs ───────────────────────────────────────────────────────────────── */
-
-const TABS = [
-  { key: 'incidents',      label: 'Incidents',      icon: AlertTriangle },
-  { key: 'toolbox_talks',  label: 'Toolbox Talks',  icon: Users },
-  { key: 'certifications', label: 'Certifications', icon: Award },
-];
-
-/* ── KPI Card ───────────────────────────────────────────────────────────── */
-
-function KpiCard({ icon: Icon, label, value, accent }) {
-  return (
-    <div
-      className="rounded-lg p-4"
-      style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={14} style={{ color: accent ? 'var(--status-loss)' : 'var(--accent)' }} />
-        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-          {label}
-        </span>
-      </div>
-      <div className="text-xl font-bold num" style={{ color: accent ? 'var(--status-loss)' : 'var(--text-primary)' }}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-/* ── Main Component ─────────────────────────────────────────────────────── */
 
 export default function Safety() {
-  const [activeTab, setActiveTab] = useState('incidents');
+  const [tab, setTab] = useState('incidents');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [expandedId, setExpandedId] = useState(null);
 
-  // API calls
-  const { data: dashboardData, loading, error, isDemo } = useApi(
-    () => api.safetyDashboard(),
-    []
-  );
-  const { data: incidentsData } = useApi(() => api.safetyIncidents({}), []);
-  const { data: talksData } = useApi(() => api.toolboxTalks({}), []);
-  const { data: certsData } = useApi(() => api.certifications({}), []);
+  const thBase = { padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--color-brand-border)', textAlign: 'left' };
 
-  const dashboard = dashboardData || demoDashboard;
-  const incidents = incidentsData || (loading ? [] : demoIncidents);
-  const talks = talksData || (loading ? [] : demoToolboxTalks);
-  const certs = certsData || (loading ? [] : demoCertifications);
-
-  if (loading) return <PageLoading />;
-  if (error && !incidents.length) return <ErrorState message={error} />;
+  const openIncidents = INCIDENTS.filter(i => i.status === 'open' || i.status === 'investigating').length;
+  const daysSinceIncident = Math.ceil((new Date() - new Date('2026-02-18')) / 86400000);
 
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
-
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Safety &amp; Compliance</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            Incident tracking, toolbox talks, and certification management
-          </p>
-        </div>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-          style={{ background: 'var(--accent)', color: '#fff' }}
-        >
-          <AlertTriangle size={14} /> Report Incident
-        </button>
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Safety &amp; Compliance</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>Incident tracking, toolbox talks, and certifications</p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard
-          icon={ShieldCheck}
-          label="Days Since Incident"
-          value={dashboard.days_since_incident}
-        />
-        <KpiCard
-          icon={AlertTriangle}
-          label="Open Incidents"
-          value={dashboard.open_incidents}
-          accent={dashboard.open_incidents > 0}
-        />
-        <KpiCard
-          icon={FileText}
-          label="YTD Incidents"
-          value={dashboard.total_incidents_ytd}
-        />
-        <KpiCard
-          icon={Users}
-          label="Talks This Month"
-          value={dashboard.toolbox_talks_this_month}
-        />
-        <KpiCard
-          icon={Award}
-          label="Expiring Certs"
-          value={dashboard.expiring_certifications}
-          accent={dashboard.expiring_certifications > 0}
-        />
-      </div>
-
-      {/* Tab Bar */}
-      <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-elevated)' }}>
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-              style={{
-                background: isActive ? 'var(--color-brand-card)' : 'transparent',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                border: isActive ? '1px solid var(--color-brand-border)' : '1px solid transparent',
-              }}
-            >
-              <Icon size={14} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'incidents' && <IncidentsTab incidents={incidents} />}
-      {activeTab === 'toolbox_talks' && <ToolboxTalksTab talks={talks} />}
-      {activeTab === 'certifications' && <CertificationsTab certs={certs} />}
-    </div>
-  );
-}
-
-/* ── Incidents Tab ──────────────────────────────────────────────────────── */
-
-function IncidentsTab({ incidents }) {
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-
-  const filtered = incidents.filter((inc) => {
-    if (statusFilter && inc.status !== statusFilter) return false;
-    if (typeFilter && inc.incident_type !== typeFilter) return false;
-    return true;
-  });
-
-  return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-xs outline-none"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-medium)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <option value="">All Statuses</option>
-          <option value="open">Open</option>
-          <option value="investigating">Investigating</option>
-          <option value="corrective_action">Corrective Action</option>
-          <option value="closed">Closed</option>
-        </select>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-xs outline-none"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-medium)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <option value="">All Types</option>
-          <option value="near_miss">Near Miss</option>
-          <option value="first_aid">First Aid</option>
-          <option value="recordable">Recordable</option>
-          <option value="lost_time">Lost Time</option>
-          <option value="property_damage">Property Damage</option>
-        </select>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="mc-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Severity</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>OSHA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((inc) => {
-              const statusStyle = INCIDENT_STATUS_STYLES[inc.status] || INCIDENT_STATUS_STYLES.open;
-              const sevStyle = SEVERITY_STYLES[inc.severity] || SEVERITY_STYLES.low;
-              const TypeIcon = INCIDENT_TYPE_ICONS[inc.incident_type] || AlertTriangle;
-              return (
-                <tr key={inc.id}>
-                  <td className="num">
-                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                      {shortDate(inc.incident_date)}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-1.5">
-                      <TypeIcon size={14} style={{ color: sevStyle.color, flexShrink: 0 }} />
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {INCIDENT_TYPE_LABELS[inc.incident_type] || inc.incident_type}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
-                      style={{ background: sevStyle.bg, color: sevStyle.color }}
-                    >
-                      {inc.severity}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="min-w-0 max-w-xs">
-                      <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
-                        {inc.description}
-                      </p>
-                      <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                        Reported by {inc.reported_by}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <span
-                      className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded whitespace-nowrap"
-                      style={{ background: statusStyle.bg, color: statusStyle.color }}
-                    >
-                      {inc.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td>
-                    {inc.osha_recordable ? (
-                      <span
-                        className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
-                        style={{ background: 'var(--status-loss-bg)', color: 'var(--status-loss)' }}
-                      >
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                        No
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={6} className="text-center text-sm py-8" style={{ color: 'var(--text-tertiary)' }}>
-                  No incidents match your filters
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-/* ── Toolbox Talks Tab ──────────────────────────────────────────────────── */
-
-function ToolboxTalksTab({ talks }) {
-  return (
-    <div className="space-y-4">
-      <div className="panel-head">
-        <h2 className="panel-title">Recent Toolbox Talks</h2>
-        <p className="panel-sub">{talks.length} talk{talks.length !== 1 ? 's' : ''} conducted</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {talks.map((talk) => (
-          <div
-            key={talk.id}
-            className="rounded-lg p-4"
-            style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-          >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                  {talk.topic}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 mt-3">
-              <div className="flex items-center gap-2 text-xs">
-                <Clock size={12} style={{ color: 'var(--text-tertiary)' }} />
-                <span style={{ color: 'var(--text-secondary)' }}>{shortDate(talk.conducted_date)}</span>
-                <span style={{ color: 'var(--text-tertiary)' }}>&middot;</span>
-                <span className="num" style={{ color: 'var(--text-secondary)' }}>{talk.duration_minutes} min</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <HardHat size={12} style={{ color: 'var(--text-tertiary)' }} />
-                <span style={{ color: 'var(--text-secondary)' }}>{talk.conducted_by}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <Users size={12} style={{ color: 'var(--text-tertiary)' }} />
-                <span className="num" style={{ color: 'var(--text-secondary)' }}>{talk.attendees} attendee{talk.attendees !== 1 ? 's' : ''}</span>
-              </div>
-            </div>
-
-            {talk.notes && (
-              <p className="text-xs mt-3 line-clamp-2" style={{ color: 'var(--text-tertiary)' }}>
-                {talk.notes}
-              </p>
-            )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+        {[
+          ['Days Since Incident', daysSinceIncident, daysSinceIncident < 7 ? 'var(--status-loss)' : 'var(--status-profit)'],
+          ['Open Incidents', openIncidents, openIncidents > 0 ? 'var(--status-loss)' : 'var(--status-profit)'],
+          ['YTD Incidents', INCIDENTS.length, 'var(--text-primary)'],
+          ['Talks This Month', TOOLBOX_TALKS.length, '#3b82f6'],
+          ['Expiring Certs', CERTS.filter(c => c.status !== 'active').length, 'var(--status-warning)'],
+        ].map(([label, val, color]) => (
+          <div key={label} style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 8, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color }}>{val}</div>
           </div>
         ))}
       </div>
 
-      {talks.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No toolbox talks recorded yet</p>
+      {openIncidents > 0 && (
+        <div style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <AlertTriangle size={15} style={{ color: 'var(--status-loss)', flexShrink: 0 }} />
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            <strong style={{ color: 'var(--status-loss)' }}>{openIncidents} open incident{openIncidents > 1 ? 's' : ''}</strong> require attention and corrective action documentation.
+          </div>
         </div>
       )}
-    </div>
-  );
-}
 
-/* ── Certifications Tab ─────────────────────────────────────────────────── */
-
-function CertificationsTab({ certs }) {
-  const [statusFilter, setStatusFilter] = useState('');
-
-  const filtered = certs.filter((c) => {
-    if (statusFilter && c.status !== statusFilter) return false;
-    return true;
-  });
-
-  return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg text-xs outline-none"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-medium)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="expired">Expired</option>
-          <option value="pending_renewal">Pending Renewal</option>
-        </select>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--color-brand-border)' }}>
+        {[['incidents','Incidents'],['toolbox','Toolbox Talks'],['certs','Certifications']].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            padding: '10px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'none',
+            color: tab === key ? '#3b82f6' : 'var(--text-secondary)',
+            borderBottom: `2px solid ${tab === key ? '#3b82f6' : 'transparent'}`,
+          }}>{label}</button>
+        ))}
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="mc-table">
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Certification</th>
-              <th>Cert #</th>
-              <th>Issued</th>
-              <th>Expiry</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((cert) => {
-              const statusStyle = CERT_STATUS_STYLES[cert.status] || CERT_STATUS_STYLES.active;
-              const remaining = daysUntil(cert.expiry_date);
-              const expiryWarning = remaining !== null && remaining <= 90 && cert.status !== 'expired';
-              return (
-                <tr key={cert.id}>
-                  <td>
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {cert.employee_name || `Employee #${cert.employee_id}`}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-1.5">
-                      <Award size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {cert.cert_type}
-                      </span>
+      {tab === 'incidents' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {INCIDENTS.map(inc => {
+            const sc = INCIDENT_STATUS[inc.status] || INCIDENT_STATUS.open;
+            const sev = SEVERITY_COLOR[inc.severity] || SEVERITY_COLOR.low;
+            const proj = PROJECTS.find(p => p.id === inc.project);
+            const isExpanded = expandedId === inc.id;
+            return (
+              <div key={inc.id} style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+                <div onClick={() => setExpandedId(isExpanded ? null : inc.id)} style={{ padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: sev.bg, color: sev.color, textTransform: 'capitalize' }}>{inc.severity}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: sc.bg, color: sc.color }}>{sc.label}</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{inc.type} &mdash; {proj?.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{inc.desc}</div>
+                  </div>
+                  <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{inc.date}</div>
+                  {inc.osha && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'rgba(251,113,133,0.15)', color: 'var(--status-loss)' }}>OSHA</span>}
+                </div>
+                {isExpanded && (
+                  <div style={{ padding: '0 18px 16px', borderTop: '1px solid var(--color-brand-border)', paddingTop: 14 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 6 }}>Root Cause</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{inc.root}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 6 }}>Corrective Action</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{inc.action}</div>
+                      </div>
                     </div>
-                  </td>
-                  <td>
-                    <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>
-                      {cert.cert_number}
-                    </span>
-                  </td>
-                  <td className="num">
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {shortDate(cert.issued_date)}
-                    </span>
-                  </td>
-                  <td className="num">
-                    <div>
-                      <span
-                        className="text-xs"
-                        style={{ color: cert.status === 'expired' ? 'var(--status-loss)' : expiryWarning ? 'var(--status-warning)' : 'var(--text-secondary)' }}
-                      >
-                        {shortDate(cert.expiry_date)}
-                      </span>
-                      {expiryWarning && remaining !== null && (
-                        <div className="text-[10px]" style={{ color: 'var(--status-warning)' }}>
-                          {remaining <= 0 ? 'Overdue' : `${remaining} days left`}
-                        </div>
-                      )}
-                      {cert.status === 'expired' && (
-                        <div className="text-[10px]" style={{ color: 'var(--status-loss)' }}>
-                          Expired
-                        </div>
-                      )}
+                    <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-tertiary)' }}>Reported by: {inc.reporter}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === 'toolbox' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+          {TOOLBOX_TALKS.map(t => {
+            const proj = PROJECTS.find(p => p.id === t.project);
+            return (
+              <div key={t.id} style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: '16px 18px' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>{t.topic}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {[
+                    ['Date', t.date],
+                    ['Project', proj?.name],
+                    ['Conductor', t.conductor],
+                    ['Attendees', `${t.attendees} people`],
+                    ['Duration', `${t.mins} min`],
+                  ].map(([label, val]) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                      <span style={{ color: 'var(--text-tertiary)' }}>{label}</span>
+                      <span style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{val}</span>
                     </div>
-                  </td>
-                  <td>
-                    <span
-                      className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded whitespace-nowrap"
-                      style={{ background: statusStyle.bg, color: statusStyle.color }}
-                    >
-                      {CERT_STATUS_LABELS[cert.status] || cert.status}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={6} className="text-center text-sm py-8" style={{ color: 'var(--text-tertiary)' }}>
-                  No certifications match your filters
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                  ))}
+                </div>
+                {t.notes && <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-tertiary)', borderTop: '1px solid var(--color-brand-border)', paddingTop: 8 }}>{t.notes}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === 'certs' && (
+        <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              {['Employee','Certification','Cert #','Issued','Expires','Status'].map(h => (
+                <th key={h} style={thBase}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {CERTS.map(c => {
+                const sc = CERT_STATUS[c.status] || CERT_STATUS.active;
+                const days = daysUntil(c.expires);
+                return (
+                  <tr key={c.id} style={{ borderTop: '1px solid var(--color-brand-border)' }}>
+                    <td style={{ padding: '11px 14px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{c.cert}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{c.num}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>{c.issued}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 11, fontFamily: 'monospace', color: days <= 90 ? 'var(--status-warning)' : 'var(--text-tertiary)' }}>
+                      {c.expires}{days <= 90 ? ` (${days}d)` : ''}
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: sc.bg, color: sc.color }}>{sc.label}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

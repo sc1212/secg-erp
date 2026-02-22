@@ -1,1312 +1,334 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Activity, AlertCircle, ArrowDownRight, ArrowUpRight, Banknote, Building2, Calendar, CheckCircle, Clock, CreditCard, DollarSign, FileText, Filter, Navigation, Receipt, RefreshCw, Send, Table, TrendingUp } from 'lucide-react';
-import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine,
-} from 'recharts';
-import { useApi } from '../hooks/useApi';
-import { useThemeColors } from '../hooks/useThemeColors';
-import { api } from '../lib/api';
-import DemoBanner from '../components/DemoBanner';
+import { Search } from 'lucide-react';
+import { money } from '../lib/format';
 import KPICard from '../components/KPICard';
+import { Banknote, FileText, Receipt, TrendingUp, CreditCard, Building2 } from 'lucide-react';
+import { useThemeColors } from '../hooks/useThemeColors';
 import ChartTooltip from '../components/ChartTooltip';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-const tabs = ['overview', 'ar', 'ap', 'pl', 'sync', 'snapshots'];
+const TABS = ['Transactions', 'AR Aging', 'AP Summary', 'Cash Flow'];
 
-const tabLabels = {
-  overview: 'Overview',
-  ar: 'Receivables',
-  ap: 'Payables',
-  pl: 'P&L',
-  sync: 'QB Sync',
-  snapshots: 'Snapshots',
+const TRANSACTIONS = [
+  { date: '2026-02-22', project: 'Riverside Custom',    vendor: 'Thompson Framing',  desc: 'Framing labor — Week 6',          amount: -18400, type: 'AP' },
+  { date: '2026-02-21', project: 'Elm St Multifamily',  vendor: 'Elm Dev Partners',  desc: 'Draw #2 received',                amount:  85000, type: 'AR' },
+  { date: '2026-02-20', project: 'Oak Creek',           vendor: 'Miller Concrete',   desc: 'Foundation pour',                 amount: -14200, type: 'AP' },
+  { date: '2026-02-20', project: 'Johnson Office TI',   vendor: 'Williams Electric', desc: 'Electrical invoice',             amount: -12400, type: 'AP' },
+  { date: '2026-02-19', project: 'Magnolia Spec',       vendor: 'Johnson Properties', desc: 'Invoice #1024 payment',          amount:  58000, type: 'AR' },
+  { date: '2026-02-18', project: 'Walnut Spec',         vendor: 'Anderson Paint',    desc: 'Paint labor — interior',         amount:  -6800, type: 'AP' },
+  { date: '2026-02-17', project: 'Riverside Custom',    vendor: 'David & Linda Rivers', desc: 'Draw #1 received',            amount:  58000, type: 'AR' },
+  { date: '2026-02-15', project: 'Oak Creek',           vendor: 'Clark HVAC',        desc: 'HVAC rough-in deposit',          amount:  -8200, type: 'AP' },
+  { date: '2026-02-14', project: 'Smith Residence',     vendor: 'SECG',              desc: 'Retainage billing #1',           amount:  24250, type: 'AR' },
+  { date: '2026-02-12', project: 'Zion Mechanical',     vendor: 'Zion Church',       desc: 'Final invoice payment',          amount:  28800, type: 'AR' },
+  { date: '2026-02-10', project: 'Magnolia Spec',       vendor: 'Davis Plumbing',    desc: 'Plumbing rough-in',              amount:  -9800, type: 'AP' },
+  { date: '2026-02-08', project: 'Elm St Multifamily',  vendor: 'Thompson Framing',  desc: 'Framing crew — floor 2',         amount: -42000, type: 'AP' },
+  { date: '2026-02-05', project: 'Johnson Office TI',   vendor: 'Martinez Drywall',  desc: 'Drywall — main office',          amount:  -8400, type: 'AP' },
+  { date: '2026-02-04', project: 'Walnut Spec',         vendor: 'SECG Spec',         desc: 'Pre-sale deposit received',      amount:  27500, type: 'AR' },
+  { date: '2026-02-01', project: 'Riverside Custom',    vendor: '84 Lumber',         desc: 'Lumber — 2x10 joists',           amount:  -8240, type: 'AP' },
+  { date: '2026-01-30', project: 'Elm St Multifamily',  vendor: 'City of Nashville', desc: 'Permits & fees',                 amount:  -4800, type: 'AP' },
+  { date: '2026-01-28', project: 'Oak Creek',           vendor: 'Earthworks Inc',    desc: 'Site grading complete',          amount: -12000, type: 'AP' },
+  { date: '2026-01-25', project: 'Magnolia Spec',       vendor: 'Brown Roofing',     desc: 'Roof installation complete',     amount: -14200, type: 'AP' },
+  { date: '2026-01-22', project: 'Zion Mechanical',     vendor: 'Clark HVAC',        desc: 'MEP services — partial',         amount:  -9800, type: 'AP' },
+  { date: '2026-01-20', project: 'Johnson Office TI',   vendor: 'Johnson Properties', desc: 'Owner invoice #003',            amount:  48000, type: 'AR' },
+  { date: '2026-01-15', project: 'Smith Residence',     vendor: 'SECG',              desc: 'Preliminary design deposit',     amount:  12000, type: 'AR' },
+  { date: '2026-01-12', project: 'Elm St Multifamily',  vendor: 'Elm Dev Partners',  desc: 'Draw #1 received',              amount: 120000, type: 'AR' },
+  { date: '2026-01-10', project: 'Riverside Custom',    vendor: 'Miller Concrete',   desc: 'Garage slab',                   amount:  -6400, type: 'AP' },
+  { date: '2026-01-08', project: 'Walnut Spec',         vendor: 'Davis Plumbing',    desc: 'Rough-in labor',                amount:  -7200, type: 'AP' },
+  { date: '2026-01-05', project: 'Magnolia Spec',       vendor: 'Clark HVAC',        desc: 'HVAC system install',           amount: -18800, type: 'AP' },
+];
+
+const AR_AGING = [
+  { project: 'Elm St Multifamily',  client: 'Elm Dev Partners',    invoice: 'Draw #3',    amount: 120000, issued: '2026-01-28', age: 25, status: 'outstanding', current: 120000, d30: 0, d60: 0, d90: 0 },
+  { project: 'Riverside Custom',    client: 'David & Linda Rivers', invoice: 'Draw #2',   amount:  58000, issued: '2026-02-10', age: 12, status: 'outstanding', current: 58000,  d30: 0, d60: 0, d90: 0 },
+  { project: 'Magnolia Spec',       client: 'SECG Spec Division',  invoice: 'Draw #2',    amount:  58000, issued: '2026-01-31', age: 22, status: 'outstanding', current: 58000,  d30: 0, d60: 0, d90: 0 },
+  { project: 'Johnson Office TI',   client: 'Johnson Properties',  invoice: 'Invoice #4',  amount:  24200, issued: '2026-01-10', age: 43, status: 'overdue',     current: 0,      d30: 24200, d60: 0, d90: 0 },
+  { project: 'Smith Residence',     client: 'Robert & Carol Smith', invoice: 'Retainage #1', amount: 24250, issued: '2025-12-20', age: 64, status: 'overdue', current: 0, d30: 0, d60: 24250, d90: 0 },
+  { project: 'Oak Creek',           client: 'Oak Creek Holdings',  invoice: 'Invoice #2',  amount:  18000, issued: '2025-11-10', age: 104, status: 'overdue',   current: 0,      d30: 0,      d60: 0,    d90: 18000 },
+  { project: 'Walnut Spec',         client: 'SECG Spec Division',  invoice: 'Pre-sale',    amount:   9950, issued: '2026-02-15', age: 7,  status: 'outstanding', current: 9950,   d30: 0, d60: 0, d90: 0 },
+];
+
+const AP_SUMMARY = [
+  { vendor: 'Thompson Framing',  amount: 42000, due: '2026-02-28', project: 'Elm St Multifamily', status: 'due_soon' },
+  { vendor: 'Williams Electric', amount: 12400, due: '2026-02-26', project: 'Johnson Office TI',  status: 'overdue' },
+  { vendor: 'Miller Concrete',   amount: 14200, due: '2026-03-05', project: 'Oak Creek',           status: 'upcoming' },
+  { vendor: 'Clark HVAC',        amount:  8200, due: '2026-02-25', project: 'Oak Creek',           status: 'due_soon' },
+  { vendor: '84 Lumber',         amount: 10284, due: '2026-03-01', project: 'Riverside Custom',   status: 'upcoming' },
+  { vendor: 'Davis Plumbing',    amount:  9800, due: '2026-03-08', project: 'Magnolia Spec',       status: 'upcoming' },
+  { vendor: 'Anderson Paint',    amount:  6800, due: '2026-03-10', project: 'Walnut Spec',         status: 'upcoming' },
+  { vendor: 'Martinez Drywall',  amount:  8400, due: '2026-02-24', project: 'Johnson Office TI',  status: 'overdue' },
+  { vendor: 'Brown Roofing',     amount: 14200, due: '2026-03-15', project: 'Magnolia Spec',       status: 'upcoming' },
+];
+
+const CASH_FLOW_WEEKS = [
+  { week: 'Wk 1',  inflow: 95000,  outflow: 78000,  net: 17000  },
+  { week: 'Wk 2',  inflow: 60000,  outflow: 82000,  net: -22000 },
+  { week: 'Wk 3',  inflow: 116000, outflow: 72400,  net: 43600  },
+  { week: 'Wk 4',  inflow: 85000,  outflow: 90000,  net: -5000  },
+  { week: 'Wk 5',  inflow: 120000, outflow: 88000,  net: 32000  },
+  { week: 'Wk 6',  inflow: 70000,  outflow: 76000,  net: -6000  },
+  { week: 'Wk 7',  inflow: 95000,  outflow: 85000,  net: 10000  },
+  { week: 'Wk 8',  inflow: 105000, outflow: 92000,  net: 13000  },
+  { week: 'Wk 9',  inflow: 88000,  outflow: 96000,  net: -8000  },
+  { week: 'Wk 10', inflow: 130000, outflow: 78000,  net: 52000  },
+  { week: 'Wk 11', inflow: 72000,  outflow: 88000,  net: -16000 },
+  { week: 'Wk 12', inflow: 98000,  outflow: 82000,  net: 16000  },
+];
+
+const AP_STATUS_COLOR = {
+  overdue:   { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'Overdue' },
+  due_soon:  { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)', label: 'Due Soon' },
+  upcoming:  { color: 'var(--status-profit)',  bg: 'rgba(52,211,153,0.12)', label: 'Upcoming' },
 };
-
-const tabIcons = {
-  overview: DollarSign,
-  ar: Receipt,
-  ap: CreditCard,
-  pl: TrendingUp,
-  sync: RefreshCw,
-  snapshots: Table,
+const AR_STATUS_COLOR = {
+  overdue:     { color: 'var(--status-loss)',    bg: 'rgba(251,113,133,0.12)', label: 'Overdue' },
+  outstanding: { color: 'var(--status-warning)', bg: 'rgba(251,191,36,0.12)', label: 'Outstanding' },
 };
 
 export default function Financials() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const tc = useThemeColors();
+  const initTab = searchParams.get('tab') === 'ar' ? 'AR Aging' : searchParams.get('tab') === 'ap' ? 'AP Summary' : searchParams.get('tab') === 'cash' ? 'Cash Flow' : 'Transactions';
+  const [tab, setTab]     = useState(initTab);
+  const [txSearch, setTxSearch] = useState('');
+  const [txType, setTxType]     = useState('All');
 
-  const validTabs = tabs;
-  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'overview';
-  const [tab, setTab] = useState(initialTab);
+  const totalAR = AR_AGING.reduce((s, r) => s + r.amount, 0);
+  const totalAP = AP_SUMMARY.reduce((s, r) => s + r.amount, 0);
 
-  // API calls with demo fallbacks
-  const { data: arData, isDemo: arDemo } = useApi(() => api.ar(), []);
-  const { data: cashData, isDemo: cashDemo } = useApi(() => api.cashForecastWeekly(), []);
-  const { data: txData, isDemo: txDemo } = useApi(() => api.transactions(), []);
+  const filteredTx = useMemo(() => TRANSACTIONS.filter(tx => {
+    const matchType = txType === 'All' || tx.type === txType;
+    const q = txSearch.toLowerCase();
+    const matchSearch = !q || tx.project.toLowerCase().includes(q) || tx.vendor.toLowerCase().includes(q) || tx.desc.toLowerCase().includes(q);
+    return matchType && matchSearch;
+  }), [txSearch, txType]);
 
-  const isDemo = arDemo || cashDemo || txDemo;
+  // AR aging buckets
+  const arCurrent = AR_AGING.reduce((s, r) => s + r.current, 0);
+  const ar30      = AR_AGING.reduce((s, r) => s + r.d30, 0);
+  const ar60      = AR_AGING.reduce((s, r) => s + r.d60, 0);
+  const ar90      = AR_AGING.reduce((s, r) => s + r.d90, 0);
 
-  // Use API data or fallbacks
-  const arInvoices = arData || demoARInvoices;
-  const cashForecast = cashData?.length ? cashData : demoCashForecast;
-  const transactions = txData?.length ? txData : demoTransactions;
+  let runningBalance = 284320;
+  const cfWithBalance = CASH_FLOW_WEEKS.map(w => {
+    runningBalance += w.net;
+    return { ...w, balance: runningBalance };
+  });
 
-  function handleTabChange(t) {
-    setTab(t);
-    setSearchParams({ tab: t });
-  }
-
-  // KPI computations
-  const cashOnHand = 247800;
-  const cashMoM = 3.2;
-  const arOutstanding = useMemo(() => {
-    const openInvoices = arInvoices.filter((inv) => inv.status !== 'paid');
-    return {
-      total: openInvoices.reduce((s, inv) => s + (inv.balance ?? inv.amount ?? 0), 0),
-      count: openInvoices.length,
-    };
-  }, [arInvoices]);
-  const apDue = 42600;
-  const netPosition = cashOnHand + arOutstanding.total - apDue;
+  const thBase = { padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', borderBottom: '1px solid var(--color-brand-border)', textAlign: 'left' };
 
   return (
-    <div className="space-y-6">
-      {isDemo && <DemoBanner />}
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Financial Overview</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>As of February 22, 2026</p>
+      </div>
 
-      {/* ── Page Header ─────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      {/* KPI Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
+        <KPICard label="Cash in Bank"     value="$284,320"           icon={Banknote}    trend={3.1} />
+        <KPICard label="Effective Cash"   value="$127,840"           icon={Banknote}    sub="After payroll + AP" />
+        <KPICard label="AR Outstanding"   value={money(totalAR)}     icon={FileText}    sub="7 invoices" />
+        <KPICard label="AP Outstanding"   value={money(totalAP)}     icon={Receipt}     trend={-4.2} />
+        <KPICard label="Revenue MTD"      value="$482,000"           icon={TrendingUp}  trend={8.4} />
+        <KPICard label="Gross Margin"     value="16.8%"              icon={TrendingUp}  trend={1.2} />
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--color-brand-border)', overflowX: 'auto' }}>
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            padding: '10px 18px', fontSize: 13, fontWeight: tab === t ? 600 : 400, cursor: 'pointer',
+            border: 'none', background: 'transparent', whiteSpace: 'nowrap',
+            color: tab === t ? '#3b82f6' : 'var(--text-secondary)',
+            borderBottom: tab === t ? '2px solid #3b82f6' : '2px solid transparent',
+            transition: 'all 0.15s',
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {/* Tab: Transactions */}
+      {tab === 'Transactions' && (
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Financial Command Center
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-          </p>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
+              <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }} />
+              <input value={txSearch} onChange={e => setTxSearch(e.target.value)} placeholder="Search project, vendor, or description..." style={{ width: '100%', paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8, borderRadius: 8, border: '1px solid var(--color-brand-border)', background: 'var(--color-brand-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            {['All','AR','AP'].map(t => (
+              <button key={t} onClick={() => setTxType(t)} style={{ padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${txType === t ? '#3b82f6' : 'var(--color-brand-border)'}`, background: txType === t ? 'rgba(59,130,246,0.14)' : 'transparent', color: txType === t ? '#3b82f6' : 'var(--text-secondary)', transition: 'all 0.15s' }}>{t}</button>
+            ))}
+          </div>
+          <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {[['Date','left'],['Project','left'],['Vendor / Party','left'],['Description','left'],['Amount','right'],['Type','left']].map(([h,a]) => (
+                      <th key={h} style={{ ...thBase, textAlign: a }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTx.map((tx, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid var(--color-brand-border)', cursor: 'pointer', transition: 'background 0.12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                      onClick={() => navigate(tx.type === 'AR' ? '/financials?tab=ar' : '/payments')}
+                    >
+                      <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{tx.date}</td>
+                      <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-primary)' }}>{tx.project}</td>
+                      <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{tx.vendor}</td>
+                      <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{tx.desc}</td>
+                      <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: tx.amount > 0 ? 'var(--status-profit)' : 'var(--status-loss)' }}>
+                        {tx.amount > 0 ? '+' : ''}{money(tx.amount)}
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: tx.type === 'AR' ? 'rgba(52,211,153,0.12)' : 'rgba(251,113,133,0.12)', color: tx.type === 'AR' ? 'var(--status-profit)' : 'var(--status-loss)' }}>{tx.type}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-        <button
-          className="ghost-btn"
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-          onClick={() => handleTabChange('sync')}
-        >
-          <RefreshCw size={14} />
-          QB Synced 2m ago
-        </button>
-      </div>
-
-      {/* ── Tab Navigation ──────────────────────────────────────────── */}
-      <div className="flex gap-1 pb-px overflow-x-auto" style={{ borderBottom: '1px solid var(--color-brand-border)' }}>
-        {tabs.map((t) => {
-          const TabIcon = tabIcons[t];
-          return (
-            <button
-              key={t}
-              onClick={() => handleTabChange(t)}
-              className="mc-tab"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                ...(tab === t ? { color: 'var(--accent)', borderBottomColor: 'var(--accent)' } : {}),
-              }}
-            >
-              <TabIcon size={14} />
-              {tabLabels[t]}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── OVERVIEW TAB ────────────────────────────────────────────── */}
-      {tab === 'overview' && (
-        <OverviewTab
-          tc={tc}
-          navigate={navigate}
-          cashOnHand={cashOnHand}
-          cashMoM={cashMoM}
-          arOutstanding={arOutstanding}
-          apDue={apDue}
-          netPosition={netPosition}
-          cashForecast={cashForecast}
-          transactions={transactions}
-          handleTabChange={handleTabChange}
-        />
       )}
 
-      {/* ── AP TAB ──────────────────────────────────────────────────── */}
-      {tab === 'ap' && <APTab navigate={navigate} />}
-
-      {/* ── AR TAB ──────────────────────────────────────────────────── */}
-      {tab === 'ar' && <ARTab arInvoices={arInvoices} navigate={navigate} />}
-
-      {/* ── P&L TAB ─────────────────────────────────────────────────── */}
-      {tab === 'pl' && <PLTab navigate={navigate} />}
-
-      {/* ── SYNC TAB ────────────────────────────────────────────────── */}
-      {tab === 'sync' && <SyncTab />}
-
-      {/* ── SNAPSHOTS TAB ───────────────────────────────────────────── */}
-      {tab === 'snapshots' && <SnapshotsTab />}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   OVERVIEW TAB — the Financial Command Center
-   ═══════════════════════════════════════════════════════════════════════════════ */
-function OverviewTab({ tc, navigate, cashOnHand, cashMoM, arOutstanding, apDue, netPosition, cashForecast, transactions, handleTabChange }) {
-  return (
-    <div className="space-y-6">
-      {/* ── KPI Row ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Financial KPIs">
-        <div
-          onClick={() => navigate('/cash-flow')}
-          style={{ cursor: 'pointer' }}
-        >
-          <KPICard
-            label="Cash on Hand"
-            value={money(cashOnHand)}
-            icon={Banknote}
-            trend={cashMoM}
-            sub="MoM"
-          />
-        </div>
-        <div
-          onClick={() => handleTabChange('ar')}
-          style={{ cursor: 'pointer' }}
-        >
-          <KPICard
-            label="AR Outstanding"
-            value={money(arOutstanding.total)}
-            icon={FileText}
-            sub={`${arOutstanding.count} invoices`}
-          />
-        </div>
-        <div
-          onClick={() => handleTabChange('ap')}
-          style={{ cursor: 'pointer' }}
-        >
-          <KPICard
-            label="AP Due"
-            value={money(apDue)}
-            icon={Receipt}
-            sub="Due < 7 days"
-          />
-        </div>
-        <div
-          onClick={() => navigate('/cash-flow')}
-          style={{ cursor: 'pointer' }}
-        >
-          <KPICard
-            label="Net Position"
-            value={money(netPosition)}
-            icon={DollarSign}
-            sub="Cash + AR - AP"
-          />
-        </div>
-      </div>
-
-      {/* ── Charts: Cash Forecast + Money In/Out ─────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* 13-Week Cash Flow Forecast (Area chart) */}
-        <div
-          className="rounded-lg p-5"
-          style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-        >
-          <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
-            <div>
-              <h3 className="panel-title">13-Week Cash Forecast</h3>
-              <div className="panel-sub">Cash position with danger zone highlighted</div>
-            </div>
-            <button className="ghost-btn" onClick={() => navigate('/cash-flow')}>
-              Full View &rarr;
-            </button>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={cashForecast} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="cashGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={tc.accent} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={tc.accent} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="dangerGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={tc.statusLoss} stopOpacity={0.15} />
-                  <stop offset="95%" stopColor={tc.statusLoss} stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
-              <XAxis dataKey="weekLabel" stroke={tc.textSecondary} fontSize={10} interval={1} />
-              <YAxis tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={10} />
-              <Tooltip content={<ChartTooltip />} />
-              <ReferenceLine
-                y={75000}
-                stroke={tc.statusWarning}
-                strokeDasharray="6 3"
-                strokeWidth={1.5}
-                label={{ value: '$75K min', fill: tc.statusWarning, fontSize: 10, position: 'insideTopLeft' }}
-              />
-              <Area
-                type="monotone"
-                dataKey="cash"
-                stroke={tc.accent}
-                fill="url(#cashGradient)"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 4, fill: tc.accent }}
-                name="Cash Position"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Money In vs Out (Dual Bar chart) */}
-        <div
-          className="rounded-lg p-5"
-          style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-        >
-          <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
-            <div>
-              <h3 className="panel-title">Money In vs Out</h3>
-              <div className="panel-sub">6-month comparison</div>
-            </div>
-            <button className="ghost-btn" onClick={() => handleTabChange('pl')}>
-              P&L &rarr;
-            </button>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={demoMoneyInOut} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
-              <XAxis dataKey="month" stroke={tc.textSecondary} fontSize={11} />
-              <YAxis tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={10} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="moneyIn" fill={tc.statusProfit} fillOpacity={0.8} radius={[3, 3, 0, 0]} name="Money In" />
-              <Bar dataKey="moneyOut" fill={tc.statusLoss} fillOpacity={0.8} radius={[3, 3, 0, 0]} name="Money Out" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ── ACTION ITEMS ─────────────────────────────────────────── */}
-      <div
-        className="rounded-lg p-5"
-        style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-      >
-        <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
-          <h3 className="panel-title">Action Items</h3>
-          <span className="text-xs font-semibold" style={{ color: 'var(--status-loss)' }}>
-            {demoActionItems.filter((a) => a.severity === 'critical').length} urgent
-          </span>
-        </div>
-        <div className="space-y-2" aria-live="polite" aria-label="Financial action items">
-          {demoActionItems.map((item) => {
-            const Icon = item.icon;
-            const style = severityStyles[item.severity] || severityStyles.info;
-            return (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
-                style={{ background: style.bg }}
-                onClick={() => navigate(item.ctaRoute)}
-              >
-                <Icon size={18} style={{ color: style.color, flexShrink: 0 }} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                      {item.title}
-                    </span>
-                    <span
-                      className="text-xs font-bold"
-                      style={{ color: style.color, fontVariantNumeric: 'tabular-nums' }}
-                    >
-                      {money(item.amount)}
-                    </span>
-                  </div>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                    {item.description}
-                  </p>
-                </div>
-                <button
-                  className="text-xs font-semibold whitespace-nowrap transition-colors"
-                  style={{ color: 'var(--accent)' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(item.ctaRoute);
-                  }}
-                >
-                  {item.type === 'ap_due' ? 'Pay Now' : 'View'} &rarr;
-                </button>
+      {/* Tab: AR Aging */}
+      {tab === 'AR Aging' && (
+        <div>
+          {/* Aging summary bar */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+            {[['Current', arCurrent, 'var(--status-profit)'],['1–30 Days', ar30, 'var(--status-warning)'],['31–60 Days', ar60, '#f97316'],['60+ Days', ar90, 'var(--status-loss)']].map(([label, val, color]) => (
+              <div key={label} style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 8, padding: '14px 16px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-secondary)', marginBottom: 6 }}>{label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color }}>{money(val)}</div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 13-Week Cash Flow Forecast ─────────────────────────────────────────── */}
-      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold">13-Week Cash Flow Forecast</h3>
-          <button onClick={() => setShowCashFlowTable((current) => !current)} className="text-xs font-medium text-brand-gold lg:hover:text-brand-gold-light transition-colors">
-            {showCashFlowTable ? 'View Chart' : 'View as Table'}
-          </button>
-        </div>
-        {showCashFlowTable ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-brand-border text-left text-xs text-brand-muted uppercase">
-                  <th className="pb-3 pr-4">Week</th>
-                  <th className="pb-3 pr-4 num">Inflows</th>
-                  <th className="pb-3 pr-4 num">Outflows</th>
-                  <th className="pb-3 num">Net</th>
-                </tr>
-              </thead>
-              <tbody>
-                {demoWeekly.map((row) => (
-                  <tr key={row.week} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
-                    <td className="py-3 pr-4 font-medium">{row.week}</td>
-                    <td className="py-3 pr-4 num">{moneyExact(row.inflows)}</td>
-                    <td className="py-3 pr-4 num">{moneyExact(row.outflows)}</td>
-                    <td className={`py-3 num ${row.net < 0 ? 'text-danger' : 'text-ok'}`}>{row.net < 0 ? `(${moneyExact(Math.abs(row.net))})` : moneyExact(row.net)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            ))}
           </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={demoWeekly}>
-              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-              <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
-              <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="inflows" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
-              <Area type="monotone" dataKey="outflows" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-      </div>
-
-      {/* ── Project Financial Health + Recent Transactions ────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Project Financial Health */}
-        <div
-          className="rounded-lg p-5"
-          style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-        >
-          <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
-            <div>
-              <h3 className="panel-title">Project Financial Health</h3>
-              <div className="panel-sub">{demoProjectHealth.length} active projects</div>
-            </div>
-            <button className="ghost-btn" onClick={() => navigate('/projects')}>
-              All Projects &rarr;
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="mc-table" style={{ fontSize: 13 }}>
+          <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th>Project</th>
-                  <th className="right">Budget</th>
-                  <th style={{ minWidth: 120 }}>Consumed</th>
-                  <th className="text-center">Status</th>
+                  {['Project','Client','Invoice / Draw','Amount','Issued','Age (days)','Status'].map(h => (
+                    <th key={h} style={{ ...thBase, textAlign: h === 'Amount' ? 'right' : 'left' }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {demoProjectHealth.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="cursor-pointer"
-                    onClick={() => navigate(`/projects/${p.id}`)}
-                    style={{ transition: 'background 0.15s' }}
-                  >
-                    <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.code}</div>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)', marginTop: 1 }}>{p.name}</div>
-                    </td>
-                    <td className="num right" style={{ fontWeight: 500 }}>{money(p.budget, true)}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div
-                          style={{
-                            flex: 1,
-                            height: 6,
-                            borderRadius: 3,
-                            background: 'var(--border-subtle)',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: `${Math.min(p.pctUsed, 100)}%`,
-                              height: '100%',
-                              borderRadius: 3,
-                              background: trafficLightColors[p.status],
-                              transition: 'width 0.3s ease',
-                            }}
-                          />
-                        </div>
-                        <span
-                          className="text-xs font-semibold"
-                          style={{ color: trafficLightColors[p.status], minWidth: 32, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}
-                        >
-                          {p.pctUsed}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: 10,
-                          height: 10,
-                          borderRadius: '50%',
-                          background: trafficLightColors[p.status],
-                          boxShadow: `0 0 6px ${trafficLightColors[p.status]}40`,
-                        }}
-                        title={`${p.margin}% margin`}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {AR_AGING.map((r, i) => {
+                  const sc = AR_STATUS_COLOR[r.status] || AR_STATUS_COLOR.outstanding;
+                  return (
+                    <tr key={i} style={{ borderTop: '1px solid var(--color-brand-border)', cursor: 'pointer', transition: 'background 0.12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{r.project}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{r.client}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{r.invoice}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'monospace', textAlign: 'right' }}>{money(r.amount)}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{r.issued}</td>
+                      <td style={{ padding: '11px 14px', fontSize: 12, fontFamily: 'monospace', color: r.age > 60 ? 'var(--status-loss)' : r.age > 30 ? 'var(--status-warning)' : 'var(--text-primary)' }}>{r.age}</td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: sc.bg, color: sc.color }}>{sc.label}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr style={{ borderTop: '2px solid var(--color-brand-border)', background: 'rgba(255,255,255,0.02)' }}>
+                  <td colSpan={3} style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>TOTAL AR OUTSTANDING</td>
+                  <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{money(totalAR)}</td>
+                  <td colSpan={3} />
+                </tr>
               </tbody>
             </table>
           </div>
         </div>
+      )}
 
-        {/* Recent Transactions */}
-        <div
-          className="rounded-lg p-5"
-          style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-        >
-          <div className="panel-head" style={{ padding: 0, border: 'none', marginBottom: 16 }}>
-            <div>
-              <h3 className="panel-title">Recent Transactions</h3>
-              <div className="panel-sub">Activity feed</div>
-            </div>
-            <button className="ghost-btn" onClick={() => handleTabChange('pl')}>
-              View All &rarr;
-            </button>
-          </div>
-          <TransactionFeed transactions={transactions} navigate={navigate} />
-        </div>
-      </div>
-
-      {/* ── QuickBooks Sync Status Bar ───────────────────────────── */}
-      <QBSyncBar syncData={demoQBSync} onClick={() => handleTabChange('sync')} />
-    </div>
-  );
-}
-
-/* ─── Transaction Feed Component ────────────────────────────────────────────── */
-function TransactionFeed({ transactions, navigate }) {
-  const grouped = useMemo(() => {
-    const groups = {};
-    transactions.forEach((tx) => {
-      const g = tx.group || 'earlier';
-      if (!groups[g]) groups[g] = [];
-      groups[g].push(tx);
-    });
-    return groups;
-  }, [transactions]);
-
-  const groupLabels = { today: 'Today', yesterday: 'Yesterday', earlier: 'Earlier This Week' };
-  const groupOrder = ['today', 'yesterday', 'earlier'];
-
-  return (
-    <div className="space-y-4" style={{ maxHeight: 380, overflowY: 'auto' }}>
-      {groupOrder.map((groupKey) => {
-        const items = grouped[groupKey];
-        if (!items?.length) return null;
-        return (
-          <div key={groupKey}>
-            <div
-              className="text-[10px] font-bold uppercase tracking-wider mb-2"
-              style={{ color: 'var(--text-tertiary)' }}
-            >
-              {groupLabels[groupKey]}
-            </div>
-            <div className="space-y-1">
-              {items.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
-                  style={{ background: 'transparent' }}
-                  onClick={() => navigate(`/financials?tab=pl`)}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-elevated)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  {/* Direction Arrow */}
-                  <div
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: tx.direction === 'in'
-                        ? 'rgba(52,211,153,0.1)'
-                        : 'rgba(251,113,133,0.1)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {tx.direction === 'in' ? (
-                      <ArrowDownRight size={16} style={{ color: 'var(--status-profit)', transform: 'scaleX(-1)' }} />
-                    ) : (
-                      <ArrowUpRight size={16} style={{ color: 'var(--status-loss)', transform: 'scaleX(-1)' }} />
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                      {tx.description}
-                    </div>
-                    <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                      {tx.category} &middot; {tx.counterparty}
-                    </div>
-                  </div>
-
-                  {/* Amount */}
-                  <div
-                    className="text-sm font-bold whitespace-nowrap"
-                    style={{
-                      color: tx.direction === 'in' ? 'var(--status-profit)' : 'var(--status-loss)',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}
-                  >
-                    {tx.direction === 'in' ? '+' : '-'}{money(tx.amount)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ─── QuickBooks Sync Bar ───────────────────────────────────────────────────── */
-function QBSyncBar({ syncData, onClick }) {
-  const data = syncData || demoQBSync;
-  const lastSyncTime = data.lastSync
-    ? new Date(data.lastSync).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    : '—';
-
-  return (
-    <div
-      className="rounded-lg px-5 py-3 flex items-center justify-between cursor-pointer transition-colors"
-      style={{
-        background: 'var(--color-brand-card)',
-        border: '1px solid var(--color-brand-border)',
-      }}
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: data.connected ? 'var(--status-profit)' : 'var(--status-loss)',
-            boxShadow: data.connected ? '0 0 8px rgba(52,211,153,0.5)' : '0 0 8px rgba(251,113,133,0.5)',
-          }}
-        />
-        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-          QuickBooks Online
-        </span>
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {data.connected ? 'Connected' : 'Disconnected'}
-        </span>
-      </div>
-      <div className="flex items-center gap-4">
-        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          Last sync: {lastSyncTime}
-        </span>
-        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          {data.pendingItems} pending
-        </span>
-        <span className="text-xs font-medium" style={{ color: 'var(--accent)' }}>
-          Details &rarr;
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   AP TAB
-   ═══════════════════════════════════════════════════════════════════════════════ */
-function APTab({ navigate }) {
-  const [filter, setFilter] = useState('all');
-  const { data: apData } = useApi(() => api.recurring(), []);
-
-  const bills = demoAPBills;
-  const filtered = filter === 'all'
-    ? bills
-    : bills.filter((b) => b.status === filter);
-
-  const totalOverdue = bills.filter((b) => b.status === 'overdue').reduce((s, b) => s + b.amount, 0);
-  const totalDueSoon = bills.filter((b) => b.status === 'due_soon').reduce((s, b) => s + b.amount, 0);
-  const totalScheduled = bills.filter((b) => b.status === 'scheduled').reduce((s, b) => s + b.amount, 0);
-
-  return (
-    <div className="space-y-4">
-      {/* AP KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Total AP" value={money(bills.reduce((s, b) => s + b.amount, 0))} icon={Receipt} sub={`${bills.length} bills`} />
-        <KPICard label="Overdue" value={money(totalOverdue)} icon={AlertCircle} sub={`${bills.filter((b) => b.status === 'overdue').length} bills`} />
-        <KPICard label="Due This Week" value={money(totalDueSoon)} icon={Clock} sub={`${bills.filter((b) => b.status === 'due_soon').length} bills`} />
-        <KPICard label="Scheduled" value={money(totalScheduled)} icon={Calendar} sub={`${bills.filter((b) => b.status === 'scheduled').length} bills`} />
-      </div>
-
-      {/* Filter pills */}
-      <div className="flex gap-2">
-        {[
-          { key: 'all', label: 'All' },
-          { key: 'overdue', label: 'Overdue' },
-          { key: 'due_soon', label: 'Due Soon' },
-          { key: 'scheduled', label: 'Scheduled' },
-        ].map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
-            style={{
-              background: filter === f.key ? 'var(--accent)' : 'var(--bg-elevated)',
-              color: filter === f.key ? '#fff' : 'var(--text-secondary)',
-              border: `1px solid ${filter === f.key ? 'var(--accent)' : 'var(--color-brand-border)'}`,
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* AP Table */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-      >
-        <div className="overflow-x-auto">
-          <table className="mc-table">
+      {/* Tab: AP Summary */}
+      {tab === 'AP Summary' && (
+        <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th>Vendor</th>
-                <th>Invoice</th>
-                <th className="right">Amount</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th className="text-center">Action</th>
+                {['Vendor','Amount','Due Date','Project','Status'].map(h => (
+                  <th key={h} style={{ ...thBase, textAlign: h === 'Amount' ? 'right' : 'left' }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((bill) => (
-                <tr
-                  key={bill.id}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/vendors`)}
-                >
-                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{bill.vendor}</td>
-                  <td className="font-mono text-xs" style={{ color: 'var(--accent)' }}>{bill.invoice}</td>
-                  <td className="num right" style={{ fontWeight: 600 }}>{moneyExact(bill.amount)}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{shortDate(bill.due)}</td>
-                  <td>
-                    <span
-                      className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
-                      style={{
-                        background: bill.status === 'overdue'
-                          ? 'rgba(251,113,133,0.15)'
-                          : bill.status === 'due_soon'
-                            ? 'rgba(251,191,36,0.15)'
-                            : 'rgba(52,211,153,0.15)',
-                        color: bill.status === 'overdue'
-                          ? 'var(--status-loss)'
-                          : bill.status === 'due_soon'
-                            ? 'var(--status-warning)'
-                            : 'var(--status-profit)',
-                      }}
-                    >
-                      {bill.status === 'due_soon' ? 'Due Soon' : bill.status === 'overdue' ? 'Overdue' : 'Scheduled'}
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    <button
-                      className="text-xs font-semibold transition-colors"
-                      style={{ color: 'var(--accent)' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate('/payments');
-                      }}
-                    >
-                      Pay Now &rarr;
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   AR TAB
-   ═══════════════════════════════════════════════════════════════════════════════ */
-function ARTab({ arInvoices, navigate }) {
-  const [filter, setFilter] = useState('all');
-
-  const invoices = arInvoices || demoARInvoices;
-  const filtered = filter === 'all'
-    ? invoices
-    : invoices.filter((inv) => inv.status === filter);
-
-  const totalOverdue = invoices.filter((inv) => inv.status === 'overdue').reduce((s, inv) => s + (inv.balance ?? inv.amount), 0);
-  const totalSent = invoices.filter((inv) => inv.status === 'sent').reduce((s, inv) => s + (inv.balance ?? inv.amount), 0);
-  const totalPaid = invoices.filter((inv) => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
-
-  return (
-    <div className="space-y-4">
-      {/* AR KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          label="Total Outstanding"
-          value={money(totalOverdue + totalSent)}
-          icon={FileText}
-          sub={`${invoices.filter((i) => i.status !== 'paid').length} invoices`}
-        />
-        <KPICard
-          label="Overdue"
-          value={money(totalOverdue)}
-          icon={AlertCircle}
-          sub={`${invoices.filter((i) => i.status === 'overdue').length} invoices`}
-        />
-        <KPICard
-          label="Sent / Pending"
-          value={money(totalSent)}
-          icon={Send}
-          sub={`${invoices.filter((i) => i.status === 'sent').length} invoices`}
-        />
-        <KPICard
-          label="Collected (MTD)"
-          value={money(totalPaid)}
-          icon={CheckCircle}
-          sub={`${invoices.filter((i) => i.status === 'paid').length} payments`}
-        />
-      </div>
-
-      {/* Filter pills */}
-      <div className="flex gap-2">
-        {[
-          { key: 'all', label: 'All' },
-          { key: 'overdue', label: 'Overdue' },
-          { key: 'sent', label: 'Sent' },
-          { key: 'paid', label: 'Paid' },
-        ].map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
-            style={{
-              background: filter === f.key ? 'var(--accent)' : 'var(--bg-elevated)',
-              color: filter === f.key ? '#fff' : 'var(--text-secondary)',
-              border: `1px solid ${filter === f.key ? 'var(--accent)' : 'var(--color-brand-border)'}`,
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* AR Table */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-      >
-        <div className="overflow-x-auto">
-          <table className="mc-table">
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Client</th>
-                <th>Project</th>
-                <th className="right">Amount</th>
-                <th className="right">Balance</th>
-                <th>Due</th>
-                <th>Status</th>
-                <th className="text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((inv) => (
-                <tr
-                  key={inv.id}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/financials?tab=ar`)}
-                >
-                  <td className="font-mono text-xs" style={{ color: 'var(--accent)' }}>{inv.invoice_number}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{shortDate(inv.date_issued)}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{shortDate(inv.date_due)}</td>
-                  <td className="num right">{moneyExact(inv.amount)}</td>
-                  <td className="num right" style={{ fontWeight: 600 }}>{moneyExact(inv.balance)}</td>
-                  <td style={{ color: inv.status === 'overdue' ? 'var(--status-loss)' : 'var(--text-secondary)' }}>
-                    {shortDate(inv.due)}
-                    {inv.age > 0 && (
-                      <span className="text-[10px] font-bold ml-1" style={{ color: 'var(--status-loss)' }}>
-                        ({inv.age}d)
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${statusBadge(inv.status)}`}>
-                      {inv.status}
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    {inv.status === 'overdue' && (
-                      <button
-                        className="text-xs font-semibold transition-colors"
-                        style={{ color: 'var(--status-loss)' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate('/financials?tab=ar');
-                        }}
-                      >
-                        Send Reminder &rarr;
-                      </button>
-                    )}
-                    {inv.status === 'sent' && (
-                      <button
-                        className="text-xs font-semibold transition-colors"
-                        style={{ color: 'var(--accent)' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate('/financials?tab=ar');
-                        }}
-                      >
-                        View &rarr;
-                      </button>
-                    )}
-                    {inv.status === 'paid' && (
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Collected</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   P&L TAB
-   ═══════════════════════════════════════════════════════════════════════════════ */
-function PLTab({ navigate }) {
-  const { data: plData } = useApi(() => api.plSummary(), []);
-
-  const demoPL = {
-    revenue: [
-      { label: 'Contract Revenue', amount: 842000 },
-      { label: 'Change Orders', amount: 48200 },
-      { label: 'T&M Billings', amount: 24600 },
-      { label: 'Other Income', amount: 3800 },
-    ],
-    totalRevenue: 918600,
-    cogs: [
-      { label: 'Direct Labor', amount: 284000 },
-      { label: 'Materials', amount: 196400 },
-      { label: 'Subcontractors', amount: 148000 },
-      { label: 'Equipment Rental', amount: 32600 },
-      { label: 'Permits & Fees', amount: 8400 },
-    ],
-    totalCOGS: 669400,
-    grossProfit: 249200,
-    grossMargin: 27.1,
-    opex: [
-      { label: 'Office Salaries', amount: 68000 },
-      { label: 'Insurance', amount: 14200 },
-      { label: 'Rent & Utilities', amount: 8400 },
-      { label: 'Vehicle Expenses', amount: 6800 },
-      { label: 'Marketing', amount: 4200 },
-      { label: 'Professional Fees', amount: 3600 },
-      { label: 'Other G&A', amount: 7200 },
-    ],
-    totalOpex: 112400,
-    netIncome: 136800,
-    netMargin: 14.9,
-  };
-
-  const pl = plData || demoPL;
-
-  return (
-    <div className="space-y-4">
-      {/* P&L KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Revenue (YTD)" value={money(pl.totalRevenue)} icon={TrendingUp} trend={12.4} sub="vs prior year" />
-        <KPICard label="Gross Profit" value={money(pl.grossProfit)} icon={DollarSign} sub={`${pl.grossMargin}% margin`} />
-        <KPICard label="Operating Expenses" value={money(pl.totalOpex)} icon={CreditCard} trend={-3.2} sub="vs budget" />
-        <KPICard label="Net Income" value={money(pl.netIncome)} icon={Banknote} sub={`${pl.netMargin}% margin`} />
-      </div>
-
-      {/* P&L Statement */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-      >
-        <div className="panel-head" style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-brand-border)' }}>
-          <div>
-            <h3 className="panel-title">Profit & Loss Statement</h3>
-            <div className="panel-sub">Year-to-date through February 2026</div>
-          </div>
-          <button className="ghost-btn">Export PDF</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="mc-table" style={{ fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th className="right">Amount</th>
-                <th className="right">% of Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Revenue Section */}
-              <tr>
-                <td colSpan={3} style={{ fontWeight: 700, color: 'var(--text-primary)', paddingTop: 12, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Revenue
-                </td>
-              </tr>
-              {pl.revenue.map((r, i) => (
-                <tr key={`rev-${i}`} className="cursor-pointer" onClick={() => navigate('/financials?tab=pl')}>
-                  <td style={{ paddingLeft: 24, color: 'var(--text-secondary)' }}>{r.label}</td>
-                  <td className="num right">{money(r.amount)}</td>
-                  <td className="num right" style={{ color: 'var(--text-tertiary)' }}>{pct((r.amount / pl.totalRevenue) * 100)}</td>
-                </tr>
-              ))}
-              <tr style={{ background: 'var(--bg-elevated)' }}>
-                <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Total Revenue</td>
-                <td className="num right" style={{ fontWeight: 700, color: 'var(--status-profit)' }}>{money(pl.totalRevenue)}</td>
-                <td className="num right" style={{ fontWeight: 700 }}>100.0%</td>
-              </tr>
-
-              {/* COGS Section */}
-              <tr>
-                <td colSpan={3} style={{ fontWeight: 700, color: 'var(--text-primary)', paddingTop: 16, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Cost of Goods Sold
-                </td>
-              </tr>
-              {pl.cogs.map((c, i) => (
-                <tr key={`cogs-${i}`} className="cursor-pointer" onClick={() => navigate('/financials?tab=pl')}>
-                  <td style={{ paddingLeft: 24, color: 'var(--text-secondary)' }}>{c.label}</td>
-                  <td className="num right">{money(c.amount)}</td>
-                  <td className="num right" style={{ color: 'var(--text-tertiary)' }}>{pct((c.amount / pl.totalRevenue) * 100)}</td>
-                </tr>
-              ))}
-              <tr style={{ background: 'var(--bg-elevated)' }}>
-                <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Total COGS</td>
-                <td className="num right" style={{ fontWeight: 700, color: 'var(--status-loss)' }}>{money(pl.totalCOGS)}</td>
-                <td className="num right" style={{ fontWeight: 700 }}>{pct((pl.totalCOGS / pl.totalRevenue) * 100)}</td>
-              </tr>
-
-              {/* Gross Profit */}
-              <tr style={{ background: 'rgba(52,211,153,0.05)', borderTop: '2px solid var(--color-brand-border)' }}>
-                <td style={{ fontWeight: 800, color: 'var(--status-profit)', fontSize: 14 }}>Gross Profit</td>
-                <td className="num right" style={{ fontWeight: 800, color: 'var(--status-profit)', fontSize: 14 }}>{money(pl.grossProfit)}</td>
-                <td className="num right" style={{ fontWeight: 700, color: 'var(--status-profit)' }}>{pct(pl.grossMargin)}</td>
-              </tr>
-
-              {/* OpEx Section */}
-              <tr>
-                <td colSpan={3} style={{ fontWeight: 700, color: 'var(--text-primary)', paddingTop: 16, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Operating Expenses
-                </td>
-              </tr>
-              {pl.opex.map((o, i) => (
-                <tr key={`opex-${i}`} className="cursor-pointer" onClick={() => navigate('/financials?tab=pl')}>
-                  <td style={{ paddingLeft: 24, color: 'var(--text-secondary)' }}>{o.label}</td>
-                  <td className="num right">{money(o.amount)}</td>
-                  <td className="num right" style={{ color: 'var(--text-tertiary)' }}>{pct((o.amount / pl.totalRevenue) * 100)}</td>
-                </tr>
-              ))}
-              <tr style={{ background: 'var(--bg-elevated)' }}>
-                <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Total Operating Expenses</td>
-                <td className="num right" style={{ fontWeight: 700, color: 'var(--status-loss)' }}>{money(pl.totalOpex)}</td>
-                <td className="num right" style={{ fontWeight: 700 }}>{pct((pl.totalOpex / pl.totalRevenue) * 100)}</td>
-              </tr>
-
-              {/* Net Income */}
-              <tr style={{ background: 'rgba(52,211,153,0.08)', borderTop: '3px solid var(--color-brand-border)' }}>
-                <td style={{ fontWeight: 900, color: 'var(--text-primary)', fontSize: 15 }}>Net Income</td>
-                <td className="num right" style={{ fontWeight: 900, color: pl.netIncome >= 0 ? 'var(--status-profit)' : 'var(--status-loss)', fontSize: 15 }}>
-                  {money(pl.netIncome)}
-                </td>
-                <td className="num right" style={{ fontWeight: 800, color: pl.netIncome >= 0 ? 'var(--status-profit)' : 'var(--status-loss)' }}>
-                  {pct(pl.netMargin)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   SYNC TAB — QuickBooks Integration
-   ═══════════════════════════════════════════════════════════════════════════════ */
-function SyncTab() {
-  const data = demoQBSync;
-  const [syncing, setSyncing] = useState(false);
-
-  function handleManualSync() {
-    setSyncing(true);
-    setTimeout(() => setSyncing(false), 2000);
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Connection Status Hero */}
-      <div
-        className="rounded-lg p-6"
-        style={{
-          background: 'var(--color-brand-card)',
-          border: data.connected
-            ? '2px solid var(--status-profit)'
-            : '2px solid var(--status-loss)',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: data.connected ? 'rgba(52,211,153,0.1)' : 'rgba(251,113,133,0.1)',
-              }}
-            >
-              {data.connected ? (
-                <CheckCircle size={24} style={{ color: 'var(--status-profit)' }} />
-              ) : (
-                <AlertCircle size={24} style={{ color: 'var(--status-loss)' }} />
-              )}
-            </div>
-            <div>
-              <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                QuickBooks Online
-              </h3>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                {data.company}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span
-              className="px-3 py-1 rounded-full text-xs font-bold uppercase"
-              style={{
-                background: data.connected ? 'rgba(52,211,153,0.15)' : 'rgba(251,113,133,0.15)',
-                color: data.connected ? 'var(--status-profit)' : 'var(--status-loss)',
-              }}
-            >
-              {data.connected ? 'Connected' : 'Disconnected'}
-            </span>
-            <button
-              className="ghost-btn"
-              onClick={handleManualSync}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-              {syncing ? 'Syncing...' : 'Sync Now'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Sync Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="AR Records" value={data.arSynced} icon={FileText} sub="Synced" />
-        <KPICard label="AP Records" value={data.apSynced} icon={Receipt} sub="Synced" />
-        <KPICard label="Journal Entries" value={data.journalEntries} icon={Building2} sub="Total" />
-        <KPICard label="Pending Items" value={data.pendingItems} icon={Clock} sub="Awaiting sync" />
-      </div>
-
-      {/* Sync History */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-      >
-        <div className="panel-head" style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-brand-border)' }}>
-          <h3 className="panel-title">Sync History</h3>
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Last 24 hours</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="mc-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Type</th>
-                <th className="right">Records</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.syncHistory.map((entry) => (
-                <tr key={entry.id}>
-                  <td style={{ color: 'var(--text-secondary)' }}>
-                    {new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                  </td>
-                  <td>
-                    <span
-                      className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
-                      style={{
-                        background: entry.type === 'manual' ? 'rgba(56,189,248,0.15)' : 'var(--bg-elevated)',
-                        color: entry.type === 'manual' ? 'var(--accent)' : 'var(--text-secondary)',
-                      }}
-                    >
-                      {entry.type}
-                    </span>
-                  </td>
-                  <td className="num right" style={{ fontWeight: 600 }}>{entry.records}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{entry.duration}</td>
-                  <td>
-                    <span
-                      className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
-                      style={{
-                        background: entry.status === 'success'
-                          ? 'rgba(52,211,153,0.15)'
-                          : entry.status === 'warning'
-                            ? 'rgba(251,191,36,0.15)'
-                            : 'rgba(251,113,133,0.15)',
-                        color: entry.status === 'success'
-                          ? 'var(--status-profit)'
-                          : entry.status === 'warning'
-                            ? 'var(--status-warning)'
-                            : 'var(--status-loss)',
-                      }}
-                    >
-                      {entry.status}
-                    </span>
-                  </td>
-                  <td className="text-xs" style={{ color: 'var(--text-tertiary)', maxWidth: 200 }}>
-                    {entry.note || '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   SNAPSHOTS TAB
-   ═══════════════════════════════════════════════════════════════════════════════ */
-function SnapshotsTab() {
-  const demoSnapshots = [
-    { id: 1, date: '2026-02-22', type: 'Weekly', cashOnHand: 247800, arTotal: 186400, apTotal: 42600, netPosition: 391600, createdBy: 'System' },
-    { id: 2, date: '2026-02-15', type: 'Weekly', cashOnHand: 240100, arTotal: 192800, apTotal: 38200, netPosition: 394700, createdBy: 'System' },
-    { id: 3, date: '2026-02-08', type: 'Weekly', cashOnHand: 228400, arTotal: 178600, apTotal: 45100, netPosition: 361900, createdBy: 'System' },
-    { id: 4, date: '2026-02-01', type: 'Monthly', cashOnHand: 235600, arTotal: 168400, apTotal: 41800, netPosition: 362200, createdBy: 'Mike S.' },
-    { id: 5, date: '2026-01-25', type: 'Weekly', cashOnHand: 221300, arTotal: 174200, apTotal: 39600, netPosition: 355900, createdBy: 'System' },
-    { id: 6, date: '2026-01-18', type: 'Weekly', cashOnHand: 218700, arTotal: 181400, apTotal: 44200, netPosition: 355900, createdBy: 'System' },
-    { id: 7, date: '2026-01-01', type: 'Monthly', cashOnHand: 212400, arTotal: 156800, apTotal: 36400, netPosition: 332800, createdBy: 'Mike S.' },
-  ];
-
-  return (
-    <div className="space-y-4">
-      {/* Snapshot Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Point-in-time financial snapshots for trend analysis and compliance
-          </p>
-        </div>
-        <button
-          className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          style={{
-            background: 'var(--accent)',
-            color: '#fff',
-            border: 'none',
-          }}
-        >
-          Create Snapshot
-        </button>
-      </div>
-
-      {/* Snapshots Table */}
-      <div
-        className="rounded-lg overflow-hidden"
-        style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
-      >
-        <div className="overflow-x-auto">
-          <table className="mc-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th className="right">Cash on Hand</th>
-                <th className="right">AR Total</th>
-                <th className="right">AP Total</th>
-                <th className="right">Net Position</th>
-                <th>Created By</th>
-              </tr>
-            </thead>
-            <tbody>
-              {demoSnapshots.map((snap, index) => {
-                const prevSnap = demoSnapshots[index + 1];
-                const netChange = prevSnap ? snap.netPosition - prevSnap.netPosition : 0;
+              {AP_SUMMARY.map((a, i) => {
+                const sc = AP_STATUS_COLOR[a.status];
                 return (
-                  <tr key={snap.id} className="cursor-pointer">
-                    <td style={{ fontWeight: 600, color: 'var(--accent)' }}>{shortDate(snap.date)}</td>
-                    <td>
-                      <span
-                        className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
-                        style={{
-                          background: snap.type === 'Monthly' ? 'rgba(56,189,248,0.15)' : 'var(--bg-elevated)',
-                          color: snap.type === 'Monthly' ? 'var(--accent)' : 'var(--text-secondary)',
-                        }}
-                      >
-                        {snap.type}
-                      </span>
+                  <tr key={i} onClick={() => navigate('/payments')} style={{ borderTop: '1px solid var(--color-brand-border)', cursor: 'pointer', transition: 'background 0.12s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{a.vendor}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'monospace', textAlign: 'right' }}>{money(a.amount)}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: a.status === 'overdue' ? 'var(--status-loss)' : 'var(--text-secondary)' }}>{a.due}</td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>{a.project}</td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 5, background: sc.bg, color: sc.color }}>{sc.label}</span>
                     </td>
-                    <td className="num right">{money(snap.cashOnHand)}</td>
-                    <td className="num right">{money(snap.arTotal)}</td>
-                    <td className="num right">{money(snap.apTotal)}</td>
-                    <td className="num right" style={{ fontWeight: 700 }}>
-                      {money(snap.netPosition)}
-                      {netChange !== 0 && (
-                        <span
-                          className="text-[10px] font-bold ml-2"
-                          style={{ color: netChange > 0 ? 'var(--status-profit)' : 'var(--status-loss)' }}
-                        >
-                          {netChange > 0 ? '+' : ''}{money(netChange, true)}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{snap.createdBy}</td>
                   </tr>
                 );
               })}
+              <tr style={{ borderTop: '2px solid var(--color-brand-border)', background: 'rgba(255,255,255,0.02)' }}>
+                <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>TOTAL AP</td>
+                <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{money(totalAP)}</td>
+                <td colSpan={3} />
+              </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      )}
+
+      {/* Tab: Cash Flow */}
+      {tab === 'Cash Flow' && (
+        <div className="space-y-4">
+          <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, padding: 20 }}>
+            <div className="panel-head" style={{ marginBottom: 12 }}>
+              <h3 className="panel-title">12-Week Cash Flow Forecast</h3>
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={CASH_FLOW_WEEKS}>
+                <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
+                <XAxis dataKey="week" stroke={tc.textSecondary} fontSize={11} />
+                <YAxis tickFormatter={v => `$${v/1000}K`} stroke={tc.textSecondary} fontSize={11} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="inflow"  fill={tc.statusProfit} name="Inflows"  radius={[3,3,0,0]} />
+                <Bar dataKey="outflow" fill={tc.statusLoss}   name="Outflows" radius={[3,3,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)', borderRadius: 10, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Week','Inflows','Outflows','Net','Running Balance'].map((h,i) => (
+                    <th key={h} style={{ ...thBase, textAlign: i === 0 ? 'left' : 'right' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cfWithBalance.map((w, i) => (
+                  <tr key={i} style={{ borderTop: '1px solid var(--color-brand-border)' }}>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{w.week}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', color: 'var(--status-profit)' }}>{money(w.inflow)}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', color: 'var(--status-loss)' }}>{money(w.outflow)}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', fontWeight: 600, color: w.net >= 0 ? 'var(--status-profit)' : 'var(--status-loss)' }}>{w.net >= 0 ? '+' : ''}{money(w.net)}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', textAlign: 'right', color: 'var(--text-primary)' }}>{money(w.balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
