@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 
 const nav = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/', icon: LayoutDashboard, label: 'Operating System' },
+  { to: '/legacy-dashboard', icon: LayoutDashboard, label: 'Legacy Dashboard' },
   { to: '/projects', icon: FolderKanban, label: 'Projects' },
   { to: '/financials', icon: DollarSign, label: 'Financials' },
   { to: '/payments', icon: CreditCard, label: 'Payments' },
