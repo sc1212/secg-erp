@@ -23,7 +23,11 @@ async def lifespan(app: FastAPI):
     In production, use Alembic migrations instead.
     """
     if settings.debug:
-        Base.metadata.create_all(bind=engine)
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("DB not ready, skipping create_all: %s", exc)
     yield
 
 
