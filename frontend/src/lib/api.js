@@ -108,6 +108,36 @@ export const api = {
   submitDailyLog: (id) => request(`/daily-logs/${id}/submit`, { method: 'POST' }),
   reviewDailyLog: (id, reviewerId) => request(`/daily-logs/${id}/review?reviewer_id=${reviewerId}`, { method: 'POST' }),
 
+  // Weather
+  weatherWeekly: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/weather/weekly${q ? '?' + q : ''}`);
+  },
+  weatherImpacts: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/weather/impacts${q ? '?' + q : ''}`);
+  },
+  weatherRules: () => request('/weather/rules'),
+  createWeatherRule: (data) => request('/weather/rules', { method: 'POST', body: JSON.stringify(data) }),
+  weatherRefresh: () => request('/weather/refresh', { method: 'POST' }),
+
+  // Documents
+  documents: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/documents${q ? '?' + q : ''}`);
+  },
+  documentTypes: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/documents/types${q ? '?' + q : ''}`);
+  },
+  documentsExpiring: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/documents/expiring${q ? '?' + q : ''}`);
+  },
+  document: (id) => request(`/documents/${id}`),
+  createDocument: (data) => request('/documents', { method: 'POST', body: JSON.stringify(data) }),
+  updateDocument: (id, data) => request(`/documents/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
   // Admin
   adminStatus: () => request('/admin/status'),
 };

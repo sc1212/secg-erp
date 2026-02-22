@@ -11,6 +11,7 @@ import {
   Banknote, FileText, Receipt, FolderKanban,
   TrendingUp, Building2, CalendarDays, CreditCard,
   AlertTriangle, AlertCircle, Info, CheckCircle, Camera, Clock,
+  Cloud, CloudRain, Sun,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -90,6 +91,9 @@ export default function Dashboard() {
         <KPICard label="Bi-Weekly Payroll" value={money(payroll.biweekly_cost ?? 0)} icon={CalendarDays} sub={`Next: ${payroll.next_pay_date ?? '—'}`} />
         <KPICard label="Total Debt" value={money(debt.total_debt ?? 0)} icon={CreditCard} sub={`${debt.active_count ?? 0} active`} />
       </div>
+
+      {/* Weather Bar */}
+      <WeatherBar />
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -225,6 +229,59 @@ function TodaysLogs() {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+const WEATHER_ICONS = { 'Sunny': Sun, 'Clear': Sun, 'Partly Cloudy': Cloud, 'Cloudy': Cloud, 'Rain': CloudRain, 'Snow': Cloud };
+
+function WeatherBar() {
+  const navigate = useNavigate();
+  const { data } = useApi(() => api.weatherWeekly(), []);
+  const days = (data || []).slice(0, 5);
+
+  if (!days.length) return null;
+
+  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+  return (
+    <div
+      className="rounded-lg p-4 cursor-pointer"
+      style={{ background: 'var(--color-brand-card)', border: '1px solid var(--color-brand-border)' }}
+      onClick={() => navigate('/weather')}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>5-Day Weather</h3>
+        <span className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>View Details &rarr;</span>
+      </div>
+      <div className="grid grid-cols-5 gap-2">
+        {days.map((day, i) => {
+          const f = day.forecast;
+          const d = new Date(f.forecast_date + 'T12:00:00');
+          const WIcon = WEATHER_ICONS[f.conditions] || Cloud;
+          const hasImpact = day.affected_projects > 0;
+          const isStopWork = day.impacts?.some(im => im.severity === 'stop_work');
+          return (
+            <div key={f.forecast_date} className="text-center">
+              <div className="text-[10px] font-semibold" style={{ color: i === 0 ? 'var(--accent)' : 'var(--text-tertiary)' }}>
+                {i === 0 ? 'TODAY' : dayNames[d.getDay()]}
+              </div>
+              <div className="my-1 flex justify-center" style={{ color: hasImpact ? (isStopWork ? 'var(--status-loss)' : 'var(--status-warning)') : 'var(--text-secondary)' }}>
+                <WIcon size={20} />
+              </div>
+              <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
+                {f.temp_high_f}°<span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>/{f.temp_low_f}°</span>
+              </div>
+              <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{f.precipitation_pct}%</div>
+              {hasImpact && (
+                <div className="text-[9px] font-semibold mt-0.5" style={{ color: isStopWork ? 'var(--status-loss)' : 'var(--status-warning)' }}>
+                  {day.affected_projects} AFFECTED
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

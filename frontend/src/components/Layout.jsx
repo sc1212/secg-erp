@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, DollarSign, CreditCard,
   Users, Handshake, UserCog, ChevronLeft, ChevronRight,
   Bell, Search, Menu, X, Sun, Moon, Crosshair,
-  CalendarDays, FileText,
+  CalendarDays, FileText, CloudSun, FolderArchive,
 } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -22,6 +22,7 @@ const navSections = [
       { to: '/projects',   icon: FolderKanban, label: 'Projects' },
       { to: '/calendar',   icon: CalendarDays, label: 'Calendar' },
       { to: '/daily-logs', icon: FileText,     label: 'Daily Logs' },
+      { to: '/weather',    icon: CloudSun,     label: 'Weather' },
     ],
   },
   {
@@ -37,6 +38,12 @@ const navSections = [
     items: [
       { to: '/team', icon: UserCog, label: 'Team' },
       { to: '/crm',  icon: Users,   label: 'CRM' },
+    ],
+  },
+  {
+    label: 'Compliance',
+    items: [
+      { to: '/documents', icon: FolderArchive, label: 'Documents' },
     ],
   },
 ];
