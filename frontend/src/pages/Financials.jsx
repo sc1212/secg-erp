@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowDownRight, ArrowUpRight, CheckCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowDownRight, ArrowUpRight, Banknote, Building2, Calendar, CheckCircle, Clock, CreditCard, DollarSign, FileText, Receipt, RefreshCw, Send, TrendingUp } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine,
@@ -233,7 +233,7 @@ function OverviewTab({ tc, navigate, cashOnHand, cashMoM, arOutstanding, apDue, 
               <CartesianGrid strokeDasharray="3 3" stroke={tc.borderSubtle} />
               <XAxis dataKey="weekLabel" stroke={tc.textSecondary} fontSize={10} interval={1} />
               <YAxis tickFormatter={(v) => money(v, true)} stroke={tc.textSecondary} fontSize={10} />
-              <Tooltip content={<ForecastTooltip />} />
+              <Tooltip content={<ChartTooltip />} />
               <ReferenceLine
                 y={75000}
                 stroke={tc.statusWarning}
