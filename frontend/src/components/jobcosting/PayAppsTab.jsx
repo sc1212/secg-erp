@@ -22,7 +22,7 @@ export default function PayAppsTab({ project }) {
           { label: 'Retainage Held', value: totalRetainage },
           { label: 'Net Paid', value: totalNet },
         ].map((card) => (
-          <div key={card.label} className="bg-brand-card border border-brand-border rounded-xl p-4">
+          <div key={card.label} className="bg-brand-card border border-brand-border rounded-lg p-4">
             <div className="text-xs text-brand-muted">{card.label}</div>
             <div className="text-xl font-bold mt-1">{moneyExact(card.value)}</div>
           </div>
@@ -34,7 +34,7 @@ export default function PayAppsTab({ project }) {
         {payApps.map((pa) => {
           const isExpanded = expanded === pa.id;
           return (
-            <div key={pa.id} className="bg-brand-card border border-brand-border rounded-xl overflow-hidden hover:border-brand-gold/20 transition-colors">
+            <div key={pa.id} className="bg-brand-card border border-brand-border rounded-lg overflow-hidden hover:border-brand-gold/20 transition-colors">
               <button
                 onClick={() => setExpanded(isExpanded ? null : pa.id)}
                 className="w-full flex items-center justify-between px-5 py-4 text-left"

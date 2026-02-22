@@ -78,7 +78,7 @@ export default function Projects() {
             <Link
               key={p.id}
               to={`/projects/${p.id}`}
-              className="block bg-brand-card border border-brand-border rounded-xl p-5 hover:border-brand-gold/30 transition-colors group"
+              className="block bg-brand-card border border-brand-border rounded-lg p-5 hover:border-brand-gold/30 transition-colors group"
             >
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">

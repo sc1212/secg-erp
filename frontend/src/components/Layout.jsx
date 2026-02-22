@@ -4,25 +4,48 @@ import {
   LayoutDashboard, FolderKanban, DollarSign, CreditCard,
   Users, Handshake, UserCog, ChevronLeft, ChevronRight,
   Bell, Search, Menu, X, Sun, Moon, Crosshair,
+  CalendarDays, FileText, CloudSun, FolderArchive,
 } from 'lucide-react';
+import ErrorBoundary from './ErrorBoundary';
 
-const nav = [
-  { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/mission',   icon: Crosshair,       label: 'Mission Control' },
-  { to: '/projects',  icon: FolderKanban,    label: 'Projects' },
-  { to: '/financials',icon: DollarSign,      label: 'Financials' },
-  { to: '/payments',  icon: CreditCard,      label: 'Payments' },
-  { to: '/vendors',   icon: Handshake,       label: 'Vendors' },
-  { to: '/crm',       icon: Users,           label: 'CRM' },
-  { to: '/team',      icon: UserCog,         label: 'Team' },
-  { to: '/', icon: LayoutDashboard, label: 'Operating System' },
-  { to: '/legacy-dashboard', icon: LayoutDashboard, label: 'Legacy Dashboard' },
-  { to: '/projects', icon: FolderKanban, label: 'Projects' },
-  { to: '/financials', icon: DollarSign, label: 'Financials' },
-  { to: '/payments', icon: CreditCard, label: 'Payments' },
-  { to: '/vendors', icon: Handshake, label: 'Vendors' },
-  { to: '/crm', icon: Users, label: 'CRM' },
-  { to: '/team', icon: UserCog, label: 'Team' },
+const navSections = [
+  {
+    label: 'Command',
+    items: [
+      { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/mission',   icon: Crosshair,       label: 'Mission Control' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { to: '/projects',   icon: FolderKanban, label: 'Projects' },
+      { to: '/calendar',   icon: CalendarDays, label: 'Calendar' },
+      { to: '/daily-logs', icon: FileText,     label: 'Daily Logs' },
+      { to: '/weather',    icon: CloudSun,     label: 'Weather' },
+    ],
+  },
+  {
+    label: 'Finance',
+    items: [
+      { to: '/financials', icon: DollarSign, label: 'Financials' },
+      { to: '/payments',   icon: CreditCard, label: 'Payments' },
+      { to: '/vendors',    icon: Handshake,  label: 'Vendors' },
+    ],
+  },
+  {
+    label: 'People',
+    items: [
+      { to: '/team', icon: UserCog, label: 'Team' },
+      { to: '/crm',  icon: Users,   label: 'CRM' },
+    ],
+  },
+  {
+    label: 'Compliance',
+    items: [
+      { to: '/documents', icon: FolderArchive, label: 'Documents' },
+    ],
+  },
 ];
 
 function SideLink({ to, icon: Icon, label, collapsed }) {
@@ -33,6 +56,7 @@ function SideLink({ to, icon: Icon, label, collapsed }) {
       className={({ isActive }) =>
         `sidebar-link${isActive ? ' active' : ''}${collapsed ? ' collapsed' : ''}`
       }
+      title={collapsed ? label : undefined}
     >
       <Icon size={18} strokeWidth={1.75} />
       {!collapsed && <span>{label}</span>}
@@ -105,20 +129,25 @@ export default function Layout() {
           )}
         </div>
 
-        {/* Section label */}
-        {!collapsed && (
-          <div
-            className="px-4 pt-5 pb-1 text-[10px] font-semibold uppercase tracking-widest"
-            style={{ color: 'var(--sidebar-text)', opacity: 0.6 }}
-          >
-            Navigation
-          </div>
-        )}
-
-        {/* Nav */}
-        <nav className="flex-1 px-2 pb-3 space-y-0.5 overflow-y-auto">
-          {nav.map((n) => (
-            <SideLink key={n.to} {...n} collapsed={collapsed} />
+        {/* Nav sections */}
+        <nav className="flex-1 px-2 pb-3 overflow-y-auto">
+          {navSections.map((section) => (
+            <div key={section.label}>
+              {!collapsed && (
+                <div
+                  className="px-2 pt-5 pb-1 text-[10px] font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--sidebar-text)', opacity: 0.5 }}
+                >
+                  {section.label}
+                </div>
+              )}
+              {collapsed && <div className="pt-3" />}
+              <div className="space-y-0.5">
+                {section.items.map((n) => (
+                  <SideLink key={n.to} {...n} collapsed={collapsed} />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -130,8 +159,6 @@ export default function Layout() {
             borderTop: '1px solid var(--border-subtle)',
             color: 'var(--sidebar-text)',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--sidebar-text-active)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--sidebar-text)')}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -160,8 +187,6 @@ export default function Layout() {
               onClick={() => setMobileOpen(!mobileOpen)}
               className="lg:hidden transition-colors"
               style={{ color: 'var(--text-secondary)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
               aria-label="Toggle mobile menu"
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -169,7 +194,7 @@ export default function Layout() {
 
             {/* Search */}
             <div
-              className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm w-64 rounded"
+              className="search-wrap hidden sm:flex items-center gap-2 px-3 py-2 text-sm rounded"
               style={{
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-medium)',
@@ -181,13 +206,11 @@ export default function Layout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="topbar-right flex items-center gap-3">
             {/* Notification bell */}
             <button
               className="relative transition-colors"
               style={{ color: 'var(--text-secondary)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
               aria-label="Notifications"
             >
               <Bell size={18} />
@@ -199,14 +222,15 @@ export default function Layout() {
               </span>
             </button>
 
-            {/* Theme toggle */}
+            {/* Theme toggle — icon shows current state: Moon = dark, Sun = light */}
             <button
               className="theme-toggle"
               onClick={toggleTheme}
               aria-label={theme === 'midnight' ? 'Switch to Arctic Command (light mode)' : 'Switch to Midnight Studio (dark mode)'}
+              aria-pressed={theme === 'arctic'}
               title={theme === 'midnight' ? 'Arctic Command' : 'Midnight Studio'}
             >
-              {theme === 'midnight' ? <Sun size={15} /> : <Moon size={15} />}
+              {theme === 'midnight' ? <Moon size={15} /> : <Sun size={15} />}
             </button>
 
             {/* User avatar */}
@@ -228,7 +252,9 @@ export default function Layout() {
           className="flex-1 overflow-y-auto p-4 lg:p-6"
           style={{ background: 'var(--bg-base, #F8FAFC)', transition: 'background-color 0.25s ease' }}
         >
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

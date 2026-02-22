@@ -65,7 +65,7 @@ export default function Team() {
       {tab === 'roster' && (
         <div className="space-y-3">
           {demoEmployees.map((e) => (
-            <div key={e.id} className="bg-brand-card border border-brand-border rounded-xl p-5 hover:border-brand-gold/20 transition-colors">
+            <div key={e.id} className="bg-brand-card border border-brand-border rounded-lg p-5 hover:border-brand-gold/20 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-brand-gold/20 border border-brand-gold/40 flex items-center justify-center text-brand-gold text-sm font-semibold">

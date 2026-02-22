@@ -21,7 +21,7 @@ export default function ChangeOrdersTab({ project }) {
           { label: 'Approved Amount', value: totalApproved },
           { label: 'Pending Amount', value: totalPending },
         ].map((card) => (
-          <div key={card.label} className="bg-brand-card border border-brand-border rounded-xl p-4">
+          <div key={card.label} className="bg-brand-card border border-brand-border rounded-lg p-4">
             <div className="text-xs text-brand-muted">{card.label}</div>
             <div className="text-xl font-bold mt-1">{card.display || moneyExact(card.value)}</div>
           </div>
@@ -33,7 +33,7 @@ export default function ChangeOrdersTab({ project }) {
         {cos.map((co) => {
           const isExpanded = expanded === co.id;
           return (
-            <div key={co.id} className="bg-brand-card border border-brand-border rounded-xl overflow-hidden hover:border-brand-gold/20 transition-colors">
+            <div key={co.id} className="bg-brand-card border border-brand-border rounded-lg overflow-hidden hover:border-brand-gold/20 transition-colors">
               <button
                 onClick={() => setExpanded(isExpanded ? null : co.id)}
                 className="w-full flex items-center justify-between px-5 py-4 text-left"

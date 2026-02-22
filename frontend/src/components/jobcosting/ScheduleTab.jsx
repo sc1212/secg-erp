@@ -35,7 +35,7 @@ export default function ScheduleTab({ project }) {
           { label: 'In Progress', value: inProgress, total: milestones.length, color: 'text-brand-gold' },
           { label: 'Remaining', value: notStarted, total: milestones.length, color: 'text-brand-muted' },
         ].map((card) => (
-          <div key={card.label} className="bg-brand-card border border-brand-border rounded-xl p-4">
+          <div key={card.label} className="bg-brand-card border border-brand-border rounded-lg p-4">
             <div className="text-xs text-brand-muted">{card.label}</div>
             <div className={`text-2xl font-bold mt-1 ${card.color}`}>{card.value}</div>
             <div className="text-[10px] text-brand-muted">of {card.total} milestones</div>
@@ -44,7 +44,7 @@ export default function ScheduleTab({ project }) {
       </div>
 
       {/* Overall progress bar */}
-      <div className="bg-brand-card border border-brand-border rounded-xl p-4">
+      <div className="bg-brand-card border border-brand-border rounded-lg p-4">
         <div className="flex justify-between text-xs text-brand-muted mb-2">
           <span>Overall Progress</span>
           <span>{pct((completed / milestones.length) * 100)}</span>

@@ -28,7 +28,7 @@ export default function ForecastTab({ project }) {
   return (
     <div className="space-y-6">
       {/* Overall forecast summary */}
-      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+      <div className="bg-brand-card border border-brand-border rounded-lg p-5">
         <h3 className="text-sm font-semibold text-brand-muted uppercase tracking-wider mb-4">Project Forecast Summary</h3>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {[
