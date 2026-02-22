@@ -309,7 +309,6 @@ export default function CashFlow() {
               fontSize: 13,
               fontWeight: scenario === s ? 700 : 400,
               color: scenario === s ? 'var(--accent)' : 'var(--text-secondary)',
-              borderBottom: scenario === s ? '2px solid var(--accent)' : '2px solid transparent',
               background: 'transparent',
               border: 'none',
               borderBottom: scenario === s ? '2px solid var(--accent)' : '2px solid transparent',
