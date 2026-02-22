@@ -1,8 +1,9 @@
-// In production on Render, the API is at a separate URL.
-// In local dev, Vite proxies /api to localhost:8000.
+// In local dev, Vite proxies /api → localhost:8000.
+// In production the API lives on a separate Render service.
 import { getAuthToken } from './auth';
 
-const BASE = import.meta.env.VITE_API_URL || '/api';
+const BASE = import.meta.env.VITE_API_URL
+  || (import.meta.env.DEV ? '/api' : 'https://secg-erp-api.onrender.com/api');
 
 async function request(path, options = {}) {
   const token = getAuthToken();
