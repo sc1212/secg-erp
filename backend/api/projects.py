@@ -19,10 +19,10 @@ from sqlalchemy.orm import Session, joinedload
 
 from backend.core.deps import get_db
 from backend.models.core import (
-    ChangeOrder, CostCode, CostEvent, PayApp, Project,
+    ChangeOrder, CostCode, PayApp, Project,
     ProjectStatus, SOVLine,
 )
-from backend.models.extended import ProjectMilestone
+from backend.models.extended import CostEvent, ProjectMilestone
 from backend.schemas import (
     ChangeOrderOut, CostCodeOut, CostEventOut, MilestoneOut,
     PaginatedResponse, PayAppOut, ProjectDetailOut, ProjectListOut,
