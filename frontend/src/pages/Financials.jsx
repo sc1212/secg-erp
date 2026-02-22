@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { api } from '../lib/api';
 import { money, moneyExact, pct, shortDate, statusBadge } from '../lib/format';
 import KPICard from '../components/KPICard';
@@ -38,7 +39,7 @@ const demoWeekly = [
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg">
+    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg text-brand-text">
       <p className="text-brand-muted mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.color }}>{p.name}: {money(p.value)}</p>
@@ -48,7 +49,9 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 export default function Financials() {
+  const colors = useThemeColors();
   const [tab, setTab] = useState('overview');
+  const [showCashFlowTable, setShowCashFlowTable] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -67,7 +70,7 @@ export default function Financials() {
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              tab === t ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-muted hover:text-brand-text'
+              tab === t ? 'border-brand-gold text-brand-gold' : 'border-transparent text-brand-muted lg:hover:text-brand-text'
             }`}
           >
             {tabLabels[t]}
@@ -78,17 +81,47 @@ export default function Financials() {
       {tab === 'overview' && (
         <div className="space-y-4">
           <div className="bg-brand-card border border-brand-border rounded-xl p-5">
-            <h3 className="text-sm font-semibold mb-4">13-Week Cash Flow Forecast</h3>
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={demoWeekly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="week" stroke="#94A3B8" fontSize={11} />
-                <YAxis tickFormatter={(v) => money(v, true)} stroke="#94A3B8" fontSize={11} />
-                <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="inflows" stroke="#16A34A" fill="#16A34A" fillOpacity={0.1} name="Inflows" />
-                <Area type="monotone" dataKey="outflows" stroke="#DC2626" fill="#DC2626" fillOpacity={0.1} name="Outflows" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold">13-Week Cash Flow Forecast</h3>
+              <button onClick={() => setShowCashFlowTable((current) => !current)} className="text-xs font-medium text-brand-gold lg:hover:text-brand-gold-light transition-colors">
+                {showCashFlowTable ? 'View Chart' : 'View as Table'}
+              </button>
+            </div>
+            {showCashFlowTable ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-brand-border text-left text-xs text-brand-muted uppercase">
+                      <th className="pb-3 pr-4">Week</th>
+                      <th className="pb-3 pr-4 num">Inflows</th>
+                      <th className="pb-3 pr-4 num">Outflows</th>
+                      <th className="pb-3 num">Net</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {demoWeekly.map((row) => (
+                      <tr key={row.week} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
+                        <td className="py-3 pr-4 font-medium">{row.week}</td>
+                        <td className="py-3 pr-4 num">{moneyExact(row.inflows)}</td>
+                        <td className="py-3 pr-4 num">{moneyExact(row.outflows)}</td>
+                        <td className={`py-3 num ${row.net < 0 ? 'text-danger' : 'text-ok'}`}>{row.net < 0 ? `(${moneyExact(Math.abs(row.net))})` : moneyExact(row.net)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={demoWeekly}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                  <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
+                  <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area type="monotone" dataKey="inflows" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
+                  <Area type="monotone" dataKey="outflows" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       )}
@@ -108,13 +141,13 @@ export default function Financials() {
             </thead>
             <tbody>
               {demoDebts.map((d) => (
-                <tr key={d.id} className="border-b border-brand-border/50 hover:bg-brand-card-hover">
+                <tr key={d.id} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
                   <td className="py-3 pr-4 font-medium">{d.name}</td>
                   <td className="py-3 pr-4 text-brand-muted">{d.lender}</td>
                   <td className="py-3 pr-4 text-xs capitalize">{d.debt_type.replace('_', ' ')}</td>
-                  <td className="py-3 pr-4 text-right font-bold">{moneyExact(d.current_balance)}</td>
-                  <td className="py-3 pr-4 text-right">{d.interest_rate}%</td>
-                  <td className="py-3 text-right">{moneyExact(d.monthly_payment)}</td>
+                  <td className="py-3 pr-4 num font-bold">{moneyExact(d.current_balance)}</td>
+                  <td className="py-3 pr-4 num">{d.interest_rate}%</td>
+                  <td className="py-3 num">{moneyExact(d.monthly_payment)}</td>
                 </tr>
               ))}
             </tbody>
@@ -137,12 +170,12 @@ export default function Financials() {
             </thead>
             <tbody>
               {demoInvoices.map((inv) => (
-                <tr key={inv.id} className="border-b border-brand-border/50 hover:bg-brand-card-hover">
+                <tr key={inv.id} className="border-b border-brand-border/50 lg:hover:bg-brand-card-hover">
                   <td className="py-3 pr-4 font-mono text-brand-gold text-xs">{inv.invoice_number}</td>
                   <td className="py-3 pr-4 text-brand-muted">{shortDate(inv.date_issued)}</td>
                   <td className="py-3 pr-4 text-brand-muted">{shortDate(inv.date_due)}</td>
-                  <td className="py-3 pr-4 text-right">{moneyExact(inv.amount)}</td>
-                  <td className="py-3 pr-4 text-right font-medium">{moneyExact(inv.balance)}</td>
+                  <td className="py-3 pr-4 num">{moneyExact(inv.amount)}</td>
+                  <td className="py-3 pr-4 num font-medium">{moneyExact(inv.balance)}</td>
                   <td className="py-3">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${statusBadge(inv.status)}`}>{inv.status}</span>
                   </td>

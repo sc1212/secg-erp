@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../lib/api';
-import { money, moneyExact, shortDate } from '../lib/format';
+import { money, moneyExact, moneyAccounting, shortDate } from '../lib/format';
 import KPICard from '../components/KPICard';
 import { PageLoading, ErrorState, EmptyState } from '../components/LoadingState';
 import {
@@ -61,7 +61,7 @@ export default function Payments() {
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               tab === t
                 ? 'border-brand-gold text-brand-gold'
-                : 'border-transparent text-brand-muted hover:text-brand-text'
+                : 'border-transparent text-brand-muted lg:hover:text-brand-text'
             }`}
           >
             {tabLabels[t]}
@@ -74,7 +74,7 @@ export default function Payments() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-brand-text">Connected Accounts</h3>
-            <button className="flex items-center gap-1.5 text-xs font-medium text-brand-gold hover:text-brand-gold-light transition-colors">
+            <button className="flex items-center gap-1.5 text-xs font-medium text-brand-gold lg:hover:text-brand-gold-light transition-colors">
               <Plus size={14} /> Connect Account
             </button>
           </div>
@@ -82,7 +82,7 @@ export default function Payments() {
             {demoAccounts.map((a, i) => {
               const Icon = accountIcon[a.type] || Landmark;
               return (
-                <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-xl px-5 py-4 hover:border-brand-gold/20 transition-colors">
+                <div key={i} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-xl px-5 py-4 lg:hover:border-brand-gold/20 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-brand-surface flex items-center justify-center">
                       <Icon size={18} className="text-brand-gold" />
@@ -94,7 +94,7 @@ export default function Payments() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <div className="font-bold">{moneyExact(a.balance)}</div>
+                      <div className="font-bold num">{moneyExact(a.balance)}</div>
                       <div className="text-[10px] text-brand-muted">{a.type === 'card' ? 'Balance' : a.type === 'loc' ? 'Drawn' : 'Available'}</div>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -146,7 +146,7 @@ export default function Payments() {
               <label className="block text-xs text-brand-muted mb-1.5">Pay Method</label>
               <div className="flex gap-2">
                 {['ACH', 'Check', 'Wire'].map((m) => (
-                  <button key={m} className="px-4 py-2 rounded-lg text-xs font-medium bg-brand-surface border border-brand-border text-brand-muted hover:text-brand-text hover:border-brand-gold/40 transition-colors first:bg-brand-gold/15 first:text-brand-gold first:border-brand-gold/30">
+                  <button key={m} className="px-4 py-2 rounded-lg text-xs font-medium bg-brand-surface border border-brand-border text-brand-muted lg:hover:text-brand-text lg:hover:border-brand-gold/40 transition-colors first:bg-brand-gold/15 first:text-brand-gold first:border-brand-gold/30">
                     {m}
                   </button>
                 ))}
@@ -155,10 +155,10 @@ export default function Payments() {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button className="px-5 py-2.5 bg-brand-surface border border-brand-border rounded-lg text-sm text-brand-muted hover:text-brand-text transition-colors">
+            <button className="px-5 py-2.5 bg-brand-surface border border-brand-border rounded-lg text-sm text-brand-muted lg:hover:text-brand-text transition-colors">
               Cancel
             </button>
-            <button className="px-5 py-2.5 bg-brand-gold hover:bg-brand-gold-light text-brand-bg font-semibold rounded-lg text-sm transition-colors">
+            <button className="px-5 py-2.5 bg-brand-gold lg:hover:bg-brand-gold-light text-brand-bg font-semibold rounded-lg text-sm transition-colors">
               Approve &amp; Send Payment &rarr;
             </button>
           </div>
@@ -190,7 +190,7 @@ export default function Payments() {
             <label className="block text-xs text-brand-muted mb-1.5">Amount Requested</label>
             <input type="text" placeholder="$0.00" className="w-full sm:w-64 bg-brand-surface border border-brand-border rounded-lg px-4 py-2.5 text-sm text-brand-text placeholder:text-brand-muted/50 focus:outline-none focus:border-brand-gold/60" />
           </div>
-          <button className="px-5 py-2.5 bg-brand-gold hover:bg-brand-gold-light text-brand-bg font-semibold rounded-lg text-sm transition-colors">
+          <button className="px-5 py-2.5 bg-brand-gold lg:hover:bg-brand-gold-light text-brand-bg font-semibold rounded-lg text-sm transition-colors">
             Create &amp; Send Invoice &rarr;
           </button>
         </div>
@@ -202,7 +202,7 @@ export default function Payments() {
           <h3 className="text-sm font-semibold text-brand-text">Recent Transactions</h3>
           <div className="space-y-1">
             {demoTransactions.map((t) => (
-              <div key={t.id} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-lg px-5 py-3 hover:border-brand-gold/20 transition-colors">
+              <div key={t.id} className="flex items-center justify-between bg-brand-card border border-brand-border rounded-lg px-5 py-3 lg:hover:border-brand-gold/20 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${t.amount > 0 ? 'bg-ok/15' : 'bg-danger/15'}`}>
                     {t.amount > 0 ? <ArrowDownLeft size={14} className="text-ok" /> : <ArrowUpRight size={14} className="text-danger" />}
@@ -213,8 +213,8 @@ export default function Payments() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`font-bold text-sm ${t.amount > 0 ? 'text-ok' : 'text-brand-text'}`}>
-                    {t.amount > 0 ? '+' : ''}{moneyExact(t.amount)}
+                  <div className={`font-bold text-sm num ${t.amount > 0 ? 'text-ok' : 'text-danger'}`}>
+                    {t.amount > 0 ? `+${moneyExact(t.amount)}` : moneyAccounting(t.amount)}
                   </div>
                   <div className="text-[10px] text-brand-muted">{shortDate(t.date)}</div>
                 </div>

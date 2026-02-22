@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, Enum, ForeignKey,
-    Integer, Numeric, String, Text, func,
+    Integer, Numeric, String, Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -464,3 +464,326 @@ class UserAccount(TimestampMixin, Base):
     is_active = Column(Boolean, default=True)
     last_login_at = Column(DateTime)
 
+
+# ── Calendar & Daily Logs (Phase 1) ─────────────────────────────────────
+
+class CalendarEvent(TimestampMixin, Base):
+    __tablename__ = "calendar_events"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, nullable=False, index=True, default=1)
+    title = Column(String(300), nullable=False)
+    description = Column(Text)
+    event_type = Column(String(50), nullable=False)
+    start_datetime = Column(DateTime, nullable=False)
+    end_datetime = Column(DateTime)
+    all_day = Column(Boolean, default=False)
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    location = Column(Text)
+    created_by = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    color = Column(String(20))
+    is_recurring = Column(Boolean, default=False)
+    recurrence_rule = Column(String(200))
+    reminder_minutes = Column(Integer)
+    visibility = Column(String(20), default="team")
+
+
+class CalendarAttendee(Base):
+    __tablename__ = "calendar_attendees"
+
+    id = Column(Integer, primary_key=True)
+    event_id = Column(Integer, ForeignKey("calendar_events.id"), nullable=False)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    response = Column(String(20), default="pending")
+
+
+class DailyLog(TimestampMixin, Base):
+    __tablename__ = "daily_logs"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, nullable=False, index=True, default=1)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    log_date = Column(Date, nullable=False)
+    author_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    weather_summary = Column(Text)
+    temp_high = Column(Integer)
+    temp_low = Column(Integer)
+    conditions = Column(String(100))
+    work_performed = Column(Text)
+    delays_issues = Column(Text)
+    visitors = Column(Text)
+    safety_notes = Column(Text)
+    material_deliveries = Column(Text)
+    equipment_on_site = Column(Text)
+    status = Column(String(20), default="draft")
+    submitted_at = Column(DateTime)
+    reviewed_by = Column(Integer, ForeignKey("employees.id"))
+    reviewed_at = Column(DateTime)
+
+
+class DailyLogCrewEntry(Base):
+    __tablename__ = "daily_log_crew"
+
+    id = Column(Integer, primary_key=True)
+    daily_log_id = Column(Integer, ForeignKey("daily_logs.id"), nullable=False)
+    entity_type = Column(String(20), nullable=False)
+    entity_id = Column(Integer)
+    entity_name = Column(String(200))
+    headcount = Column(Integer, default=1)
+    hours = Column(Numeric(4, 1))
+    trade = Column(String(100))
+
+
+class DailyLogPhoto(Base):
+    __tablename__ = "daily_log_photos"
+
+    id = Column(Integer, primary_key=True)
+    daily_log_id = Column(Integer, ForeignKey("daily_logs.id"), nullable=False)
+    document_id = Column(Integer, ForeignKey("documents.id"))
+    prompt_template_id = Column(Integer, ForeignKey("photo_prompt_templates.id"))
+    gps_latitude = Column(Numeric(10, 8))
+    gps_longitude = Column(Numeric(11, 8))
+    capture_timestamp = Column(DateTime)
+    file_url = Column(Text, nullable=False)
+    thumbnail_url = Column(Text)
+    caption = Column(Text)
+    taken_at = Column(DateTime)
+    sort_order = Column(Integer, default=0)
+
+# ── Foundation Engine Models (Phase 0) ──────────────────────────────────
+
+class PhotoPromptTemplate(TimestampMixin, Base):
+    __tablename__ = "photo_prompt_templates"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    construction_phase = Column(String(50), nullable=False)
+    label = Column(String(100), nullable=False)
+    description = Column(Text)
+    is_required = Column(Boolean, default=False)
+    sort_order = Column(Integer, default=0)
+
+
+class Tenant(TimestampMixin, Base):
+    __tablename__ = "tenants"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(300), nullable=False)
+    slug = Column(String(100), unique=True, nullable=False)
+    is_active = Column(Boolean, default=True)
+
+
+class Role(TimestampMixin, Base):
+    __tablename__ = "roles"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    permissions = Column(Text, nullable=False)
+
+
+class Document(TimestampMixin, Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    vendor_id = Column(Integer, ForeignKey("vendors.id"))
+    employee_id = Column(Integer, ForeignKey("employees.id"))
+    title = Column(String(300), nullable=False)
+    doc_type = Column(String(50), nullable=False)
+    file_url = Column(Text, nullable=False)
+    file_size_bytes = Column(Integer)
+    mime_type = Column(String(100))
+    expiry_date = Column(Date)
+    tags = Column(Text)
+    version = Column(Integer, default=1)
+    parent_id = Column(Integer, ForeignKey("documents.id"))
+    status = Column(String(20), default="active")
+    uploaded_by = Column(Integer, ForeignKey("employees.id"))
+    notes = Column(Text)
+
+
+class SystemEvent(TimestampMixin, Base):
+    __tablename__ = "system_events"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    event_type = Column(String(100), nullable=False)
+    source_type = Column(String(50), nullable=False)
+    source_id = Column(Integer, nullable=False)
+    payload = Column(Text)
+    processed = Column(Boolean, default=False)
+
+
+class NotificationRule(TimestampMixin, Base):
+    __tablename__ = "notification_rules"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String(200), nullable=False)
+    event_type = Column(String(100), nullable=False)
+    condition = Column(Text)
+    channels = Column(Text, nullable=False)
+    recipient_roles = Column(Text)
+    priority = Column(String(20), default="normal")
+    message_template = Column(Text)
+    is_active = Column(Boolean, default=True)
+
+
+class Notification(TimestampMixin, Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    recipient_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    event_id = Column(Integer, ForeignKey("system_events.id"))
+    channel = Column(String(20), nullable=False)
+    category = Column(String(50), nullable=False)
+    title = Column(String(300), nullable=False)
+    body = Column(Text)
+    action_url = Column(Text)
+    priority = Column(String(20), default="normal")
+    source_type = Column(String(50))
+    source_id = Column(Integer)
+    is_read = Column(Boolean, default=False)
+    read_at = Column(DateTime)
+    sent_at = Column(DateTime)
+    delivery_status = Column(String(20), default="pending")
+
+
+class NotificationPreference(TimestampMixin, Base):
+    __tablename__ = "notification_preferences"
+
+    id = Column(Integer, primary_key=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    category = Column(String(50), nullable=False)
+    channel_in_app = Column(Boolean, default=True)
+    channel_email = Column(Boolean, default=True)
+    channel_sms = Column(Boolean, default=False)
+    channel_push = Column(Boolean, default=False)
+    quiet_hours_start = Column(String(10))
+    quiet_hours_end = Column(String(10))
+
+
+class ApprovalRequest(TimestampMixin, Base):
+    __tablename__ = "approval_requests"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    entity_type = Column(String(50), nullable=False)
+    entity_id = Column(Integer, nullable=False)
+    requested_by = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    assigned_to = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    approval_rule_id = Column(Integer, ForeignKey("approval_rules.id"))
+    status = Column(String(30), default="pending")
+    decision_at = Column(DateTime)
+    decision_notes = Column(Text)
+    due_date = Column(Date)
+    escalated_to = Column(Integer, ForeignKey("employees.id"))
+    escalated_at = Column(DateTime)
+
+
+class ApprovalRule(TimestampMixin, Base):
+    __tablename__ = "approval_rules"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    entity_type = Column(String(50), nullable=False)
+    condition_field = Column(String(100))
+    condition_operator = Column(String(10))
+    condition_value = Column(Numeric(14, 2))
+    approver_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    escalation_hours = Column(Integer, default=48)
+    is_active = Column(Boolean, default=True)
+
+
+class ExceptionItem(TimestampMixin, Base):
+    __tablename__ = "exception_items"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    exception_type = Column(String(100), nullable=False)
+    source_type = Column(String(50), nullable=False)
+    source_id = Column(Integer)
+    description = Column(Text, nullable=False)
+    severity = Column(String(20), default="warning")
+    assigned_to = Column(Integer, ForeignKey("employees.id"))
+    status = Column(String(20), default="open")
+    resolved_by = Column(Integer, ForeignKey("employees.id"))
+    resolved_at = Column(DateTime)
+    resolution_notes = Column(Text)
+
+
+class PeriodSnapshot(TimestampMixin, Base):
+    __tablename__ = "period_snapshots"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    snapshot_type = Column(String(20), nullable=False)
+    snapshot_date = Column(Date, nullable=False)
+    cash_position = Column(Numeric(14, 2), default=0)
+    total_ar = Column(Numeric(14, 2), default=0)
+    total_ap = Column(Numeric(14, 2), default=0)
+    total_backlog = Column(Numeric(14, 2), default=0)
+    total_committed = Column(Numeric(14, 2), default=0)
+    project_snapshots = Column(Text)
+    is_closed = Column(Boolean, default=False)
+    closed_by = Column(Integer, ForeignKey("employees.id"))
+    closed_at = Column(DateTime)
+    notes = Column(Text)
+
+
+class CostEvent(TimestampMixin, Base):
+    __tablename__ = "cost_events"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    cost_code_id = Column(Integer, ForeignKey("cost_codes.id"), nullable=False)
+    event_type = Column(String(50), nullable=False)
+    event_date = Column(Date, nullable=False)
+    amount = Column(Numeric(14, 2), nullable=False)
+    description = Column(String(500))
+    vendor_id = Column(Integer, ForeignKey("vendors.id"))
+    employee_id = Column(Integer, ForeignKey("employees.id"))
+    source_type = Column(String(50), nullable=False)
+    source_id = Column(Integer)
+    division = Column(String(50))
+    status = Column(String(20), default="pending")
+    approved_by = Column(Integer, ForeignKey("employees.id"))
+    approved_at = Column(DateTime)
+    posted_at = Column(DateTime)
+    qb_synced = Column(Boolean, default=False)
+    qb_sync_id = Column(String(100))
+
+
+class Integration(TimestampMixin, Base):
+    __tablename__ = "integrations"
+
+    id = Column(Integer, primary_key=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    provider = Column(String(50), nullable=False)
+    status = Column(String(20), default="disconnected")
+    access_token_encrypted = Column(Text)
+    refresh_token_encrypted = Column(Text)
+    token_expires_at = Column(DateTime)
+    last_sync_at = Column(DateTime)
+    last_sync_status = Column(String(20))
+    config = Column(Text)
+    error_message = Column(Text)
+
+
+class SyncLog(TimestampMixin, Base):
+    __tablename__ = "sync_logs"
+
+    id = Column(Integer, primary_key=True)
+    integration_id = Column(Integer, ForeignKey("integrations.id"), nullable=False, index=True)
+    direction = Column(String(10))
+    entity_type = Column(String(50))
+    records_processed = Column(Integer)
+    records_failed = Column(Integer)
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+    status = Column(String(20))
+    error_details = Column(Text)

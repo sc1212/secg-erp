@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 export default function Login() {
@@ -7,13 +8,24 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    // No real auth yet — just go to dashboard
-    setTimeout(() => navigate('/'), 600);
+    setError('');
+    try {
+      const destination = location.state?.from || '/';
+      await login(email, password);
+      navigate(destination, { replace: true });
+    } catch (err) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -24,7 +36,7 @@ export default function Login() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-brand-gold flex items-center justify-center text-brand-bg text-2xl font-bold mb-4 shadow-lg shadow-brand-gold/20">
+          <div className="w-16 h-16 rounded-lg bg-brand-gold flex items-center justify-center text-brand-bg text-2xl font-bold mb-4 shadow-lg shadow-brand-gold/20">
             SE
           </div>
           <h1 className="text-xl font-semibold text-brand-text tracking-wide">SOUTHEAST ENTERPRISE</h1>
@@ -32,7 +44,7 @@ export default function Login() {
         </div>
 
         {/* Card */}
-        <form onSubmit={handleSubmit} className="bg-brand-card border border-brand-border rounded-2xl p-8 shadow-2xl">
+        <form onSubmit={handleSubmit} className="bg-brand-card border border-brand-border rounded-lg p-8 shadow-2xl">
           <div className="space-y-5">
             <div>
               <label className="block text-xs font-medium text-brand-muted mb-1.5">Email</label>
@@ -68,6 +80,8 @@ export default function Login() {
               <input type="checkbox" id="remember" className="w-4 h-4 rounded border-brand-border bg-brand-surface accent-brand-gold" />
               <label htmlFor="remember" className="text-sm text-brand-muted">Keep me signed in</label>
             </div>
+
+            {error && <div className="text-xs text-danger bg-danger/10 border border-danger/20 rounded-lg px-3 py-2" aria-live="polite">{error}</div>}
 
             <button
               type="submit"

@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
+import { useNavigate } from 'react-router-dom';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { api } from '../lib/api';
-import { money, pct } from '../lib/format';
+import { money } from '../lib/format';
 import KPICard from '../components/KPICard';
 import { PageLoading, ErrorState } from '../components/LoadingState';
 import {
@@ -39,7 +42,7 @@ const alertBg = { critical: 'bg-danger/10', warning: 'bg-warn/10', info: 'bg-ok/
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg">
+    <div className="bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-xs shadow-lg text-brand-text">
       <p className="text-brand-muted mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} style={{ color: p.color }}>
@@ -51,6 +54,9 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 export default function Dashboard() {
+  const colors = useThemeColors();
+  const navigate = useNavigate();
+  const [showBriefing, setShowBriefing] = useState(false);
   const { data, loading, error, refetch } = useApi(() => api.dashboard());
 
   const cash = data?.cash || {};
@@ -58,18 +64,50 @@ export default function Dashboard() {
   const pipeline = data?.pipeline || {};
   const payroll = data?.payroll || {};
   const debt = data?.debt || {};
-  const alerts = data?.alerts || [
+  const alerts = (data?.alerts || [
     { level: 'critical', category: 'AR', message: '3 invoices overdue totaling $45,200' },
     { level: 'warning', category: 'Budget', message: 'PRJ-051 is 96% of budget with 2 months remaining' },
     { level: 'warning', category: 'Compliance', message: '5 lien waivers pending from vendors' },
     { level: 'info', category: 'Draws', message: 'Draw #3 for PRJ-042 approved ($41,400)' },
-  ];
+  ]).map((a, i) => ({ ...a, action_url: a.action_url || ['/financials','/projects','/vendors','/calendar'][i % 4] }));
+
+  useEffect(() => {
+    const lastShown = localStorage.getItem('briefing_last_shown_at');
+    const dismissedToday = localStorage.getItem('briefing_dismissed_date') === new Date().toDateString();
+    const tooSoon = lastShown && (Date.now() - Number(lastShown) < 4 * 60 * 60 * 1000);
+    setShowBriefing(!dismissedToday && !tooSoon);
+  }, []);
+
+  const closeBriefing = (dismissToday = false) => {
+    localStorage.setItem('briefing_last_shown_at', String(Date.now()));
+    if (dismissToday) localStorage.setItem('briefing_dismissed_date', new Date().toDateString());
+    setShowBriefing(false);
+  };
+
 
   if (loading) return <PageLoading />;
   if (error && !data) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">
+      {showBriefing && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-3xl w-full bg-brand-card border border-brand-border rounded-xl p-6 space-y-4 animate-in fade-in">
+            <h2 className="text-xl font-bold">☀️ Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, Samuel.</h2>
+            <div className="text-sm">Weather — Murfreesboro, TN · 48°F Partly Cloudy · Freeze warning tonight.</div>
+            <div className="space-y-2 text-sm">
+              <button onClick={() => { navigate('/financials'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• 3 new invoices synced from QuickBooks ($14,280) →</button>
+              <button onClick={() => { navigate('/payments'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• Vendor payment processed — Miller Concrete ($8,400) →</button>
+              <button onClick={() => { navigate('/daily-logs'); closeBriefing(); }} className="w-full text-left p-2 rounded hover:bg-brand-card-hover">• Connor submitted daily log — Riverside Custom →</button>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => closeBriefing(true)} className="px-3 py-2 rounded border border-brand-border text-sm">Don't show today</button>
+              <button onClick={() => closeBriefing()} className="px-3 py-2 rounded bg-brand-gold text-brand-bg text-sm font-semibold">Go to Dashboard</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -79,18 +117,25 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Cash on Hand" value={money(cash.cash_on_hand || 277912)} icon={Banknote} trend={8.3} />
-        <KPICard label="Accounts Receivable" value={money(cash.ar_outstanding || 184500)} icon={FileText} trend={-2.1} />
-        <KPICard label="Accounts Payable" value={money(cash.ap_outstanding || 97200)} icon={Receipt} trend={5.7} />
-        <KPICard label="Active Projects" value={projects.active_projects || 47} icon={FolderKanban} sub="3 at risk" />
+
+      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-brand-text mb-3">Weather — Murfreesboro, TN</h3>
+        <div className="text-sm">48°F · Partly Cloudy · Wind 8mph NW</div>
+        <div className="text-xs text-brand-muted mt-1">Freeze warning tonight — protect exposed pipes</div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Pipeline Value" value={money(pipeline.total_value || 2400000, true)} icon={TrendingUp} sub={`${pipeline.total_opportunities || 12} active`} />
-        <KPICard label="Retainage Held" value={money(cash.retainage_receivable || 142800)} icon={Building2} sub={`${projects.active_projects || 8} projects`} />
-        <KPICard label="Bi-Weekly Payroll" value={money(payroll.biweekly_cost || 24813)} icon={CalendarDays} sub={`Next: ${payroll.next_pay_date || '2/28'}`} />
-        <KPICard label="Total Debt" value={money(debt.total_debt || 432934)} icon={CreditCard} sub={`${debt.active_count || 6} active`} />
+        <KPICard label="Cash on Hand" value={money(cash.cash_on_hand ?? 0)} icon={Banknote} trend={8.3} />
+        <KPICard label="Accounts Receivable" value={money(cash.ar_outstanding ?? 0)} icon={FileText} trend={-2.1} />
+        <KPICard label="Accounts Payable" value={money(cash.ap_outstanding ?? 0)} icon={Receipt} trend={5.7} />
+        <KPICard label="Active Projects" value={projects.active_projects ?? 0} icon={FolderKanban} sub="3 at risk" />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard label="Pipeline Value" value={money(pipeline.total_value ?? 0, true)} icon={TrendingUp} sub={`${pipeline.total_opportunities ?? 0} active`} />
+        <KPICard label="Retainage Held" value={money(cash.retainage_receivable ?? 0)} icon={Building2} sub={`${projects.active_projects ?? 0} projects`} />
+        <KPICard label="Bi-Weekly Payroll" value={money(payroll.biweekly_cost ?? 0)} icon={CalendarDays} sub={`Next: ${payroll.next_pay_date ?? '—'}`} />
+        <KPICard label="Total Debt" value={money(debt.total_debt ?? 0)} icon={CreditCard} sub={`${debt.active_count ?? 0} active`} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -98,11 +143,11 @@ export default function Dashboard() {
           <h3 className="text-sm font-semibold text-brand-text mb-4">Budget vs Actuals — Top Projects</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={demoProjects} layout="vertical" margin={{ left: 10 }}>
-              <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke="#94A3B8" fontSize={11} />
-              <YAxis type="category" dataKey="name" stroke="#94A3B8" fontSize={11} width={60} />
+              <XAxis type="number" tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
+              <YAxis type="category" dataKey="name" stroke={colors.textMuted} fontSize={11} width={60} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="budget" fill="#E2E8F0" radius={[0, 4, 4, 0]} name="Budget" />
-              <Bar dataKey="spent" fill="#2563EB" radius={[0, 4, 4, 0]} name="Spent" />
+              <Bar dataKey="budget" fill={colors.border} radius={[0, 4, 4, 0]} name="Budget" />
+              <Bar dataKey="spent" fill={colors.gold} radius={[0, 4, 4, 0]} name="Spent" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -111,12 +156,12 @@ export default function Dashboard() {
           <h3 className="text-sm font-semibold text-brand-text mb-4">Cash Flow Forecast — 8 Weeks</h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={demoCashFlow}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis dataKey="week" stroke="#94A3B8" fontSize={11} />
-              <YAxis tickFormatter={(v) => money(v, true)} stroke="#94A3B8" fontSize={11} />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+              <XAxis dataKey="week" stroke={colors.textMuted} fontSize={11} />
+              <YAxis tickFormatter={(v) => money(v, true)} stroke={colors.textMuted} fontSize={11} />
               <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="inflow" stroke="#16A34A" fill="#16A34A" fillOpacity={0.1} name="Inflows" />
-              <Area type="monotone" dataKey="outflow" stroke="#DC2626" fill="#DC2626" fillOpacity={0.1} name="Outflows" />
+              <Area type="monotone" dataKey="inflow" stroke={colors.ok} fill={colors.ok} fillOpacity={0.1} name="Inflows" />
+              <Area type="monotone" dataKey="outflow" stroke={colors.danger} fill={colors.danger} fillOpacity={0.1} name="Outflows" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -131,7 +176,7 @@ export default function Dashboard() {
               <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-lg ${alertBg[a.level]}`}>
                 <Icon size={16} className={alertColor[a.level]} />
                 <span className="text-sm flex-1">{a.message}</span>
-                <button className="text-xs text-brand-gold hover:text-brand-gold-light transition-colors font-medium">View &rarr;</button>
+                <button onClick={() => navigate(a.action_url)} className="text-xs text-brand-gold hover:text-brand-gold-light transition-colors font-medium">View &rarr;</button>
               </div>
             );
           })}
