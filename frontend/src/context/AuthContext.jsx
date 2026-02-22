@@ -4,9 +4,11 @@ import { clearAuthToken, setAuthToken } from '../lib/auth';
 
 const AuthContext = createContext(null);
 
+const DEV_BYPASS = import.meta.env.DEV || import.meta.env.VITE_AUTH_BYPASS === 'true';
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(DEV_BYPASS ? 'dev-bypass' : null);
+  const [user, setUser] = useState(DEV_BYPASS ? { id: 0, email: 'scarson@southeastenterprise.com', username: 'scarson', full_name: 'Samuel Carson' } : null);
 
   const login = async (usernameOrEmail, password) => {
     const result = await api.login(usernameOrEmail, password);
