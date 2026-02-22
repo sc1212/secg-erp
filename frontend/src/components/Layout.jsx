@@ -15,6 +15,14 @@ const nav = [
   { to: '/vendors',   icon: Handshake,       label: 'Vendors' },
   { to: '/crm',       icon: Users,           label: 'CRM' },
   { to: '/team',      icon: UserCog,         label: 'Team' },
+  { to: '/', icon: LayoutDashboard, label: 'Operating System' },
+  { to: '/legacy-dashboard', icon: LayoutDashboard, label: 'Legacy Dashboard' },
+  { to: '/projects', icon: FolderKanban, label: 'Projects' },
+  { to: '/financials', icon: DollarSign, label: 'Financials' },
+  { to: '/payments', icon: CreditCard, label: 'Payments' },
+  { to: '/vendors', icon: Handshake, label: 'Vendors' },
+  { to: '/crm', icon: Users, label: 'CRM' },
+  { to: '/team', icon: UserCog, label: 'Team' },
 ];
 
 function SideLink({ to, icon: Icon, label, collapsed }) {
