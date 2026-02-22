@@ -469,6 +469,7 @@ class UserAccount(TimestampMixin, Base):
 
 class CalendarEvent(TimestampMixin, Base):
     __tablename__ = "calendar_events"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, nullable=False, index=True, default=1)
@@ -490,6 +491,7 @@ class CalendarEvent(TimestampMixin, Base):
 
 class CalendarAttendee(Base):
     __tablename__ = "calendar_attendees"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     event_id = Column(Integer, ForeignKey("calendar_events.id"), nullable=False)
@@ -499,6 +501,7 @@ class CalendarAttendee(Base):
 
 class DailyLog(TimestampMixin, Base):
     __tablename__ = "daily_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, nullable=False, index=True, default=1)
@@ -523,6 +526,7 @@ class DailyLog(TimestampMixin, Base):
 
 class DailyLogCrewEntry(Base):
     __tablename__ = "daily_log_crew"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     daily_log_id = Column(Integer, ForeignKey("daily_logs.id"), nullable=False)
@@ -536,6 +540,7 @@ class DailyLogCrewEntry(Base):
 
 class DailyLogPhoto(Base):
     __tablename__ = "daily_log_photos"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     daily_log_id = Column(Integer, ForeignKey("daily_logs.id"), nullable=False)
@@ -584,6 +589,7 @@ class Role(TimestampMixin, Base):
 
 class Document(TimestampMixin, Base):
     __tablename__ = "documents"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -606,6 +612,7 @@ class Document(TimestampMixin, Base):
 
 class SystemEvent(TimestampMixin, Base):
     __tablename__ = "system_events"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -618,6 +625,7 @@ class SystemEvent(TimestampMixin, Base):
 
 class NotificationRule(TimestampMixin, Base):
     __tablename__ = "notification_rules"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -633,6 +641,7 @@ class NotificationRule(TimestampMixin, Base):
 
 class Notification(TimestampMixin, Base):
     __tablename__ = "notifications"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -654,6 +663,7 @@ class Notification(TimestampMixin, Base):
 
 class NotificationPreference(TimestampMixin, Base):
     __tablename__ = "notification_preferences"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
@@ -668,6 +678,7 @@ class NotificationPreference(TimestampMixin, Base):
 
 class ApprovalRequest(TimestampMixin, Base):
     __tablename__ = "approval_requests"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -700,6 +711,7 @@ class ApprovalRule(TimestampMixin, Base):
 
 class ExceptionItem(TimestampMixin, Base):
     __tablename__ = "exception_items"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -717,6 +729,7 @@ class ExceptionItem(TimestampMixin, Base):
 
 class PeriodSnapshot(TimestampMixin, Base):
     __tablename__ = "period_snapshots"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
@@ -736,6 +749,7 @@ class PeriodSnapshot(TimestampMixin, Base):
 
 class CostEvent(TimestampMixin, Base):
     __tablename__ = "cost_events"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
