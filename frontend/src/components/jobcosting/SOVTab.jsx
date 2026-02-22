@@ -41,7 +41,7 @@ export default function SOVTab({ project }) {
           { label: 'Balance to Finish', value: totals.balance },
           { label: 'Overall % Complete', value: null, display: pct(totalPct) },
         ].map((card) => (
-          <div key={card.label} className="bg-brand-card border border-brand-border rounded-xl p-4">
+          <div key={card.label} className="bg-brand-card border border-brand-border rounded-lg p-4">
             <div className="text-xs text-brand-muted">{card.label}</div>
             <div className="text-xl font-bold mt-1">{card.display || moneyExact(card.value)}</div>
           </div>

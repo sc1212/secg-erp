@@ -65,7 +65,7 @@ export default function ProjectDetail() {
         <ArrowLeft size={16} /> Back to Projects
       </Link>
 
-      <div className="bg-brand-card border border-brand-border rounded-xl p-6">
+      <div className="bg-brand-card border border-brand-border rounded-lg p-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">

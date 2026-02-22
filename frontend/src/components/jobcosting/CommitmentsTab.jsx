@@ -38,7 +38,7 @@ export default function CommitmentsTab({ project }) {
           { label: 'Paid', value: totals.paid, sub: `Retainage: ${moneyExact(totals.retainage)}` },
           { label: 'Remaining', value: totals.remaining, sub: `Open commitments: ${commitments.filter((c) => c.status === 'active').length}` },
         ].map((card) => (
-          <div key={card.label} className="bg-brand-card border border-brand-border rounded-xl p-4">
+          <div key={card.label} className="bg-brand-card border border-brand-border rounded-lg p-4">
             <div className="text-xs text-brand-muted">{card.label}</div>
             <div className="text-xl font-bold mt-1">{moneyExact(card.value)}</div>
             <div className="text-[10px] text-brand-muted mt-1">{card.sub}</div>
@@ -67,7 +67,7 @@ export default function CommitmentsTab({ project }) {
           const isExpanded = expanded[cmt.id];
           const Icon = typeIcon[cmt.type] || FileText;
           return (
-            <div key={cmt.id} className="border border-brand-border rounded-xl overflow-hidden">
+            <div key={cmt.id} className="border border-brand-border rounded-lg overflow-hidden">
               {/* Header row */}
               <button
                 onClick={() => toggle(cmt.id)}

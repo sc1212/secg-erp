@@ -35,7 +35,7 @@ export default function ActualsTab({ project }) {
           { label: 'Pending/Approved', value: totalPending, sub: `${pendingItems.length} items` },
           { label: 'Budget Remaining', value: project.budget_total - totalActual, sub: `of ${moneyExact(project.budget_total)}` },
         ].map((card) => (
-          <div key={card.label} className="bg-brand-card border border-brand-border rounded-xl p-4">
+          <div key={card.label} className="bg-brand-card border border-brand-border rounded-lg p-4">
             <div className="text-xs text-brand-muted">{card.label}</div>
             <div className="text-xl font-bold mt-1">{moneyExact(card.value)}</div>
             <div className="text-[10px] text-brand-muted mt-1">{card.sub}</div>

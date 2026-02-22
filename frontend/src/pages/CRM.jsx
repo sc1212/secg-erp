@@ -56,7 +56,7 @@ export default function CRM() {
       {tab === 'pipeline' && (
         <div className="space-y-3">
           {demoPipeline.map((p) => (
-            <div key={p.id} className="bg-brand-card border border-brand-border rounded-xl p-5 hover:border-brand-gold/20 transition-colors">
+            <div key={p.id} className="bg-brand-card border border-brand-border rounded-lg p-5 hover:border-brand-gold/20 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
@@ -86,7 +86,7 @@ export default function CRM() {
       {tab === 'leads' && (
         <div className="space-y-3">
           {demoLeads.map((l) => (
-            <div key={l.id} className="bg-brand-card border border-brand-border rounded-xl p-5 hover:border-brand-gold/20 transition-colors">
+            <div key={l.id} className="bg-brand-card border border-brand-border rounded-lg p-5 hover:border-brand-gold/20 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-1">

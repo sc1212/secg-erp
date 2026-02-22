@@ -67,7 +67,7 @@ export default function Vendors() {
             const avgScore = ((Number(v.score_quality) + Number(v.score_timeliness) + Number(v.score_communication) + Number(v.score_price)) / 4);
             const insExpired = v.insurance_expiry && new Date(v.insurance_expiry) < new Date();
             return (
-              <div key={v.id} className="bg-brand-card border border-brand-border rounded-xl p-5 hover:border-brand-gold/20 transition-colors">
+              <div key={v.id} className="bg-brand-card border border-brand-border rounded-lg p-5 hover:border-brand-gold/20 transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-semibold text-brand-text">{v.name}</h3>

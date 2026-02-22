@@ -30,7 +30,7 @@ export default function CashflowWipTab({ project }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+      <div className="bg-brand-card border border-brand-border rounded-lg p-5">
         <h3 className="text-sm font-semibold text-brand-muted uppercase tracking-wider mb-4">WIP Reconciliation</h3>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {[
@@ -82,7 +82,7 @@ export default function CashflowWipTab({ project }) {
         </div>
       </div>
 
-      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+      <div className="bg-brand-card border border-brand-border rounded-lg p-5">
         <h3 className="text-sm font-semibold text-brand-muted uppercase tracking-wider mb-4">Monthly Cashflow</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -100,7 +100,7 @@ export default function CashflowWipTab({ project }) {
         </div>
       </div>
 
-      <div className="bg-brand-card border border-brand-border rounded-xl p-5">
+      <div className="bg-brand-card border border-brand-border rounded-lg p-5">
         <h3 className="text-sm font-semibold text-brand-muted uppercase tracking-wider mb-3">Monthly Detail</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

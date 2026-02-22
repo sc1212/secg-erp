@@ -24,7 +24,7 @@ export default function Login() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-brand-gold flex items-center justify-center text-brand-bg text-2xl font-bold mb-4 shadow-lg shadow-brand-gold/20">
+          <div className="w-16 h-16 rounded-lg bg-brand-gold flex items-center justify-center text-brand-bg text-2xl font-bold mb-4 shadow-lg shadow-brand-gold/20">
             SE
           </div>
           <h1 className="text-xl font-semibold text-brand-text tracking-wide">SOUTHEAST ENTERPRISE</h1>
@@ -32,7 +32,7 @@ export default function Login() {
         </div>
 
         {/* Card */}
-        <form onSubmit={handleSubmit} className="bg-brand-card border border-brand-border rounded-2xl p-8 shadow-2xl">
+        <form onSubmit={handleSubmit} className="bg-brand-card border border-brand-border rounded-lg p-8 shadow-2xl">
           <div className="space-y-5">
             <div>
               <label className="block text-xs font-medium text-brand-muted mb-1.5">Email</label>

@@ -5,6 +5,7 @@ import {
   Users, Handshake, UserCog, ChevronLeft, ChevronRight,
   Bell, Search, Menu, X, Sun, Moon, Crosshair,
 } from 'lucide-react';
+import ErrorBoundary from './ErrorBoundary';
 
 const nav = [
   { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
@@ -15,14 +16,6 @@ const nav = [
   { to: '/vendors',   icon: Handshake,       label: 'Vendors' },
   { to: '/crm',       icon: Users,           label: 'CRM' },
   { to: '/team',      icon: UserCog,         label: 'Team' },
-  { to: '/', icon: LayoutDashboard, label: 'Operating System' },
-  { to: '/legacy-dashboard', icon: LayoutDashboard, label: 'Legacy Dashboard' },
-  { to: '/projects', icon: FolderKanban, label: 'Projects' },
-  { to: '/financials', icon: DollarSign, label: 'Financials' },
-  { to: '/payments', icon: CreditCard, label: 'Payments' },
-  { to: '/vendors', icon: Handshake, label: 'Vendors' },
-  { to: '/crm', icon: Users, label: 'CRM' },
-  { to: '/team', icon: UserCog, label: 'Team' },
 ];
 
 function SideLink({ to, icon: Icon, label, collapsed }) {
@@ -33,6 +26,7 @@ function SideLink({ to, icon: Icon, label, collapsed }) {
       className={({ isActive }) =>
         `sidebar-link${isActive ? ' active' : ''}${collapsed ? ' collapsed' : ''}`
       }
+      title={collapsed ? label : undefined}
     >
       <Icon size={18} strokeWidth={1.75} />
       {!collapsed && <span>{label}</span>}
@@ -130,8 +124,6 @@ export default function Layout() {
             borderTop: '1px solid var(--border-subtle)',
             color: 'var(--sidebar-text)',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--sidebar-text-active)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--sidebar-text)')}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -160,8 +152,6 @@ export default function Layout() {
               onClick={() => setMobileOpen(!mobileOpen)}
               className="lg:hidden transition-colors"
               style={{ color: 'var(--text-secondary)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
               aria-label="Toggle mobile menu"
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -186,8 +176,6 @@ export default function Layout() {
             <button
               className="relative transition-colors"
               style={{ color: 'var(--text-secondary)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
               aria-label="Notifications"
             >
               <Bell size={18} />
@@ -229,7 +217,9 @@ export default function Layout() {
           className="flex-1 overflow-y-auto p-4 lg:p-6"
           style={{ background: 'var(--bg-base, #F8FAFC)', transition: 'background-color 0.25s ease' }}
         >
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
